@@ -1,0 +1,6 @@
+credentials.php
+jslib/
+**/PHPExcel/
+**/cache/
+**/not_used/
+**/saved/

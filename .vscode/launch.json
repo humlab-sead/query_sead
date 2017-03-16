@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach (Remote Debug)",
+            "type":"php",
+            "request": "launch",
+            "stopOnEntry": false,
+            "localSourceRoot": "${workspaceRoot}",
+            "serverSourceRoot": "${workspaceRoot}",
+            "log": false,
+            "port": 9000
+        }
+    ]
+}

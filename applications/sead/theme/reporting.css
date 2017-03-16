@@ -1,0 +1,25 @@
+
+/* BEGIN GENERIC TABLE DEF */
+
+h2 {
+	margin:0px;
+	font-style:italic;
+	color:#000000;
+        font-size:16px;
+
+}
+.generic_table {
+	border-spacing: 0px;
+        font-size:12px;
+	border-collapse:separate;
+}
+.facet_control_bar_button
+{
+    	display:inline;
+	margin:0px;
+	margin-right:0px;
+	cursor:pointer;
+	font-size:12px;
+	font-weight:bold;
+	color:#333;
+}
