@@ -11,32 +11,15 @@ image_functions - <fb_server_image_funct.php>
 parameters functions - <fb_server_client_params_funct.php>
 */
 require_once __DIR__ . '/lib/dijkstra.php';
-
+require_once __DIR__ . '/connection_helper.php';
 require_once __DIR__ . "/../applications/applicationSpecification.php";
 require_once __DIR__ . "/../applications/sead/fb_def.php";
 require_once __DIR__ . "/../applications/sead/custom_server_funct.php";
 require_once __DIR__ . "/lib/SqlFormatter.php";
 require_once __DIR__ . "/lib/imageSmoothArc_optimized.php";
-require_once __DIR__ . '/lib/t.php';
+require_once __DIR__ . '/language/t.php';
 require_once __DIR__ . '/lib/fb_server_image_funct.php';
 require_once __DIR__ . '/fb_server_client_params_funct.php';
-
-function open_connection()
-{
-    if (!($conn = pg_connect(CONNECTION_STRING))) {
-        echo "Error: pg_connect failed.\n";
-        exit;
-    }
-    return $conn;
-}
-
-function query_connection($conn, $q) {
-    if (($rs = pg_query($conn, $q)) <= 0) {
-        echo "Error: cannot execute site query. " . SqlFormatter::format($q,false) . " \n";
-        exit;
-    }
-    return $rs;
-}
 
 /*
 * Funnction: *  render_column_meta_data
@@ -108,41 +91,34 @@ function render_data_rows_as_html($conn, $rs, $max_result_display_rows, $header_
         foreach ($row as $row_item) {
             $java_script="";
             $skip_column=false;
-            // add formatting for image_items
             switch ($header_data[$column_counter]["result_column_type"]) {
-                case "image_item":
-                    // Get image file name
-                    //$file_name=render_image_from_id($conn,$row_item);
-                    //$row_text.="<IMG SRC=\"server/".$file_name."\" >";;
-                    $file_name=render_image_from_id_detail($conn, $row_item);
-                    $row_text="<IMG title=\"show on map\" style=\"cursor:pointer\"  SRC=\"".$file_name."\" >";
-                    ;
-                    $java_script=render_java_script_from_id($conn, $row_item);
-                    
-                    break;
+                // case "image_item":
+                //     $file_name=render_image_from_id_detail($conn, $row_item);
+                //     $row_text="<IMG title=\"show on map\" style=\"cursor:pointer\"  SRC=\"".$file_name."\" >";
+                //     $java_script=render_java_script_from_id($conn, $row_item);
+                //     break;
                 case "link_item":
                     $url=$header_data[$column_counter]["link_url"];
                     if (isset($header_data[$column_counter]["link_label"])) {
                         $link_label=$header_data[$column_counter]["link_label"];
-                } else {
-                    $link_label=$row_item;
-                }
-                
-                $row_text="<A HREF=\"$url=$row_item&application_name=$applicationName\" title=\"info\" target=\"blank\" >$link_label</A>";
-                break;
+                    } else {
+                        $link_label=$row_item;
+                    }
+                    
+                    $row_text="<A HREF=\"$url=$row_item&application_name=$applicationName\" title=\"info\" target=\"blank\" >$link_label</A>";
+                    break;
                 case "link_item_filtered":
                     $url=$header_data[$column_counter]["link_url"];
                     if (isset($header_data[$column_counter]["link_label"])) {
                         $link_label=$header_data[$column_counter]["link_label"];
-                } else {
-                    $link_label=$row_item;
-                }
-                
-                $row_text="<A HREF=\"$url=$row_item&cache_id=$cache_id&application_name=$applicationName\" title=\"info\" target=\"blank\" >$link_label</A>";
-                break;
+                    } else {
+                        $link_label=$row_item;
+                    }
+                    
+                    $row_text="<A HREF=\"$url=$row_item&cache_id=$cache_id&application_name=$applicationName\" title=\"info\" target=\"blank\" >$link_label</A>";
+                    break;
                 case "sort_item":
                     $skip_column=true;
-                    ;
                     break;
                 default:
                     $row_text= $row_item;
@@ -172,29 +148,22 @@ function render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column
             $data_array[$row_key]["row_id"]=$row_counter;
             // add formatting for image_items
             switch ($column_meta_data[$column_counter]["result_column_type"]) {
-                case "image_item":
-                    // Get image file name
-                    $file_name=render_image_from_id_detail($conn, $row_item, 604, "nobackground");
-                    // event, function name, arguments.
-                    $java_script=render_java_script_from_id($conn, $row_item);
-                    
-                    $data_array[$row_key][$column_counter]["image_src"]= $file_name;
-                    $data_array[$row_key][$column_counter]["image_title"]="show on map";
-                    $data_array[$row_key][$column_counter]["java_script_function"]="zoom_to_bounds";
-                    $column_meta_data[$data_item_counter]["result_column_title"]=t($result_item["text"], $facet_params["client_language"]) ;
-                    
-                    $java_script_arguments=render_java_script_arguments($conn, $row_item);
-                    
-                    if (is_array($java_script_arguments)) {
-                        foreach ($java_script_arguments as $jkey => $j_argument) {
-                            $data_array[$row_key][$column_counter]["arguments"][$jkey]=$j_argument;
-                    }
-                }
-                
-                break;
+                // case "image_item":
+                //     $file_name=render_image_from_id_detail($conn, $row_item, 604, "nobackground");
+                //     $java_script=render_java_script_from_id($conn, $row_item);
+                //     $data_array[$row_key][$column_counter]["image_src"]= $file_name;
+                //     $data_array[$row_key][$column_counter]["image_title"]="show on map";
+                //     $data_array[$row_key][$column_counter]["java_script_function"]="zoom_to_bounds";
+                //     $column_meta_data[$data_item_counter]["result_column_title"]=t($result_item["text"], $facet_params["client_language"]) ;
+                //     $java_script_arguments=render_java_script_arguments($conn, $row_item);
+                //     if (is_array($java_script_arguments)) {
+                //         foreach ($java_script_arguments as $jkey => $j_argument) {
+                //                 $data_array[$row_key][$column_counter]["arguments"][$jkey]=$j_argument;
+                //         }
+                //     }
+                //     break;
                 case "link_item":
                     $url=$column_meta_data[$column_counter]["link_url"];
-                    // $row_text="<A HREF=\"$url=$row_item\" title=\"info\" target=\"blank\" >$row_item</A>";
                     $data_array[$row_key][$column_counter]["link_url"]="".$url."=".$row_item."";
                     break;
                 case "link_item_filtered":
@@ -203,7 +172,6 @@ function render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column
                     break;
                 case "sort_item":
                     $skip_column=true;
-                    ;
                     break;
                 default:
                     $row_text=$row_item;
@@ -212,7 +180,6 @@ function render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column
             }
             // add formattting for html-link items
             if (!$skip_column) {
-                // $html_table.= "<td  $java_script > ".$row_text." </td>";
                 $data_array[$row_key][$column_counter]["cell_type"]=$column_meta_data[$column_counter]["result_column_type"];
                 $data_array[$row_key][$column_counter]["result_column_title"]=$column_meta_data[$column_counter]["result_column_title"];
                 $data_array[$row_key][$column_counter]["result_column_title_extra"]=$column_meta_data[$column_counter]["result_column_title_extra"];
@@ -221,7 +188,6 @@ function render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column
         }
         $row_counter++;
     }
-    //
     return $data_array;
 }
 
@@ -241,15 +207,12 @@ function xml_encode($array, $indent = false, $i = 0)
             $data .= ($indent?"\r\n":'').xml_encode($v, $indent, ($i+1)).($indent?str_repeat("\t", $i):'');
         } else {
             $data .= "<![CDATA[".$v."]]>";
-            //$data .= "".$v."";
         }
         $data .= '</'.$k.'>'.($indent?"\r\n":'');
     }
-    if (!$i) {
-        //     $data .= '</root>';
-    }
     return $data;
 }
+
 function render_result_array_as_xml($result_array)
 {
     return xml_encode($result_array);
@@ -258,12 +221,8 @@ function render_result_array_as_xml($result_array)
 function result_render_list_view_xml($conn, $facet_params, $result_params, $data_link, $cache_id, $data_link_text)
 {
     global $facet_definition, $result_definition,  $last_facet_query, $max_result_display_rows;
-    // get the query to populate the list
     $q = get_result_data_query($facet_params, $result_params). " ";
-    if (($rs = pg_query($conn, $q)) <= 0) {
-        echo "Error: cannot execute query3. $q \n";
-        exit;
-    }
+    $rs = ConnectionHelper::query($conn, $q);
     $column_meta_data=  render_column_meta_data($result_definition, $result_params, $facet_params);
     $result_array=render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column_meta_data, $cache_id);
     $result_data_xml= render_result_array_as_xml($result_array);
@@ -273,13 +232,8 @@ function result_render_list_view_xml($conn, $facet_params, $result_params, $data
 function result_render_list_view($conn, $facet_params, $result_params, $data_link, $cache_id, $data_link_text)
 {
     global $facet_definition, $result_definition,  $last_facet_query, $max_result_display_rows;
-    // get the query to populate the list
-    $q= get_result_data_query($facet_params, $result_params). " ";
-    
-    if (($rs = pg_query($conn, $q)) <= 0) {
-        echo "Error: cannot execute query3. $q \n";
-        exit;
-    }
+    $q = get_result_data_query($facet_params, $result_params). " ";
+    $rs = ConnectionHelper::query($conn, $q);
     $html_table = create_custom_result_table_header($rs, $facet_params, $result_params, "server/" . $data_link, $cache_id, "server/" .$data_link_text);
     $q=SqlFormatter::format($q, false);
     $html_table.="   <!-- BEGIN SQL -->\n";
@@ -334,15 +288,11 @@ function get_result_xml_from_id($result_state_id)
 function save_facet_xml($conn, $facet_xml)
 {
     global $application_name, $cache_seq;
-    if (isset($cache_seq)) {
-        $rs5 = pg_query($conn, "select nextval('$cache_seq') as cache_id;");
-    } else {
-        $rs5 = pg_query($conn, "select nextval('file_name_data_download_seq') as cache_id;");
-    }
+    $q = isset($cache_seq) ? "select nextval('$cache_seq') as cache_id;" : "select nextval('file_name_data_download_seq') as cache_id;";
+    $rs5 = ConnectionHelper::query($conn, $q);
     while ($row = pg_fetch_assoc($rs5)) {
         $facet_state_id = $application_name . $row["cache_id"];
     }
-    // store $facet_xml in  file to be read by download command
     file_put_contents(__DIR__ . "/cache/" . $facet_state_id . "_facet_xml.xml", $facet_xml);
     return $facet_state_id;
 }
@@ -359,27 +309,6 @@ function inverse_array($array_in)
         $inverse_array_in[$val] = $key;
     }
     return $inverse_array_in;
-}
-
-//***************************************************************************************************************************************************
-/**
-* Sanitizes the parameter supplied as need for sql execution. This is
-* relevant for user supplied data (such as the login).
-*
-* adopted from http://www.bitrepository.com/sanitize-data-to-prevent-sql-injection-attacks.html
-* @param string $sql_parameter The data intended for inclusion in the sql query.
-* @param Resource $db_conn A database connection refering to a pg_connection. Optional
-* @return string The sanitized data.
-*
-*/
-function sanitize_input($sql_parameter, $db_conn = null)
-{
-    $data = trim($sql_parameter); // just for completion.
-    if (get_magic_quotes_gpc()) {
-        $data = stripslashes($data);
-    }
-    $data = pg_escape_string($db_conn, $data);
-    return $data;
 }
 
 //***************************************************************************************************************************************************
@@ -506,13 +435,13 @@ function prepare_result_params($facet_params, $result_params)
                         $group_by_str_inner.=$alias_name. ",";
                         break;
                     case "single_item":
-                        default:
-                            $data_fields.=$alias_name . ",";
-                            //the tables are stored in an array.
-                            $data_tables[] = $item["table"];
-                            $group_by_str.=$alias_name . ",";
-                            $group_by_str_inner.=$alias_name. ",";
-                            break;
+                    default:
+                        $data_fields.=$alias_name . ",";
+                        //the tables are stored in an array.
+                        $data_tables[] = $item["table"];
+                        $group_by_str.=$alias_name . ",";
+                        $group_by_str_inner.=$alias_name. ",";
+                        break;
                 }
             }
         }
@@ -573,7 +502,7 @@ function get_result_data_query($facet_params, $result_params)
     
     $q.="  group by  $group_by_str_inner ) as tmp ";
     if (!empty($group_by_str)) {
-        $q.=" group by  $group_by_str  ";
+        $q.=" group by $group_by_str  ";
     }
     if (!empty($sort_fields)) {
         $q.=" order by $sort_fields";
@@ -825,14 +754,6 @@ function get_discrete_selection_values($current_selection_group)
     return $selection_values;
 }
 
-function write_object_to_file($filename, $object)
-{
-    $file = fopen($filename,"w");
-    $data = print_r($object, TRUE);
-    fwrite($file, $data);
-    fclose($file);
-}
-
 class query_builder
 {
     public function make_sub_selects($routes, $edge_list, $subselect_where)
@@ -871,11 +792,6 @@ class query_builder
     
     public function get_query_information($edge_list, $numeric_edge_list, $lookup_list_tables, $facet_definition, $facet_params, $f_code, $extra_tables, $f_list)
     {
-        // ROGER
-        $filename = 'C:\\tmp\\qsead\\get_query_information_'.date('Ymd_his').'.txt';
-        $backtrace = debug_backtrace();
-        write_object_to_file($filename, $backtrace);
-        
         global $list_of_alias_tables;
         $query = array();
         $table_list = array();
@@ -1048,10 +964,6 @@ class query_builder
         $query["none_reduced_routes"]=$none_reduced_routes;
         $query["reduced_routes"]=$routes;
         $query["sub_selects"]=$sub_selects;
-
-        // ROGER
-        $filename = 'C:\\tmp\\qsead\\RESULT_get_query_information_'.date('Ymd_his').'.txt';
-        write_object_to_file($filename, $query);
 
         return $query;
     }
@@ -1263,20 +1175,27 @@ function get_discrete_count_query2($count_facet, $facet_params, $summarize_type 
     
     $query = get_query_clauses($facet_params, $count_facet, $extra_tables, $f_list); // mapped to new function
     $count_column = $facet_definition[$count_facet]["id_column"];
-    $requested_facet_column=$facet_definition[$requested_facet]["id_column"];
-    //the query need to be a nested query
-    if ($query["joins"] != "") {
-        $extra_join = $query["joins"] . "  ";
-    }
-    $q = "select facet_term, $summarize_type(summarize_term) as direct_count from (";
-    $q.="select $requested_facet_column  as facet_term , $count_column as summarize_term from " . $query["tables"] . " $extra_join where    1=1  ";
-    
-    if ($query["where"] != '') {
-        $q.=" and  " . $query["where"] . " ";
-    }
-    $q.=" group by $count_column, $requested_facet_column";
-    $q.=" ) as tmp_query group by facet_term;";
-    $q=SqlFormatter::format($q, false);
+    $requested_facet_column = $facet_definition[$requested_facet]["id_column"];
+    $query_tables = $query["tables"];
+    $extra_join = ($query["joins"] != "") ? $query["joins"] . "  " : "";
+    $extra_where = ($query["where"] != '')  ? " and  " . $query["where"] . " " : "";
+
+    $q = <<<EOT
+
+    select facet_term, $summarize_type(summarize_term) as direct_count
+    from (
+        select $requested_facet_column  as facet_term , $count_column as summarize_term
+        from $query_tables
+            $extra_join
+        where 1 = 1
+            $extra_where
+        group by $count_column, $requested_facet_column
+    ) as tmp_query
+    group by facet_term;
+
+EOT;
+
+    //$q = SqlFormatter::format($q, false);
     return $q;
 }
 
@@ -1288,21 +1207,23 @@ function get_discrete_count_query($f_code, $query, $direct_count_column)
 {
     global $facet_definition;
     
+    $query_tables = $query["tables"];
     $query_column = $facet_definition[$f_code]["id_column"];
-    //the query need to be a nested query
-    if ($query["joins"] != "") {
-        $extra_join = $query["joins"] . "  ";
-    }
-    $q = "select facet_term, count(facet_term) as direct_count from (";
-    $q.="select $query_column as facet_term from " . $query["tables"] . " $extra_join where    1=1  ";
-    
-    if ($query["where"] != '') {
-        $q.=" and  " . $query["where"] . " ";
-    }
-    
-    $q.=" group by $query_column, $direct_count_column";
-    $q.=" ) as tmp_query group by facet_term;";
-    
+    $extra_join = ($query["joins"] != "") ? $query["joins"] . "  " : "";
+    $extra_where = ($query["where"] != '') ? " and  " . $query["where"] . " " : "";
+
+    $q  = <<<EOD
+        select facet_term, count(facet_term) as direct_count
+        from (
+            select $query_column as facet_term
+            from $query_tables
+                 $extra_join
+            where 1 = 1 
+              $extra_where
+            group by $query_column, $direct_count_column
+        ) as tmp_query group by facet_term;
+EOD;
+
     return $q;
 }
 
@@ -1382,29 +1303,6 @@ function get_geo_count_query($facet_params, $f_code, $direct_count_table, $direc
     return SqlFormatter::format($new_sql, false);
 }
 
-//***************************************************************************************************************************************************
-/*
-function: exist_table
-check if the table exists in the database
-*/
-
-function exist_table($conn, $database_table)
-{
-    $data_array = explode(".", $database_table);
-    $table = $data_array[1];
-    $q = "SELECT  relname FROM pg_class WHERE relname !~ '^(pg_|sql_)' AND relkind = 'r' and relname ='" . $table . "'";
-    if (($rs4 = pg_exec($conn, $q)) <= 0) {
-        echo "Error: cannot execute  " . $q . " \n";
-        pg_close($conn);
-        exit;
-    }
-    if (pg_numrows($rs4) == 0) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
 //***********************************************************************************************************************************************************************
 /*
 Function: get_counts
@@ -1453,20 +1351,14 @@ function get_counts($conn, $f_code, $facet_params, $interval = 1, $direct_count_
             $box_check = get_geo_box_from_selection($geo_selection); // use this function to check if there are any selections
             if ($box_check["count_boxes"] > 0 && isset($geo_selection)) {
                 $q = get_geo_count_query($facet_params, $f_code, $direct_count_table, $direct_count_column);
-        } else {
-            $q = "select 'null' as facet_term, 0 as direct_count ;";
-        }
-        
-        
-        break;
+            } else {
+                $q = "select 'null' as facet_term, 0 as direct_count ;";
+            }
+            break;
     }
     $max_count = 0;
     $min_count = 99999999999999999;
-    if (($rs = pg_exec($conn, $q)) <= 0) {
-        echo "Error: cannot execute query2b. direct counts  ".SqlFormatter::format($q, false). "\n";
-        pg_close($conn);
-        exit;
-    }
+    $rs = ConnectionHelper::execute($conn, $q);
     while ($row = pg_fetch_assoc($rs)) {
         $facet_term = $row["facet_term"];
         if ($row["direct_count"] > $max_count) {
@@ -1505,19 +1397,16 @@ get the sql-query for facet with interval data by computing a sql-query by addin
 
 function get_range_query($interval, $min_value, $max_value, $interval_count)
 {
+    $pieces = array();
     $interval_counter = 0;
     $lower = $min_value;
     while ($interval_counter <= $interval_count && $lower <= $max_value) {
-        // loop the number of classes.
         $lower = $min_value + $interval * $interval_counter;
         $upper = $min_value + $interval * $interval_counter + $interval;
-        
-        $q1.="select " . $lower . " as lower, " . $upper . " as upper, '" . $lower . "=>" . $upper . "'::text as id,'' as name  \n        union all ";
+        $pieces[] = "select " . $lower . " as lower, " . $upper . " as upper, '" . $lower . "=>" . $upper . "'::text as id,'' as name";
         $interval_counter++;
     }
-    
-    $q1 = substr($q1, 0, -14);
-    
+    $q1 = implode("\nunion all ",$pieces);
     return $q1;
 }
 
@@ -1528,12 +1417,7 @@ function get_text_filter_condition($facet_params, $query_column_name)
     if ($find_str == "undefined") {
         $find_str = "%";
     }
-    if (!empty($find_str) && $filter_by_text == true) {
-        $find_cond = $query_column_name . " ilike '" . $find_str . "' AND \n";
-    } else {
-        $find_cond = "";
-    }
-    return $find_cond;
+    return (!empty($find_str) && $filter_by_text == true) ? $query_column_name . " ILIKE '" . $find_str . "' AND \n" : "";
 }
 /*
 function: get_discrete_query
@@ -1645,15 +1529,11 @@ function get_extra_row_info($f_code, $conn, $params)
     $q1.=" $and_clause \n " . $query["joins"];
     $q1.= $map_filter_query_where;
     
-    $q1.= " GROUP BY  COALESCE($query_column_name,'No value') ,id , sort_column   order by sort_column";
+    $q1.= " GROUP BY COALESCE($query_column_name,'No value') ,id , sort_column   order by sort_column";
     $q1.= " ) as tmp ";
     
     $last_facet_query.="Facet load of $f_code <BR>\n" . $q1 . "<BR>\n<BR><HR>\n";
-    if (($rs2 = pg_exec($conn, $q1)) <= 0) {
-        echo "Error: cannot execute query2. $q1  \n";
-        pg_close($conn);
-        exit;
-    }
+    $rs2 = ConnectionHelper::execute($conn, $q1);
     $row_counter = 1;
     while ($row = pg_fetch_assoc($rs2)) {
         $au_id = $row["id"];
@@ -1675,11 +1555,7 @@ function compute_range_lower_upper($conn, $facet)
     $q = "";
     $q.=" select max(" . $query_column . ") as max,  min(" . $query_column . ") as min from " . $query_table;
     if ($q != "") {
-        if (($rs2 = pg_exec($conn, $q)) <= 0) {
-            echo "Error: cannot execute   $q  \n";
-            pg_close($conn);
-            exit;
-        }
+        $rs2 = ConnectionHelper::execute($conn, $q);
         while ($row = pg_fetch_assoc($rs2)) {
             $facet_range["upper"] = $row["max"];
             $facet_range["lower"] = $row["min"];
@@ -1793,11 +1669,7 @@ function get_facet_content($conn, $params)
     }
 
     $last_facet_query.="--- Facet load of $f_code \n" . $q1 . ";\n";
-    if (($rs2 = pg_query($conn, $q1)) <= 0) {
-        echo "Error: cannot execute query2. get facet content ".SqlFormatter::format($q1, false)."  \n";
-        pg_close($conn);
-        exit;
-    }
+    $rs2 = Connectionhelper::query($conn, $q1);
     $facet_contents[$f_code]['f_code'] = $f_code;
     $facet_contents[$f_code]['range_interval'] = $interval;
     $facet_contents[$f_code]['f_action'] = $params['f_action'][1];

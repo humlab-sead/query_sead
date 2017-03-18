@@ -28,7 +28,7 @@ function info_area_render_login_box() {
 	
 	box += "<div id=\"background_overlay\"></div>";
 	box += "<div id=\"login_box\">";
-	box += "<div id=\"login_box_close_button\" style=\"color:red;position:absolute;left:224px;top:24px;background-color:#00639f;cursor:pointer;\"><img src=\"applications/ships/theme/images/button_close.png\"></div>";
+	box += "<div id=\"login_box_close_button\" style=\"color:red;position:absolute;left:224px;top:24px;background-color:#00639f;cursor:pointer;\"><img src=\"applications/sead/theme/images/button_close.png\"></div>";
 	box += "<table id=\"login_table\" class=\"generic_table\"><tbody>";
 	box += "<tr>";
 	box += "<td class=\"generic_table_top_left\"></td><td class=\"generic_table_top_middle\"></td><td class=\"generic_table_top_right\"></td>"; //top row
@@ -169,7 +169,7 @@ function info_area_open_view_state_save_box() {
 	
 	
 	var html = "<div id=\"viewstate_save_popup\">";
-	html += "<img id=\"viewstate_save_popup_close_btn\" style=\"float:right;\" src=\"applications/ships/theme/images/button_close.png\" />";
+	html += "<img id=\"viewstate_save_popup_close_btn\" style=\"float:right;\" src=\"applications/sead/theme/images/button_close.png\" />";
 	html += "<div class=\"content_container\"></div></div>";
 	
 	var html_obj = $(html);
@@ -212,7 +212,7 @@ function info_area_open_view_state_load_box() {
 	
 	$("#load_view_state_button").css("color", "#bbb");
 	
-	var html = "<div id=\"viewstate_load_popup\"><img id=\"viewstate_load_popup_close_btn\" style=\"float:right;\" src=\"applications/ships/theme/images/button_close.png\" /><span style=\"font-size:12px;font-weight:bold;\">"+t("Vynummer")+"</span><br/><input id=\"view_state_select_box\" type=\"text\" style=\"width:60px;\" value=\""
+	var html = "<div id=\"viewstate_load_popup\"><img id=\"viewstate_load_popup_close_btn\" style=\"float:right;\" src=\"applications/sead/theme/images/button_close.png\" /><span style=\"font-size:12px;font-weight:bold;\">"+t("Vynummer")+"</span><br/><input id=\"view_state_select_box\" type=\"text\" style=\"width:60px;\" value=\""
 	+current_view_state_id+"\" /><input type=\"submit\" value=\""+t("Ladda")+"\" /><hr /><div><span style=\"font-weight:bold;\">"+t("Dina senaste vyer")+"</span><div id=\"latest_view_states_container\"></div></div></div>";
 	
 	var html_obj = $(html);
@@ -307,7 +307,7 @@ function info_area_open_language_selection_dialog() {
 	
 	$("#language_selection_button").css("color", "#bbb");
 	
-	var html = "<div id=\"language_selection_dialog\"><img id=\"language_selection_dialog_close_btn\" style=\"float:right;cursor:pointer;\" src=\"applications/ships/theme/images/button_close.png\" />";
+	var html = "<div id=\"language_selection_dialog\"><img id=\"language_selection_dialog_close_btn\" style=\"float:right;cursor:pointer;\" src=\"applications/sead/theme/images/button_close.png\" />";
 	
 	html += "<table ><tbody>";
 	html += "<tr><td style=\"vertical-align:middle;\"><span class=\"language_selection_language_title\">"+t("Välj språk")+"</span></td></tr>";
@@ -322,33 +322,24 @@ function info_area_open_language_selection_dialog() {
 		else {
 			bg_color = "#ffffff";
 		}
-		
 		html += "<tr style=\"background-color:"+bg_color+";\" id=\"language_button_"+language_definitions[key]['language']+"\" value=\""+language_definitions[key]['language']+"\"><td style=\"vertical-align:middle;\"><span class=\"language_selection_language_title\">"+language_definitions[key]['language_name']+"</span></td></tr>";
-	//	html += "<br>";
 	}
 	
-	
 	html += "</tbody></table>";
-	
 	html += "<span id=\"translations_link\"><a href=\"admin/index.php?application_name="+application_name+"\">"+t("Översättningar")+"</a></span>";
-	
 	html += "</div>";
 	
 	var html_obj = $(html);
-	
 	
 	$(html_obj).css("position", "absolute");
 	$(html_obj).css("top", 40);
 	$(html_obj).css("right", 10);
 	
-	
 	$("#language_selection_dialog_close_btn", html_obj).bind("click", function() {
 		$("#language_selection_dialog").remove();
 	});
 	
-	
 	$("body").append(html_obj);
-	
 	
 	for(var key in language_definitions) {
 	
@@ -362,7 +353,6 @@ function info_area_open_language_selection_dialog() {
 			
 			//save the viewstate to trigger a refresh of everything - to get the new translations in
 			user_save_view_state(); //the saved viewstate is automatically loaded asap
-                       // alert(client_language);
 			// CLEAR the webpage when switching language
 			$("#title_bar_container").empty();
 			$("#facet_workspace").empty();
@@ -370,38 +360,10 @@ function info_area_open_language_selection_dialog() {
 			$("#facet_controller_outer").empty();
 			$("#result_controller_outer").empty();
 			$("#show_active_filters_link").html(t("Laddar"));
-//			$("info_area").empty();
-
-
-
-			
-			
-			//wait_to_activate_last_view_state(old_view_state_id);
-			
-			
-			/*
-			while(old_view_state_id == current_view_state_id) {
-				setTimeout(function() { info_area_call_view_state(view_state_id); }, 100);
-			}
-			*/
-			/*
-			setTimeout(function() {
-				user_get_view_state(view_state_id);
-			}, 3000);
-			*/
-			
-			//info_area_call_view_state(view_state_id);
-			
-			//window.location.href = "http://galactica.humlab.umu.se/ships/trunk/?view_state="+;
-			//info_area_refresh_view_state_list();
-		
 		});
 	}
 	
-	
-	
 	return html;
-	
 }
 
 function wait_to_activate_last_view_state(old_view_state_id) {

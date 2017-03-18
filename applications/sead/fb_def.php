@@ -140,7 +140,7 @@ if (!($conn = pg_connect(CONNECTION_STRING))) {
         "join_condition"=> " inner join ".$targetTable. " on
         (".$sourceTable.".\"".$sourceColumn."\"=".$targetTable.".\"".$targetColumn."\")
         ",
-        "weight"=>$row["weight"] );
+        "weight"=>$row["weight"]);
     }
     pg_close($conn);
 }

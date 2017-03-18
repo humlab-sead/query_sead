@@ -7,11 +7,9 @@ others such as list
 
 see also:
 - <custom_map_server_functions.php (SHIPS)>	 maps_functions
-- <custom_diagram_server_functions.php (SHIPS)> diagram_functions
 */
 
 require_once __DIR__."/custom_map_server_functions.php";
-require_once __DIR__."/custom_diagram_server_functions.php";
 
 /*
 function: get_save_query
@@ -69,18 +67,6 @@ function render_java_script_arguments($conn,$obj_id)
 function render_java_script_from_id($conn,$obj_id)
 {
     return $java_script;
-}
-
-/*
-function: render_image_from_id
-function to render a image that could be used in the resultlist as an icon/image
-
-returns filename of the image
-or empty
-*/
-function render_image_from_id($conn,$obj_id,$desired_size=128)
-{
-    return "";
 }
 
 ?>

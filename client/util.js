@@ -449,7 +449,7 @@ function report_new_phrase(text) {
 	//report this new phrase to the server
 	request = $.ajax({
 		type: "POST",
-		url: "http://" + application_address + application_prefix_path + "server/lib/add_phrase.php?f=language_new_phrase",
+		url: "http://" + application_address + application_prefix_path + "server/language/add_phrase.php?f=language_new_phrase",
 		cache: false,
 		dataType: "text/html",
 		processData: false,

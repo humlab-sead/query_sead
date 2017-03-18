@@ -449,34 +449,34 @@ function derive_selections_string($params) {
 }
 
 function derive_count_of_selection($facet_params, $requested = false) {
+    // goes through the ilst of facets and print the selection of each facet and also the different type of selections
     
     global $facet_definition, $language;
     $f_list = derive_facet_list($facet_params);
     $f_selected = derive_selections($facet_params);
     $count_of_selections = 0;
-    // goes through the ilst of facets and print the selection of each facet and also the different type of selections
     
-    if (!empty($f_list)) {
+    if (empty($f_list)) {
+        return "";
+    }
+    $facet_counter = 0;
+    foreach ($f_list as $pos => $facet) {
         
-        $facet_counter = 0;
-        foreach ($f_list as $pos => $facet) {
-            
-            if (isset($f_selected[$facet]) && ( $requested == $facet || $requested === false )) { // check that the facets has selection(s)
-                foreach ($f_selected[$facet] as $skey => $selection_group) { // dig into the gruops of selection of the facets
-                    foreach ($selection_group as $skey2 => $selection) { // dig into the group
-                        foreach ($selection as $skey3 => $selection_bit) { // dig into the particular selection ie type and value
-                            $selection_bit = (array) $selection_bit;
-                            
-                            switch ($facet_definition[$facet]["facet_type"]) {
-                                case "discrete": // many rows
-                                    $count_of_selections++;
-                                    break;
-                                case "range":  // 0  - 500 // two columns
-                                    break;
-                                case "geo": // there are few element representing one rectangle, the id of the rectangle and the 4 coordinates
-                                    $count_of_selections = $count_of_selections + 0.2;
-                                    break;
-                            }
+        if (isset($f_selected[$facet]) && ( $requested == $facet || $requested === false )) { // check that the facets has selection(s)
+            foreach ($f_selected[$facet] as $skey => $selection_group) { // dig into the gruops of selection of the facets
+                foreach ($selection_group as $skey2 => $selection) { // dig into the group
+                    foreach ($selection as $skey3 => $selection_bit) { // dig into the particular selection ie type and value
+                        $selection_bit = (array) $selection_bit;
+                        
+                        switch ($facet_definition[$facet]["facet_type"]) {
+                            case "discrete": // many rows
+                                $count_of_selections++;
+                                break;
+                            case "range":  // 0  - 500 // two columns
+                                break;
+                            case "geo": // there are few element representing one rectangle, the id of the rectangle and the 4 coordinates
+                                $count_of_selections = $count_of_selections + 0.2;
+                                break;
                         }
                     }
                 }
@@ -592,16 +592,16 @@ function derive_selections_to_matrix($facet_params, $requested = false) {
                 $rectangle_count = 0;
                 foreach ($f_selected[$facet] as $skey => $selection_group) { // dig into the gruops of selection of the facets
                     foreach ($selection_group as $skey2 => $selection) { // dig into the group
-                        $selection_rows_html = "";
+                        //$selection_rows_html = "";
                         foreach ($selection as $skey3 => $selection_bit) { // dig into the particular selection ie type and value
-                            $dicrete_selection_counter++;
+                            // $dicrete_selection_counter++;
                             $selection_bit = (array) $selection_bit;
                             
                             switch ($facet_definition[$facet]["facet_type"]) {
                                 case "discrete":
                                     // many rows
                                     $selection_rows_matrix[$facet]["selections"][] = $selection_bit;
-                                    $dicrete_selection_counter++;
+                                    // $dicrete_selection_counter++;
                                     break;
                                 case "range":
                                     // 0  - 500

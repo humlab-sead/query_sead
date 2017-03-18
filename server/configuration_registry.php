@@ -18,28 +18,6 @@ class ConfigurationRegistry
     }
 }
 
-class ConnectionHelper
-{
-    public static function createConnection()
-    {
-        if (!($conn = pg_connect(CONNECTION_STRING))) {
-            echo "Error: pg_connect failed.\n";
-            exit;
-        }
-        return $conn;
-    }
-
-    public static function executeQuery($q)
-    {
-        if (($rs = pg_exec($conn, $q)) <= 0) {
-            echo "Error: cannot execute:  $q  \n";
-            pg_close($conn);
-            exit;
-        }
-        return rs;
-    }
-}
-
 class CacheService
 {
     public static function Get($key1, $key2)

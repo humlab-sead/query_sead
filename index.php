@@ -4,7 +4,7 @@ session_start();
 $sid = session_id();
 
 error_reporting(E_ERROR | E_WARNING | E_PARSE); // | E_NOTICE);
-require_once("server/lib/language.php");
+require_once("server/language/language.php");
 
 $view_state_id = empty($_GET["view_state"]) ? get_default_view_state() : $_GET["view_state"];
 $client_language = get_view_state_language($view_state_id);
@@ -81,7 +81,7 @@ PHP-scripts used in ajax requests and request:
 - <map_download.php>; get the map as png with a world-file as well as the placenames of the relevant polygons in the  map.(parished or counties)
 - <get_view_state.php>; get a view state from database to be used to recreate a view state
 - <save_view_state.php>; saves a view_state into the database
-- <diagram_symbol.php>; renders a image based on color and type
+- REMOVED <diagram_symbol.php>; renders a image based on color and type
 - REMOVED (SEAD): <get_xy_statistics.php>; get a textfile with statistics for a point in the map
 
 The start-up parameters are:
@@ -163,9 +163,17 @@ include_once("interface.php");
     <title><?php echo $applicationTitle?></title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <link rel="stylesheet" type="text/css" href="jslib/jquery-ui-1.7.2/css/ui-lightness/jquery-ui-1.7.2.custom.css" />
-    <link rel="stylesheet" type="text/css" href="jslib/jquery-ui-1.7/themes/base/ui.resizable.css" />
+    <!--<link rel="stylesheet" type="text/css" href="jslib/jquery-ui-1.7.2/css/ui-lightness/jquery-ui-1.7.2.custom.css" />-->
+    <link rel="stylesheet" type="text/css" href="//code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" />
+    <!--<link rel="stylesheet" type="text/css" href="jslib/jquery-ui-1.7/themes/base/ui.resizable.css" />-->
     <link rel="stylesheet" type="text/css" href="applications/sead/theme/style.css" />
+
+    <script type="text/javascript" src="//code.jquery.com/jquery-3.2.0.min.js"></script>
+    <script type="text/javascript" src="//code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <!--<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>-->
+    <!--<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-tools/1.2.7/jquery.tools.min.js"></script>-->
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.9/highcharts.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.9/js/modules/exporting.js"></script>
 
     <script type="text/javascript" src="client/client_definitions.js"></script>
     <script type="text/javascript">
@@ -173,14 +181,14 @@ include_once("interface.php");
     var current_view_state_id = "<?=$view_state_id?>";
     </script>
 
-    <script type="text/javascript" src="jslib/jquery-1.4.4-ships.js"></script>
-    <script type="text/javascript" src="jslib/jquery_1_8_ui/jquery-ui.min.js"></script>
-    <script type="text/javascript" src="jslib/jquery.easing.1.3.js"></script>
-    <script type="text/javascript" src="jslib/jquery.tools.min.js"></script>
-    <script type="text/javascript" src="jslib/jquery.tooltip.min.js"></script>
-    <script type="text/javascript" src="jslib/highcharts-2.2.5/js/highcharts.js"></script>
-    <script type="text/javascript" src="jslib/highcharts-2.2.5/js/modules/exporting.js"></script>
 
+    <!--<script type="text/javascript" src="jslib/jquery-1.4.4-ships.js"></script>-->
+    <!--<script type="text/javascript" src="jslib/jquery_1_8_ui/jquery-ui.min.js"></script>-->
+    <!--<script type="text/javascript" src="jslib/jquery.easing.1.3.js"></script>-->
+    <!--<script type="text/javascript" src="jslib/jquery.tools.min.js"></script>-->
+    <!--<script type="text/javascript" src="jslib/jquery.tooltip.min.js"></script>-->
+    <!--<script type="text/javascript" src="jslib/highcharts-2.2.5/js/highcharts.js"></script>-->
+    <!--<script type="text/javascript" src="jslib/highcharts-2.2.5/js/modules/exporting.js"></script>-->
 <?php
     if($_SERVER['SERVER_NAME'] == "galactica.humlab.umu.se")
         $mapkey = "ABQIAAAAN-sHYBjRfx7XbH1YgH6zQhQbdT_5QWJiYyBPD-oaC9uG2dLsZxQOMpj_Hip4wOOmpgiz5hCV3Z1ykg";
@@ -206,7 +214,7 @@ include_once("interface.php");
     require_once("server/js_facet_def.php");
     echo "</script>";
     require_once("server/js_result_def.php");
-    require_once("server/lib/language.php");
+    require_once("server/language/language.php");
     // if(isset($_GET['f']) && $_GET['f'] == "language_update")
         // echo language_perform_update();
     echo language_create_javascript_languages_definition_array();

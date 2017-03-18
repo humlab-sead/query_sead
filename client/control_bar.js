@@ -441,7 +441,7 @@ function facet_control_render_item(item, has_children, level) {
 	if(has_children) {
 		trigger_class=" parent_trigger_area ";
 		classes += " facet_control_item_parent";
-		parent_icon_html += "<img class=\"facet_control_item_tree_btn\" src=\"applications/ships/theme/images/tree_btn_closed.png\" />&nbsp;";
+		parent_icon_html += "<img class=\"facet_control_item_tree_btn\" src=\"applications/sead/theme/images/tree_btn_closed.png\" />&nbsp;";
 	}
 	else {
 		trigger_class=" child_trigger_area ";

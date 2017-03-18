@@ -14,7 +14,7 @@ See also:
 <layout.php (SHIPS)> 
 <layout.php (SEAD)>
 */ 
-require_once "server/lib/t.php";
+require_once "server/language/t.php";
 require_once "applications/applicationSpecification.php";
 
 $facet_control = "<div id=\"facet_control\"></div>";
@@ -48,31 +48,29 @@ It uses definitions    "$language" to assign title to the different result tabs 
 
 */
 function interface_render_result_workspace_content() {
-    global $language, $application_name;
-    $out = "";
-    $out .= "<table id=\"result_workspace_table_top\" style=\"z-index:2;\"><tbody>";
-	$out .= "<tr id=\"result_workspace_tab_area\">";
-	$out .= "<td style=\"\"><div class=\"result_loading_indicator\"></div></td>";
-	$out .= "<td id=\"result_max_min_button_cell\"><span class=\"js_link\"><img id=\"result_max_min_button\" style=\"cursor:pointer;\" src=\"applications/".$application_name."/theme/images/button_expand.png\" alt=\"button_expand.png\"/></span></td></tr>";
-	$out .= "</tbody></table>";
-    $out .= "<table id=\"result_workspace_table\" class=\"generic_table\" ><tbody>";
-	$out .= "<tr>";
-	$out .= "<td class=\"result_table_top_left\"></td><td class=\"result_table_top_middle\">";
-	$out .= "</td><td class=\"result_table_top_right\"></td>"; //top row
-	$out .= "</tr>";
-	$out .= "<tr>";
-	$out .= "<td class=\"result_table_middle_left\"></td><td class=\"result_table_middle_middle\">" . 
-			"<div>" . 
-				"<div id=\"result_workspace_content_container\"></div>" .
-				"</div>" . 
-			"</td><td class=\"result_table_middle_right\"></td>"; //middle row
-	$out .= "</tr>";
-	$out .= "<tr>";
-	$out .= "<td class=\"result_table_bottom_left\"></td><td class=\"result_table_bottom_middle\"></td><td class=\"result_table_bottom_right\"></td>"; //bottom row
-	$out .= "</tr>";
-	$out .= "";
-	$out .= "";
-	$out .= "</tbody></table>";
+    $out = <<<EOS
+    <table id="result_workspace_table_top" style="z-index:2;"><tbody>
+	 <tr id="result_workspace_tab_area">
+	 <td style=""><div class="result_loading_indicator"></div></td>
+	 <td id="result_max_min_button_cell"><span class="js_link"><img id="result_max_min_button" style="cursor:pointer;" src="applications/sead/theme/images/button_expand.png" alt="button_expand.png"/></span></td></tr>
+	 </tbody></table>
+     <table id="result_workspace_table" class="generic_table"><tbody>
+	 <tr>
+	 <td class="result_table_top_left"></td><td class="result_table_top_middle">
+	 </td><td class="result_table_top_right"></td>
+	 </tr>
+	 <tr>
+	 <td class="result_table_middle_left"></td><td class="result_table_middle_middle">
+	 <div>
+	 	<div id="result_workspace_content_container"></div>
+	 	</div>
+	 </td><td class="result_table_middle_right"></td>
+	 </tr>
+	 <tr>
+	 <td class="result_table_bottom_left"></td><td class="result_table_bottom_middle"></td><td class="result_table_bottom_right"></td>
+	 </tr>
+	 </tbody></table>
+EOS;
 	return $out;
 }
 /*
@@ -80,20 +78,21 @@ function: interface_render_info_area
 Returns the html with divs and table for the info area
 */
 function interface_render_info_area() {
-	global $language;
-	$out = "<div id=\"login_area\" style=\"text-align:center;\">";
-	$out .= "<table class=\"generic_table\"><tbody>";
-	$out .= "<tr>";
-	$out .= "<td class=\"generic_table_top_left\"></td><td class=\"generic_table_top_middle\"></td><td class=\"generic_table_top_right\"></td>";
-	$out .= "</tr>";
-	$out .= "<tr><td class=\"generic_table_middle_left\"></td><td class=\"generic_table_middle_middle content_container\">";
-	$out .= "<div id=\"user_area\"></div>";
-	$out .= "</td><td class=\"generic_table_middle_right\"></td>";
-	$out .= "</tr>";
-	$out .= "<tr>";
-	$out .= "<td class=\"generic_table_bottom_left\"></td><td class=\"generic_table_bottom_middle\"></td><td class=\"generic_table_bottom_right\"></td>";
-	$out .= "</tr></tbody></table>";
-	$out .= "</div>";
+	$out = <<<EOT
+    <div id="login_area" style="text-align:center;">
+	<table class="generic_table"><tbody>
+	<tr>
+	<td class="generic_table_top_left"></td><td class="generic_table_top_middle"></td><td class="generic_table_top_right"></td>
+	</tr>
+	<tr><td class="generic_table_middle_left"></td><td class="generic_table_middle_middle content_container">
+	<div id="user_area"></div>
+	</td><td class="generic_table_middle_right"></td>
+	</tr>
+	<tr>
+	<td class="generic_table_bottom_left"></td><td class="generic_table_bottom_middle"></td><td class="generic_table_bottom_right"></td>
+	</tr></tbody></table>
+	</div>
+EOT;
 	return $out;
 }
 /*
@@ -101,24 +100,18 @@ function: interface_render_info_area2
 returns the html for the help/faq area
 */
 function interface_render_info_area2() {
-	global $language;
-	$out = "";
-	return $out;
+	return "";
 }
 
 function interface_render_title_button($text, $terminating_button = false) {
-	
-	$out = "";
-	$out .= "<table style=\"border-collapse:collapse;height:14px;\"><tbody><tr>";
-	$out .= "<td class=\"title_button_left\"></td>";
-	$out .= "<td class=\"title_button_middle\" >".$text."</td>";
-	if($terminating_button) {
-		$out .= "<td class=\"title_button_right_round\"></td>";
-	}
-	else {
-		$out .= "<td class=\"title_button_right\"></td>";
-	}
-	$out .= "</tr></tbody></table>";
+	$button_class = $terminating_button ? "title_button_right_round" : "title_button_right";
+	$out = <<<EOX
+	<table style="border-collapse:collapse;height:14px;"><tbody><tr>
+	<td class="title_button_left"></td>
+	<td class="title_button_middle">$text</td>
+	<td class="$button_class"></td>
+	</tr></tbody></table>
+EOX;
 	return $out;
 }
 

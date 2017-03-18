@@ -11,13 +11,13 @@ function FacetRenderLocator()
      //  console.log(_facet_type);
     	if(_facet_type == "discrete") {
             return new FacetRender_Discrete();
-	}
-	if(_facet_type == "range") {
-            return new FacetRender_Range();
-	}
-	if(_facet_type == "geo") {
-            return new FacetRender_Geo();
-	}
+        }
+        if(_facet_type == "range") {
+                return new FacetRender_Range();
+        }
+        if(_facet_type == "geo") {
+                return new FacetRender_Geo();
+        }
         return new FacetRender_Null();
     }
 }  
