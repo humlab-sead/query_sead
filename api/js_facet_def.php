@@ -19,7 +19,7 @@ category - for grouping of facets in facet control area
 */
 error_reporting( error_reporting() & ~E_NOTICE );
 require_once("applications/applicationSpecification.php");
-require_once('fb_server_funct.php');
+require_once('server/fb_server_funct.php');
 include_once("server/lib/Cache.php");
 
 // compute max and min for range facet

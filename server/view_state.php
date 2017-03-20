@@ -1,24 +1,53 @@
 <?php
-session_start();
- 
-require('fb_server_funct.php');
 
-if (!($conn = pg_connect(CONNECTION_STRING))) { echo "Error: pg_connect failed.\n"; exit; }
+require_once __DIR__ . "/../applications/sead/fb_def.php";
+require_once __DIR__ . "/../server/connection_helper.php";
 
-$q="select * from $view_state_table  where session_id='".session_id()."' order by view_state_id desc limit 5";
-if (($rs = pg_query($conn, $q)) <= 0) { echo "Error: cannot execute query3. $q \n"; exit; }
+class ViewState {
 
-header("Content-type: text/xml");
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-echo "<view_states>\n";
-while ($row = pg_fetch_assoc($rs) )
-{
-	//print_r($row);
-	echo "<view_state>\n";
-	echo "<id>".$row["view_state_id"]."</id>\n";
-	echo "<created>".$row["creatation_date"]."</created>\n";
-	echo "</view_state>\n";
+    public static function toXML($rows)
+    {
+        $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        $xml .= "<view_states>\n";
+        foreach ($rows as $row)
+        {
+            $xml .= "<view_state>\n";
+            $xml .= "<id>" . $row["view_state_id"] . "</id>\n";
+            $xml .= "<created>" . $row["creatation_date"] . "</created>\n";
+            $xml .= "</view_state>\n";
+        }
+        $xml .= "</view_states>";
+        return $xml;
+    }
+
+    public static function saveViewState($session_id, $view_state)
+    {
+        global $view_state_table;
+        $conn = ConnectionHelper::createConnection();
+        $q = "Insert Into $view_state_table (view_state, session_id) Values ('$view_state', '$session_id') Returning view_state_id";
+        $rs = ConnectionHelper::query($conn, $q);
+        $row = pg_fetch_assoc($rs);
+        $view_state_id = $row["view_state_id"];
+        return $view_state_id;
+    }
+
+    public static function getIndex($session_id)
+    {
+        global $view_state_table;
+        $conn = ConnectionHelper::createConnection();
+        $q = "select * from $view_state_table where session_id = '$session_id' order by view_state_id desc limit 5";
+        $index = ConnectionHelper::queryRows($conn, $q);
+        return $index;
+    }
+
+    public static function getViewState($view_state_id)
+    {
+        global $view_state_table;
+        $conn = ConnectionHelper::createConnection();
+        $q = "select * from $view_state_table where view_state_id = $view_state_id";
+        $row = ConnectionHelper::queryRow($conn, $q);
+        return $row ? $row["view_state"] : null;
+    }
 }
-echo "</view_states>";
 
 ?>

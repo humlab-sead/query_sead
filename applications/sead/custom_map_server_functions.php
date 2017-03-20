@@ -4,21 +4,21 @@ file: custom_map_server_functions.php (SEAD)
 This file hold server function for the map component
 */
 
-// function get_xy_statistics($conn, $lat,$lng, $result_code)
-// {
-//     global $result_definition;
-//     return $info_text;
-// }
+function get_xy_statistics($conn, $lat,$lng, $result_code)
+{
+    global $result_definition;
+    return $info_text;
+}
 
 /*
 function: get_xy_info
 get the info for a coordinate in the result map
 returns a simple information-object in HTML.
 */
-// function get_xy_info($conn,$lat,$lng,$result_code)
-// {
-//     return	null;
-// }
+function get_xy_info($conn,$lat,$lng,$result_code)
+{
+    return	null;
+}
 
 function get_empty_zoom_and_center_coordinates()
 {
@@ -68,7 +68,7 @@ function result_render_map_view($conn,$facet_params,$result_params,$facet_xml,$r
 
 	if (isset($direct_count_column) &&!empty($direct_count_column)  ) 
 	{
-        $direct_counts=get_counts($conn,  $f_code,  $facet_params,$interval, $direct_count_table,$direct_count_column);
+        $direct_counts=get_discrete_counts($conn,  $f_code,  $facet_params,$interval, $direct_count_table,$direct_count_column);
         $filtered_direct_counts= $direct_counts["list"];
 	}
 
@@ -76,7 +76,7 @@ function result_render_map_view($conn,$facet_params,$result_params,$facet_xml,$r
 
 	if (isset($direct_count_column) &&!empty($direct_count_column)  ) 
 	{
-	    $direct_counts=get_counts($conn,  $f_code,  $no_selection_params,$interval, $direct_count_table,$direct_count_column);
+	    $direct_counts=get_discrete_counts($conn,  $f_code,  $no_selection_params,$interval, $direct_count_table,$direct_count_column);
 		$un_filtered_direct_counts= $direct_counts["list"];
 	}
 

@@ -9,7 +9,7 @@ This file populating the facets with content
 There are three types of facets
 * Dicrete facet
 * Range facet
-* Geo facet
+* REMOVED: Geo facet
 
 It is being called from javascript <facet.js> with the function <facet_load_data>
 It returns a xml-document with the content.
@@ -28,11 +28,11 @@ Shared sequence:
 * Derive a compsosite ID for caching of the facet content.
 * Render the data for the facet using function <get_facet_content>
 * Computing start_row and limit if the text-search is being used.
-* Output the parts of the facet's data to the client using <build_xml_response>, depending on how much data the client requests or defined by text-search start_row
+* Output the parts of the facet's data to the client using <FacetXMLSerializer::build_xml_response>, depending on how much data the client requests or defined by text-search start_row
 */
 
-require_once('fb_server_funct.php');
-include_once ("lib/Cache.php");
+require_once(__DIR__ . "/../server/fb_server_funct.php");
+include_once(__DIR__ . "/../server/lib/Cache.php");
 
 if (!empty($_REQUEST["xml"])) {
     $xml=$_REQUEST["xml"];
@@ -97,7 +97,6 @@ if ($action_type=="populate_text_search") {
     }
 }
 
-
 if ($type_of_facet_requested=="range") {
     $query_offset=0;
     $query_limit=250;
@@ -111,7 +110,7 @@ if ($type_of_facet_requested=="range") {
     $query_limit=$geo_boxes["count_boxes"];
 }
 
-$response = build_xml_response($f_content[$facet_params["requested_facet"]], $action_type, $duration, $query_offset, $query_limit, $filter_state_id);
+$response = FacetXMLSerializer::build_xml_response($f_content[$facet_params["requested_facet"]], $action_type, $duration, $query_offset, $query_limit, $filter_state_id);
 header("Content-Type: text/xml");
 
 echo $response;

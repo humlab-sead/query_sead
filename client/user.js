@@ -247,7 +247,7 @@ function user_save_view_state(view_state_name) {
 	
 	$.ajax({
 		type: "POST",
-		url: "http://" + application_address + application_prefix_path + "server/save_view_state.php",
+		url: "http://" + application_address + application_prefix_path + "api/save_view_state.php",
 		cache: false,
 		dataType: "text",
 		processData: false,
@@ -1016,7 +1016,7 @@ function user_get_view_state(view_state_id) {
 	
 	$.ajax({
 		type: "POST",
-		url: "http://" + application_address + application_prefix_path + "server/get_view_state.php",
+		url: "http://" + application_address + application_prefix_path + "api/get_view_state.php",
 		cache: false,
 		dataType: "xml",
 		processData: false,

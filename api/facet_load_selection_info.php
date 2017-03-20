@@ -1,7 +1,10 @@
 <?php
 
-require_once('fb_server_funct.php');
-include_once ("lib/Cache.php");
+// require_once('fb_server_funct.php');
+// include_once ("lib/Cache.php");
+
+require_once(__DIR__ . "/../server/fb_server_funct.php");
+require_once(__DIR__ . "/../server/lib/Cache.php");
 
 if (!empty($_REQUEST["xml"])) {
     $xml=$_REQUEST["xml"];

@@ -389,7 +389,7 @@ function facet_load_data(load_obj) {
 	refresh_selection_info(load_obj);
 	request = $.ajax({
 		type: "POST",
-		url: "http://" + application_address + application_prefix_path + "server/fb_load.php?"+load_obj.facet_requesting,
+		url: "http://" + application_address + application_prefix_path + "api/load_facet.php?"+load_obj.facet_requesting,
 		cache: false,
 		dataType: "xml",
 		processData: false,
@@ -516,7 +516,7 @@ function refresh_selection_info(load_obj)
 	
 	request = $.ajax({
 		type: "POST",
-		url: "http://" + application_address + application_prefix_path + "server/facet_load_selection_info.php?"+load_obj.facet_requesting,
+		url: "http://" + application_address + application_prefix_path + "api/facet_load_selection_info.php?"+load_obj.facet_requesting,
 		cache: false,
 		dataType: "xml",
 		processData: false,
@@ -1172,7 +1172,7 @@ function facet_create_facet(facet_obj) {
 	"end_value" : facet_obj.selections.end
 	});
 
-	// Fredrik says: added result_load here instead of each facet_load, since it is only when adding new one there is need to refresh current_filter
+	// Fredrik says: added load_result here instead of each facet_load, since it is only when adding new one there is need to refresh current_filter
 	if(system.do_not_initiate_result_load_data == false) {
 	//	result_load_data(); // use event instead
         

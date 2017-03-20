@@ -1,6 +1,6 @@
 <?php
 /*
-file: result_load.php
+file: load_result.php
 
  This file contains functions called by the client when the result area needs to be populated. 
 
@@ -80,9 +80,9 @@ Sequence for map load operation:
 	<custom_map_server_functions.php (HSM)> <HSM>  has a seperate repositories and will maybe be integrated later.
 */
 
-require __DIR__ . '/fb_server_funct.php';
-include_once __DIR__ . '/lib/Cache.php';
-require_once __DIR__ . '/connection_helper.php';
+require_once __DIR__ . '/../server/fb_server_funct.php';
+require_once __DIR__ . '/../server/lib/Cache.php';
+require_once __DIR__ . '/../server/connection_helper.php';
 
 global $result_definition_item,$application_name,$cache_seq; 
 
@@ -103,7 +103,7 @@ if (!empty($facet_state_id))
 $facet_params = fb_process_params($facet_xml); 
 $facet_params = remove_invalid_selections($conn,$facet_params);
 
-// The xml-data is containing result information is processed and all parameters are put into an array for futher use.
+// The xml-data contains result information, and is processed and all parameters are put into an array for futher use.
 
 $result_xml = $_REQUEST['result_xml'];
 $diagram_xml = $_REQUEST['diagram_xml'];
@@ -112,23 +112,6 @@ $symbol_xml = $_REQUEST['symbol_xml'];
 
 $result_params = process_result_params($result_xml);
 
-class MapResultCompiler {
-
-    public function render($map_xml, $symbol_xml)
-    {
-		$map_params = process_map_xml($map_xml);
-		if (!empty($symbol_xml)) {
-			$symbol_params = process_symbol_xml($symbol_xml);
-		}
-		$aggregation_code = $result_params["aggregation_code"];
-		$out = result_render_map_view($conn, $facet_params, $result_params, $map_params, $facet_xml, $result_xml, $map_xml, $aggregation_code);
-		$out = "<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>\n<result_html>$result_list</result_html>" . $out ;
-        return $out;
-    }
-
-}
-
-//print_r($result_params);
 switch($result_params["view_type"]) {
 	case "map":
 		$map_params=process_map_xml($map_xml);
@@ -238,13 +221,13 @@ switch($result_params["view_type"]) {
                     $facet_state_id=$application_name.$row["cache_id"];
             }
             // store $facet_xml in  file to be read by download command
-            file_put_contents(__DIR__."/../server/cache/".$facet_state_id."_facet_xml.xml",$facet_xml);
+            file_put_contents(__DIR__."/cache/".$facet_state_id."_facet_xml.xml",$facet_xml);
         }
             // store $result_xml in  file 
-        file_put_contents(__DIR__."/../server/cache/".$facet_state_id."_result_xml.xml",$result_xml);
+        file_put_contents(__DIR__."/cache/".$facet_state_id."_result_xml.xml",$result_xml);
 
-		$data_link="get_data_table.php?cache_id=".$facet_state_id."&application_name=$applicationName";
-		$data_link_text="get_data_table_text.php?cache_id=".$facet_state_id."&application_name=$applicationName";
+		$data_link="/api/get_data_table.php?cache_id=".$facet_state_id."&application_name=$applicationName";
+		$data_link_text="/api/get_data_table_text.php?cache_id=".$facet_state_id."&application_name=$applicationName";
 
 		// new data link with a file_name that is unique point to facet_xml_file in the cache_catalogue
         switch ($result_params["client_render"])
@@ -270,6 +253,7 @@ switch($result_params["view_type"]) {
 
 	break;
 }
+
 header("Content-Type: text/xml");
 header("Character-Encoding: UTF-8");
 $meta_data_str=derive_selections_to_html($facet_params);

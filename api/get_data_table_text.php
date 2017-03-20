@@ -13,19 +13,21 @@ Sequence:
 * Make  a zip-file for the documentation and datatable
 */
 
-require('fb_server_funct.php');
+require_once (__DIR__ . '/../server/fb_server_funct.php');
 
 if (!($conn = pg_connect(CONNECTION_STRING))) { echo "Error: pg_connect failed.\n"; exit; }
 
 // The xml-data is containing facet information is processed and all parameters are put into an array for futher use.
-$facet_xml_file_location="cache/".$_REQUEST['cache_id']."_facet_xml.xml";
-$facet_xml=file_get_contents($facet_xml_file_location);
+// $facet_xml_file_location="cache/".$_REQUEST['cache_id']."_facet_xml.xml";
+// $facet_xml=file_get_contents($facet_xml_file_location);
+$facet_xml = get_facet_xml_from_id($_REQUEST['cache_id']);
 
 $facet_params = fb_process_params($facet_xml);
 $facet_params=remove_invalid_selections($conn,$facet_params);
 
-$result_xml_file_location="cache/".$_REQUEST['cache_id']."_result_xml.xml";
-$result_xml=file_get_contents($result_xml_file_location);
+// $result_xml_file_location="cache/".$_REQUEST['cache_id']."_result_xml.xml";
+// $result_xml=file_get_contents($result_xml_file_location);
+$result_xml = get_result_xml_from_id($_REQUEST['cache_id']);
 
 $result_params = process_result_params($result_xml);
 

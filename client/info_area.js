@@ -259,7 +259,7 @@ see also <info_area_populate_view_state_list>
 function info_area_refresh_view_state_list() {
 	$.ajax({
 		type: "POST",
-		url: "http://" + application_address + application_prefix_path + "server/view_state.php",
+		url: "http://" + application_address + application_prefix_path + "api/view_state.php",
 		cache: false,
 		dataType: "xml",
 		processData: false,

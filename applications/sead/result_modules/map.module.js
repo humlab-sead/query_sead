@@ -395,7 +395,7 @@ function result_map_set_infowindow_content(content)
 /*
 function result_map_create_map
 Creates the google map and the tile overlay with demographic statistical visualization
-Get the argument for the tile-request from the server xml-request from the result_load.php
+Get the argument for the tile-request from the server xml-request from the load_result.php
 ie map-table, join_table and map_file_path.
 
 
@@ -444,7 +444,7 @@ function result_map_create_map() {
 
 /*
 function: result_map_data_loading_params
-contructs the map_xml-document for the result_load operation
+contructs the map_xml-document for the load_result operation
 getting the parameters from the map_controls form (indirectly)
 
 */

@@ -52,7 +52,7 @@ function process_pie_chart_xml($pie_chart_xml)
 /*
 Function: process_result_params
 The xml-data is containing result information is processed and all parameters are put into an array for futher use
-see <result_load.php> for descriptions of xml-schemas
+see <load_result.php> for descriptions of xml-schemas
 Returns:
 $result_params -  An array .
 */
@@ -82,7 +82,7 @@ function process_result_params($result_xml){
 function: process_map_xml
 process the map_xml document and stores it as array
 
-see <result_load.php> for descriptions of xml-schemas
+see <load_result.php> for descriptions of xml-schemas
 */
 
 function process_map_xml($map_xml)
@@ -116,7 +116,7 @@ function process_map_xml($map_xml)
 Function: process_diagram_params
 function to convert diagram document to an associative array
 
-see <result_load.php> for descriptions of xml-schemas
+see <load_result.php> for descriptions of xml-schemas
 */
 function process_diagram_params($diagram_xml){
     global $result_definition;
@@ -181,17 +181,19 @@ function write_xml_to_file($filename, $object)
     fwrite($file, $data);
     fclose($file);
 }
+
+// ROGER: TODO Rename to deserialize_facet_xml
 function fb_process_params($xml)
 {
     global $request_id;
 
-    $backtrace =  debug_backtrace();
-    write_xml_to_file('C:\\tmp\\qsead\\fb_process_params_backtrace_'.date('Ymd_his').'.txt', $backtrace);
-    //write_xml_to_file('C:\\tmp\\qsead\\fb_process_params_'.date('Ymd_his').'.txt', $xml);
-    try {
-    } catch (Exception $e) {
-        echo 'Caught exception: ',  $e->getMessage(), "\n";
-    }
+    // $backtrace =  debug_backtrace();
+    // write_xml_to_file('C:\\tmp\\qsead\\fb_process_params_backtrace_'.date('Ymd_his').'.txt', $backtrace);
+    // //write_xml_to_file('C:\\tmp\\qsead\\fb_process_params_'.date('Ymd_his').'.txt', $xml);
+    // try {
+    // } catch (Exception $e) {
+    //     echo 'Caught exception: ',  $e->getMessage(), "\n";
+    // }
     $xml_obj=simplexml_load_string ($xml);
 
     $request_id = "".$xml_obj->request_id;                  // Save the id of the request. Is sent back to the client via xml without any change.
@@ -355,7 +357,6 @@ function derive_facet_list($facet_params)
             if (isset($facet["facet_position"]))
             {
                 $position=$facet["facet_position"];
-                //echo $position;
                 $f_list[$position]=$f_code;
             }
         }

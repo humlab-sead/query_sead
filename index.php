@@ -52,7 +52,7 @@ Batik rasterizer (jar-files):
 
 Directort permission notes:
 - cache needs to have write permissions
-- server/cache and subdirectories need to have write permissionss
+- api/cache and subdirectories need to have write permissionss
 
 Javascript libries:
 Own core libraries:
@@ -75,8 +75,8 @@ Result modules javascript libraries:
 
 
 PHP-scripts used in ajax requests and request:
-- <fb_load.php> loads facet information for different type of facets
-- <result_load.php>; loads result_information for different types of results (map, table and diagram)
+- <load_facet.php> loads facet information for different type of facets
+- <load_result.php>; loads result_information for different types of results (map, table and diagram)
 - <get_data_table.php>; get the result zip-file with tab-separated data and documentation into a zip-file
 - <map_download.php>; get the map as png with a world-file as well as the placenames of the relevant polygons in the  map.(parished or counties)
 - <get_view_state.php>; get a view state from database to be used to recreate a view state
@@ -211,9 +211,9 @@ include_once("interface.php");
 
     <script type="text/javascript">
 <?php
-    require_once("server/js_facet_def.php");
+    require_once("api/js_facet_def.php");
     echo "</script>";
-    require_once("server/js_result_def.php");
+    require_once("api/js_result_def.php");
     require_once("server/language/language.php");
     // if(isset($_GET['f']) && $_GET['f'] == "language_update")
         // echo language_perform_update();

@@ -16,10 +16,9 @@ require_once __DIR__ . "/../applications/applicationSpecification.php";
 require_once __DIR__ . "/../applications/sead/fb_def.php";
 require_once __DIR__ . "/../applications/sead/custom_server_funct.php";
 require_once __DIR__ . "/lib/SqlFormatter.php";
-require_once __DIR__ . "/lib/imageSmoothArc_optimized.php";
 require_once __DIR__ . '/language/t.php';
-require_once __DIR__ . '/lib/fb_server_image_funct.php';
 require_once __DIR__ . '/fb_server_client_params_funct.php';
+require_once __DIR__ . '/html_render.php';
 
 /*
 * Funnction: *  render_column_meta_data
@@ -52,25 +51,6 @@ function render_column_meta_data($result_definition, $result_params, $facet_para
     return $column_meta_data;
 }
 
-function render_html_header_from_array($table_id, $header_array)
-{
-    $html="<TABLE id=\"".$table_id."\">\n";
-    $html.="<thead><TR>\n";
-    foreach ($header_array as $data_item_counter => $data_element) {
-        $html.="<th>".$data_element["result_column_title"]." ".$data_element["result_column_title_extra_info"]."</th>";
-    }
-    $html.="</TR></thead>\n";
-    return $html;
-}
-
-function render_list_data_view($conn, $facet_params, $result_params, $data_link, $cache_id, $data_link_text)
-{
-    global $facet_definition, $result_definition,  $last_facet_query, $max_result_display_rows;
-    $column_meta_data= render_header_data($result_definition, $result_params);
-    // get the query to populate the list
-    $q= get_result_data_query($facet_params, $result_params). " ";
-    json_encode($header_array);
-}
 
 //***************************************************************************************************************************************************
 /*
@@ -92,11 +72,6 @@ function render_data_rows_as_html($conn, $rs, $max_result_display_rows, $header_
             $java_script="";
             $skip_column=false;
             switch ($header_data[$column_counter]["result_column_type"]) {
-                // case "image_item":
-                //     $file_name=render_image_from_id_detail($conn, $row_item);
-                //     $row_text="<IMG title=\"show on map\" style=\"cursor:pointer\"  SRC=\"".$file_name."\" >";
-                //     $java_script=render_java_script_from_id($conn, $row_item);
-                //     break;
                 case "link_item":
                     $url=$header_data[$column_counter]["link_url"];
                     if (isset($header_data[$column_counter]["link_label"])) {
@@ -146,22 +121,7 @@ function render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column
         foreach ($row as $row_item) {
             $skip_column=false;
             $data_array[$row_key]["row_id"]=$row_counter;
-            // add formatting for image_items
             switch ($column_meta_data[$column_counter]["result_column_type"]) {
-                // case "image_item":
-                //     $file_name=render_image_from_id_detail($conn, $row_item, 604, "nobackground");
-                //     $java_script=render_java_script_from_id($conn, $row_item);
-                //     $data_array[$row_key][$column_counter]["image_src"]= $file_name;
-                //     $data_array[$row_key][$column_counter]["image_title"]="show on map";
-                //     $data_array[$row_key][$column_counter]["java_script_function"]="zoom_to_bounds";
-                //     $column_meta_data[$data_item_counter]["result_column_title"]=t($result_item["text"], $facet_params["client_language"]) ;
-                //     $java_script_arguments=render_java_script_arguments($conn, $row_item);
-                //     if (is_array($java_script_arguments)) {
-                //         foreach ($java_script_arguments as $jkey => $j_argument) {
-                //                 $data_array[$row_key][$column_counter]["arguments"][$jkey]=$j_argument;
-                //         }
-                //     }
-                //     break;
                 case "link_item":
                     $url=$column_meta_data[$column_counter]["link_url"];
                     $data_array[$row_key][$column_counter]["link_url"]="".$url."=".$row_item."";
@@ -220,10 +180,10 @@ function render_result_array_as_xml($result_array)
 
 function result_render_list_view_xml($conn, $facet_params, $result_params, $data_link, $cache_id, $data_link_text)
 {
-    global $facet_definition, $result_definition,  $last_facet_query, $max_result_display_rows;
+    global $facet_definition, $result_definition, $max_result_display_rows;
     $q = get_result_data_query($facet_params, $result_params). " ";
     $rs = ConnectionHelper::query($conn, $q);
-    $column_meta_data=  render_column_meta_data($result_definition, $result_params, $facet_params);
+    $column_meta_data = render_column_meta_data($result_definition, $result_params, $facet_params);
     $result_array=render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column_meta_data, $cache_id);
     $result_data_xml= render_result_array_as_xml($result_array);
     return $result_data_xml;
@@ -231,7 +191,7 @@ function result_render_list_view_xml($conn, $facet_params, $result_params, $data
 
 function result_render_list_view($conn, $facet_params, $result_params, $data_link, $cache_id, $data_link_text)
 {
-    global $facet_definition, $result_definition,  $last_facet_query, $max_result_display_rows;
+    global $facet_definition, $result_definition, $max_result_display_rows;
     $q = get_result_data_query($facet_params, $result_params). " ";
     $rs = ConnectionHelper::query($conn, $q);
     $html_table = create_custom_result_table_header($rs, $facet_params, $result_params, "server/" . $data_link, $cache_id, "server/" .$data_link_text);
@@ -241,7 +201,7 @@ function result_render_list_view($conn, $facet_params, $result_params, $data_lin
     $html_table.="   <!-- END SQL -->\n";
     // Draw the column headlines
     $column_meta_data=  render_column_meta_data($result_definition, $result_params, $facet_params);
-    $html_table.=render_html_header_from_array("result_output_table", $column_meta_data);
+    $html_table.=HTMLRender::render_html_header_from_array("result_output_table", $column_meta_data);
     $html_table.= "<tbody>";
     $html_table.=render_data_rows_as_html($conn, $rs, $max_result_display_rows, $column_meta_data, $cache_id);
     $html_table.="   <!-- data array  -->";
@@ -258,13 +218,12 @@ function derive_result_selection_str($result_xml)
     $xml_object = new SimpleXMLElement($result_xml);
     $result_items_str="";
     $xml_object = $xml_object->result_input;
-    
     foreach ($xml_object->selected_item as $checked) {
-        if (!empty($result_definition[(string) $checked])) {
-            $result_items_str.=  (string) $checked;
+        if (!empty($result_definition[(string)$checked])) {
+            $result_items_str .= (string)$checked;
         }
     }
-    return  (string) $result_items_str;
+    return (string)$result_items_str;
 }
 /*
 * function: get_facet_xml_from_id
@@ -275,14 +234,14 @@ function derive_result_selection_str($result_xml)
 */
 function get_facet_xml_from_id($facet_state_id)
 {
-    $facet_xml_file_location=__DIR__."/cache/".$facet_state_id."_facet_xml.xml";
+    $facet_xml_file_location=__DIR__."/../api/cache/".$facet_state_id."_facet_xml.xml";
     return file_get_contents($facet_xml_file_location);
 }
 
 function get_result_xml_from_id($result_state_id)
 {
-    $result_xml_file_location=__DIR__."/cache/".$result_state_id."_result_xml.xml";
-    return   file_get_contents($result_xml_file_location);
+    $result_xml_file_location=__DIR__."/../api/cache/".$result_state_id."_result_xml.xml";
+    return file_get_contents($result_xml_file_location);
 }
 
 function save_facet_xml($conn, $facet_xml)
@@ -293,7 +252,7 @@ function save_facet_xml($conn, $facet_xml)
     while ($row = pg_fetch_assoc($rs5)) {
         $facet_state_id = $application_name . $row["cache_id"];
     }
-    file_put_contents(__DIR__ . "/cache/" . $facet_state_id . "_facet_xml.xml", $facet_xml);
+    file_put_contents(__DIR__ . "/../api/cache/" . $facet_state_id . "_facet_xml.xml", $facet_xml);
     return $facet_state_id;
 }
 
@@ -309,63 +268,6 @@ function inverse_array($array_in)
         $inverse_array_in[$val] = $key;
     }
     return $inverse_array_in;
-}
-
-//***************************************************************************************************************************************************
-/*
-function:  format_string
-
-Description:
-Inserts text strings supplied in an associate array into the supplied text string.
-This function works by replacing standard tokens with the string specified in the
-second argument. It also only replaces one item at a time so that consequtive
-tokens of the same type are replaces by different strings, if more than one token
-is given as key in the supplied array.
-
-In order to be able to supply several keys of the same token, the value of the token key
-can be an array.
-The tokens used are specified in the replacement tokens section of the applicationSpecification.php file.
-parmeters:
-* @param string $tokenized_string The string that contain the markup tokens.
-* @param array $replacement_array The array defining the replacement values, keyed by the tokens
-and allow both single values and array values for the keys.
-*
-
-returns:
-string the tokenized_string with the tokens replaced by the values in the supplied array.
-
-Author:
-Erik E.
-
-*/
-function format_string($tokenized_string, $replacement_array)
-{
-    $string_copy = $tokenized_string; // copy the string for good measure.
-    foreach ($replacement_array as $token => $values) {
-        if (is_array($values)) {
-            foreach ($values as $value) {
-                $first_occurance = strpos($string_copy, $token);
-                if ($first_occurance === false) {
-                    break;
-                }
-                $string_copy = substr_replace($string_copy, $values, $first_occurance, strlen($token));
-            }
-        } else {
-            //if the supplied string contain more than one token of the same kind
-            //yet only one value for that token, replace all occurances of that
-            //token with the given value.
-            $parts = explode($token, $str_copy);
-            if (count($parts) > 1) {
-                $string_copy = str_replace($token, $value, $string_copy);
-            } else {
-                $first_occurance = strpos($string_copy, $token);
-                if ($first_occurance !== false) {
-                    $string_copy = substr_replace($string_copy, $values, $first_occurance, strlen($token));
-                }
-            }
-        }
-    }
-    return $string_copy;
 }
 
 function prepare_result_params($facet_params, $result_params)
@@ -510,13 +412,6 @@ function get_result_data_query($facet_params, $result_params)
     return $q;
 }
 
-function generate_temporary_name()
-{
-    srand((double) microtime() * 1000000);
-    $temp_table = "database_graph_" . rand(0, 10000000);
-    return $temp_table;
-}
-
 //***************************************************************************************************************************************************
 /*
 Function: get_joins
@@ -636,59 +531,6 @@ function get_range_selection_clauses($f_code, $skey, $current_selection_group)
     if ($facet_definition[$skey]["query_cond"] != "") {
         $query_where.="  and " . $facet_definition[$skey]["query_cond"] . "   ";
     }
-    return $query_where;
-}
-
-/*
-function: get_geo_box_from_selection
-To be used to calculate how many observation for each map-rectangle selection
-*/
-
-function get_geo_box_from_selection($current_selection_group)
-{
-    $current_selection_group = (array) $current_selection_group;
-    $count_boxes = 0;
-    foreach ($current_selection_group as $key2 => $current_selection) {
-        if (isset($current_selection)) {
-            // loop through the different types of values  in the group
-            foreach ($current_selection as $key5 => $selection_t) {
-                $selection_t = (array) $selection_t;
-                $this_selection_a[$selection_t["selection_type"]] = $selection_t["selection_value"];
-            }
-            $e1 = $this_selection_a["e1"];
-            $n1 = $this_selection_a["n1"];
-            $e2 = $this_selection_a["e2"];
-            $n2 = $this_selection_a["n2"];
-            $box_list[] = " SetSRID('BOX3D($e1 $n1,$e2 $n2)'::box3d,4326) ";
-            $id_list[] = $this_selection_a["rectangle_id"];
-            $count_boxes++;
-        }
-    }
-    $return_obj["box_list"] = $box_list;
-    $return_obj["id_list"] = $id_list;
-    $return_obj["count_boxes"] = $count_boxes;
-    
-    return $return_obj;
-}
-
-/*
-function: get_geo_filter_clauses
-loop through selections and builds the sql for geo_filter, one or many areas (rectangles representative by 2 pair of coordinates
-*/
-
-function get_geo_filter_clauses($f_code, $skey, $current_selection_group)
-{
-    global $facet_definition;
-    $box_list = get_geo_box_from_selection($current_selection_group);
-    $box_list = $box_list["box_list"];
-    $query_temp = "";
-    $geo_column = $facet_definition[$skey]["geo_filter_column"];
-    foreach ($box_list as $box_key => $box) {
-        $query_temp.="\n $geo_column && " . $box . " and ST_Intersects( $geo_column," . $box . ") \n  or ";
-    }
-    $query_temp = substr($query_temp, 0, -3);
-    $or_include="";
-    $query_where.="(( " . $query_temp . " ) $or_include)  ";
     return $query_where;
 }
 
@@ -1076,14 +918,12 @@ function get_query_clauses($params, $f_code, $extra_tables, $f_list)
     return $query_info;
 }
 
-//get_range_counts($q1,$params,$f_code)
 function get_range_counts($conn, $params, $q_interval, $f_code, $query, $direct_count_column, $direct_count_table)
 {
     global $facet_definition;
     
     $direct_counts = array();
     $combined_list = array();
-    $row_counter = 1;
     $query_table = $facet_definition[$f_code]["table"];
     $data_tables[] = $query_table;
     $data_tables[] = $direct_count_table;
@@ -1171,9 +1011,10 @@ function get_discrete_count_query2($count_facet, $facet_params, $summarize_type 
         }
     }
     
-    $f_list=insert_item_before_search_item($f_list, $requested_facet, $count_facet);
+    $f_list = insert_item_before_search_item($f_list, $requested_facet, $count_facet);
     
-    $query = get_query_clauses($facet_params, $count_facet, $extra_tables, $f_list); // mapped to new function
+    $query = get_query_clauses($facet_params, $count_facet, $extra_tables, $f_list);
+
     $count_column = $facet_definition[$count_facet]["id_column"];
     $requested_facet_column = $facet_definition[$requested_facet]["id_column"];
     $query_tables = $query["tables"];
@@ -1199,113 +1040,10 @@ EOT;
     return $q;
 }
 
-/*
-function: get_discrete_count_query
-get sql-query for counting of discrete-facet
-*/
-function get_discrete_count_query($f_code, $query, $direct_count_column)
-{
-    global $facet_definition;
-    
-    $query_tables = $query["tables"];
-    $query_column = $facet_definition[$f_code]["id_column"];
-    $extra_join = ($query["joins"] != "") ? $query["joins"] . "  " : "";
-    $extra_where = ($query["where"] != '') ? " and  " . $query["where"] . " " : "";
-
-    $q  = <<<EOD
-        select facet_term, count(facet_term) as direct_count
-        from (
-            select $query_column as facet_term
-            from $query_tables
-                 $extra_join
-            where 1 = 1 
-              $extra_where
-            group by $query_column, $direct_count_column
-        ) as tmp_query group by facet_term;
-EOD;
-
-    return $q;
-}
-
-/*
-function: get_geo_count_query
-get sql-query for counting of geo-facet
-l
-*/
-
-function get_geo_count_query($facet_params, $f_code, $direct_count_table, $direct_count_column)
-{
-    global $facet_definition;
-    $f_selected = derive_selections($facet_params);
-    $geo_selection = $f_selected[$f_code]["selection_group"];
-    
-    $data_tables[] = $direct_count_table;
-    $f_list = derive_facet_list($facet_params);
-    $mod_params = $facet_params;
-    
-    $mod_params["facet_collection"][$f_code]["selection_groups"] = ""; //empty the selections for geo // removed the geo_selection
-    $query_table = $facet_definition[$f_code]["table"];
-    $data_tables[] = $query_table;
-    
-    $temp_table = "temp_poly_" . md5($direct_count_column . derive_selections_string($facet_params));
-    //maka tempory table with geo-filter only to make a temp output for the polygons
-    $temp_geo_sql = "select * into temp " . $temp_table . " from  " . $facet_definition[$f_code]["table"];
-    //get the selection as sql for the geo_selection
-    $box_list = get_geo_box_from_selection($geo_selection);
-    $box_list = $box_list["box_list"];
-    
-    $query_temp = "";
-    if (isset($box_list)) {
-        $query_temp = " where  (";
-        foreach ($box_list as $box_key => $box) {
-            $query_temp.="\n " . $facet_definition[$f_code]["geo_filter_column"] . " && " . $box . " and ST_Intersects( " . $facet_definition[$f_code]["geo_filter_column"] . "," . $box . ") \n  or ";
-        }
-        $query_temp = substr($query_temp, 0, -4); // remove last or
-        $query_temp.=" ) ";
-    }
-    
-    $temp_geo_sql.=$query_temp . "\n;";
-    
-    $query = get_query_clauses($facet_params, $f_code, $data_tables, $f_list);
-    $query_modified = get_query_clauses($mod_params, $f_code, $data_tables, $f_list);
-    //replace ships_polygons with temp out but with the alias "ships_polygons"
-    $query["tables"] = str_replace($facet_definition[$f_code]["table"], $temp_table . " as " . $facet_definition[$f_code]["table"], $query["tables"]);
-    // optimiziation replace ships_polygons with a subset of ships_polygon based on the area name that temp table as ships_polygon
-    
-    $new_sql = $temp_geo_sql; // add temp table query to the main query
-    
-    $sql_geo_boxes = "";
-    $geo_boxes = get_geo_box_from_selection($geo_selection);
-    
-    $geo_box_id_list = $geo_boxes["id_list"];
-    $geo_boxes = $geo_boxes["box_list"];
-    foreach ($geo_boxes as $tkey => $the_geo_box) {
-        $rect_id = $geo_box_id_list[$tkey];
-        $sql_geo_boxes.=" select  '$rect_id'::text as rectangle_id, " . $the_geo_box . "    union    ";
-    }
-    
-    $sql_geo_boxes = substr($sql_geo_boxes, 0, -10);
-    
-    // make temp table for performance:
-    $temp_table = "temp_" . md5(derive_selections_string($facet_params) . $direct_count_column);
-    $new_sql.= "select * into temp $temp_table from  (" . $sql_geo_boxes . ") as geotemp2;";
-    $new_sql.="select  rectangle_id as facet_term, area(setsrid),count($direct_count_column) as direct_count from  ";
-    if ($query["joins"] != "") {
-        $extra_join = $query["joins"] . "  ";
-    }
-    
-    $new_sql.=" $temp_table, " . $query["tables"] . "  $extra_join  where " . $facet_definition[$f_code]["geo_filter_column"] . " && setsrid   ";
-    if ($query_modified["where"] != '') {
-        $new_sql.=" and  " . $query_modified["where"] . " ";
-    }
-    $new_sql.=" group by rectangle_id,setsrid";
-    
-    return SqlFormatter::format($new_sql, false);
-}
 
 //***********************************************************************************************************************************************************************
 /*
-Function: get_counts
+Function: get_discrete_counts
 Arguments:
 * table over which to do counting
 * column over which to do counting
@@ -1314,14 +1052,14 @@ Returns:
 associative array with counts, the keys are the facet_term i.e the unique id of the row
 */
 
-function get_counts($conn, $f_code, $facet_params, $interval = 1, $direct_count_table, $direct_count_column)
+function get_discrete_counts($conn, $f_code, $facet_params, $interval = 1, $direct_count_table, $direct_count_column)
 {
-    global $last_facet_query, $facet_definition;
+    global $facet_definition;
+    // "geo" removed so this must be a "discrete" facet!!
     $direct_counts = array();
     $combined_list = array();
-    $row_counter = 1;
     $data_tables[] = $direct_count_table;
-    $query_table =isset($facet_definition["alias_table"]) ? $facet_definition["alias_table"] :$facet_definition[$f_code]["table"];
+    $query_table =isset($facet_definition["alias_table"]) ? $facet_definition["alias_table"] : $facet_definition[$f_code]["table"];
     $data_tables[] = $query_table;
     $f_list = derive_facet_list($facet_params);
     //check if f_code exist in list, if not add it. since counting can be done also in result area and then using "abstract facet" that are not normally part of the list
@@ -1332,30 +1070,9 @@ function get_counts($conn, $f_code, $facet_params, $interval = 1, $direct_count_
     }
     // use the id's to compute direct resource counts
     // filter is not being used be needed as parameter
-    switch ($facet_definition[$f_code]["facet_type"]) {
-        case "discrete":
-            $count_facet="result_facet";
-            $summarize_type="count";
-            if (isset($facet_definition[$f_code]["count_facet"])) {
-                $count_facet=$facet_definition[$f_code]["count_facet"];
-            }
-            if (isset($facet_definition[$f_code]["summarize_type"])) {
-                $summarize_type=$facet_definition[$f_code]["summarize_type"];
-            }
-            $q=get_discrete_count_query2($count_facet, $facet_params, $summarize_type);
-            break;
-        case "geo":
-            $f_selected = derive_selections($facet_params);
-            $geo_selection = $f_selected[$f_code]["selection_group"];
-            $count_facet="result_facet";
-            $box_check = get_geo_box_from_selection($geo_selection); // use this function to check if there are any selections
-            if ($box_check["count_boxes"] > 0 && isset($geo_selection)) {
-                $q = get_geo_count_query($facet_params, $f_code, $direct_count_table, $direct_count_column);
-            } else {
-                $q = "select 'null' as facet_term, 0 as direct_count ;";
-            }
-            break;
-    }
+    $count_facet = $facet_definition[$f_code]["count_facet"] ?? "result_facet";
+    $summarize_type = $facet_definition[$f_code]["summarize_type"] ?? "count";
+    $q = get_discrete_count_query2($count_facet, $facet_params, $summarize_type);
     $max_count = 0;
     $min_count = 99999999999999999;
     $rs = ConnectionHelper::execute($conn, $q);
@@ -1367,10 +1084,8 @@ function get_counts($conn, $f_code, $facet_params, $interval = 1, $direct_count_
         if ($row["direct_count"] < $min_count) {
             $min_count = $row["direct_count"];
         }
-        
         $direct_counts["$facet_term"] = $row["direct_count"];
     }
-    $last_facet_query.="-- direct counts query \n  $q; \n";
 
     $combined_list["list"] = $direct_counts;
     $combined_list["sql"]=  $q ;
@@ -1458,47 +1173,6 @@ function get_discrete_query($facet_params)
 }
 
 /*
-function: get_geo_query
-make a query for the boxes in the map-filter,the rectangles
-
-*/
-
-function get_geo_query($params)
-{
-    // FIXME  query
-    // make a query for the boxes in the map-filter,the rectange
-    global $facet_definition;
-    $f_code = $params["requested_facet"];
-    $f_list = derive_facet_list($params);
-    $f_selected = derive_selections($params);
-    $geo_selection = $f_selected[$f_code]["selection_group"];
-    $query = get_query_clauses($params, $f_code, $data_tables, $f_list);
-    $sql_geo_boxes = "";
-    $geo_boxes = get_geo_box_from_selection($geo_selection);
-    $id_box_list = $geo_boxes["id_list"];
-    $geo_boxes = $geo_boxes["box_list"];
-    foreach ($geo_boxes as $tkey => $the_geo_box) {
-        $rect_id = $id_box_list[$tkey];
-        $sql_geo_boxes.=" select '$rect_id'::text as rectangle_id, " . $the_geo_box . "    union    ";
-    }
-    $sql_geo_boxes = substr($sql_geo_boxes, 0, -10);
-    $new_sql = "select  rectangle_id as id, asgml(setsrid) as name from  ";
-    if ($query["joins"] != "") {
-        $extra_join = $query["joins"] . "";
-    }
-    $new_sql.=" ($sql_geo_boxes) as geotemp2  ";
-    if (!empty($query["tables"])) {
-        $new_sql.=", " . $query["tables"];
-    }
-    $new_sql.=" $extra_join where  1=1  ";
-    if ($query["where"] != '') {
-        $new_sql.=" and  " . $query["where"] . " ";
-    }
-    $new_sql.=" group by rectangle_id,setsrid";
-    return SqlFormatter::format($new_sql, false);
-}
-
-/*
 function: get_extra_row_info
 get additional information for a facet_row to be associated with a id in a array
 So one in a abstract term merges the content of two facets that has the same table and the same id for a row in the table.
@@ -1506,35 +1180,33 @@ So one in a abstract term merges the content of two facets that has the same tab
 
 function get_extra_row_info($f_code, $conn, $params)
 {
-    global $facet_definition, $last_facet_query;
+    global $facet_definition;
+
     $query_column = $facet_definition[$f_code]["id_column"];
     $f_list = derive_facet_list($params);
+
     $query = get_query_clauses($params, $f_code, $data_tables, $f_list);
+
     $query_column_name = $facet_definition[$f_code]["name_column"];
     $sort_column = $facet_definition[$f_code]["sort_column"];
     $tables = $query["tables"];
+    $query_joins = (trim($query["joins"]) != '') ? " And " .  $query["joins"] : "";
+    $where_clause = (trim($query["where"]) != '')  ? " And " . $query["where"] : "";
+
+    $q1 = <<<EOS
+        Select Distinct id, name
+        From (
+            Select $query_column as id , Coalesce($query_column_name,'No value') as name, $sort_column as sort_column
+            From $tables 
+            Where 1 = 1 
+              $where_clause
+              $query_joins
+            Group By Coalesce($query_column_name,'No value'), id, sort_column
+            Order By sort_column
+        ) as tmp
+EOS;
     
-    $and_clause = "";
-    $q1 = "select distinct id, name from (";
-    $q1.="SELECT  $query_column  as id , COALESCE($query_column_name,'No value') as name, $sort_column as sort_column \n FROM   " . $tables . "  WHERE 1=1 ";
-    if (trim($query["where"]) != '') {
-        $q1.=" AND \n " . $query["where"];
-    }
-    if (trim($query["joins"]) != '' && trim($query["where"]) != '') {
-        $and_clause = " AND ";
-    }
-    if (trim($query["joins"]) != '' && trim($query["where"]) == '') {
-        $and_clause = " AND \n ";
-    }
-    $q1.=" $and_clause \n " . $query["joins"];
-    $q1.= $map_filter_query_where;
-    
-    $q1.= " GROUP BY COALESCE($query_column_name,'No value') ,id , sort_column   order by sort_column";
-    $q1.= " ) as tmp ";
-    
-    $last_facet_query.="Facet load of $f_code <BR>\n" . $q1 . "<BR>\n<BR><HR>\n";
     $rs2 = ConnectionHelper::execute($conn, $q1);
-    $row_counter = 1;
     while ($row = pg_fetch_assoc($rs2)) {
         $au_id = $row["id"];
         $extra_row_info[$au_id] = $row["name"];
@@ -1542,52 +1214,56 @@ function get_extra_row_info($f_code, $conn, $params)
     return $extra_row_info;
 }
 
-// compute max and min for range facet
-/*
-Function: compute_range_lower_upper
-Get the min and max values of filter-variable from the database table.
-*/
-function compute_range_lower_upper($conn, $facet)
-{
-    global $facet_definition;
-    $query_column = $facet_definition[$facet]["id_column"];
-    $query_table = $facet_definition[$facet]["table"];
-    $q = "";
-    $q.=" select max(" . $query_column . ") as max,  min(" . $query_column . ") as min from " . $query_table;
-    if ($q != "") {
-        $rs2 = ConnectionHelper::execute($conn, $q);
-        while ($row = pg_fetch_assoc($rs2)) {
-            $facet_range["upper"] = $row["max"];
-            $facet_range["lower"] = $row["min"];
-        }
-    }
-    return $facet_range;
-}
+class RangeLimitCalculator {
 
-/*
-function: get_lower_upper_limit
-Gets the lower and limits in range-filter so the correct intervals can be computed.
-Uses the clients setting if existing, otherwise get it from the database.
-*/
-
-function get_lower_upper_limit($conn, $params, $facet)
-{
-    $f_selected = derive_selections($params);
-    if (isset($f_selected[$facet])) {
-        foreach ($f_selected[$facet] as $skey => $selection_group) { // dig into the gruops of selection of the facets
-            foreach ($selection_group as $skey2 => $selection) { // dig into the group
-                foreach ($selection as $skey3 => $selection_bit) { // dig into the particular selection ie type and value
-                    $selection_bit = (array) $selection_bit;
-                    $limits[$selection_bit["selection_type"]] = $selection_bit["selection_value"];
-                }
+    // compute max and min for range facet
+    /*
+    Function: compute_range_lower_upper
+    Get the min and max values of filter-variable from the database table.
+    */
+    private static function compute_range_lower_upper($conn, $facet)
+    {
+        global $facet_definition;
+        $query_column = $facet_definition[$facet]["id_column"];
+        $query_table = $facet_definition[$facet]["table"];
+        $q = "";
+        $q.=" select max(" . $query_column . ") as max,  min(" . $query_column . ") as min from " . $query_table;
+        if ($q != "") {
+            $rs2 = ConnectionHelper::execute($conn, $q);
+            while ($row = pg_fetch_assoc($rs2)) {
+                $facet_range["upper"] = $row["max"];
+                $facet_range["lower"] = $row["min"];
             }
         }
-    } else {
-        // If the limits are not set in the facet_xml from the client then use the min and max values from the database
-        $limits = compute_range_lower_upper($conn, $facet);
+        return $facet_range;
     }
-    
-    return $limits;
+
+    /*
+    function: get_lower_upper_limit
+    Gets the lower and limits in range-filter so the correct intervals can be computed.
+    Uses the clients setting if exists, otherwise get it from the database.
+    */
+    // TODO: $facet is actually a $facet_key, change to real facet object instead (removed global dependencies above)
+    public static function get_lower_upper_limit($conn, $params, $facet)
+    {
+        $f_selected = derive_selections($params);
+
+        if (isset($f_selected[$facet])) {
+            foreach ($f_selected[$facet] as $skey => $selection_group) { // dig into the groups of selections of the facets
+                foreach ($selection_group as $skey2 => $selection) { // dig into each group
+                    foreach ($selection as $skey3 => $selection_bit) { // dig into the particular selection ie type and value
+                        $selection_bit = (array) $selection_bit;
+                        $limits[$selection_bit["selection_type"]] = $selection_bit["selection_value"];
+                    }
+                }
+            }
+        } else {
+            // If the limits are not set in the facet_xml from the client then use the min and max values from the database
+            $limits = RangeLimitCalculator::compute_range_lower_upper($conn, $facet);
+        }
+        
+        return $limits;
+    }
 }
 
 /*
@@ -1614,11 +1290,9 @@ Preperation function:
 Functions used by interval facets:
 <get_range_query>
 
-Functions used by discrete and geo facets (geo):
+Functions used by discrete facets (geo):
 <get_discrete_query>
-
-function used all types of facet:
-<get_counts>
+<get_discrete_counts>
 
 Post functions:
 <build_xml_response>
@@ -1626,7 +1300,7 @@ Post functions:
 
 function get_facet_content($conn, $params)
 {
-    global $last_facet_query, $direct_count_table, $direct_count_column, $indirect_count_table, $indirect_count_column,
+    global $direct_count_table, $direct_count_column, $indirect_count_table, $indirect_count_column,
     $facet_definition;
     $facet_content = $search_string = $query_column_name = "";
     $f_code = $params["requested_facet"];
@@ -1638,37 +1312,23 @@ function get_facet_content($conn, $params)
             // get the limits from the client if existing otherwize get the min and max from the database
             // this is need to match the client handling of the intervals in facet.range.js
             // use the limits to define the size of the interval
-            $limits = get_lower_upper_limit($conn, $params, $f_code);
+            $limits = RangeLimitCalculator::get_lower_upper_limit($conn, $params, $f_code);
             $min_value = $limits["lower"];
             $max_value = $limits["upper"];
             $interval_count = 120; // should it be lower maybe??? when there is no data
             $interval = floor(($limits["upper"] - $limits["lower"]) / $interval_count);
             if ($interval <= 0) {
                 $interval = 1;
-        }
-        // derive the interval as sql-query although it is not using a table...only a long sql with select the values of the interval
-        $q1 = get_range_query($interval, $min_value, $max_value, $interval_count);
-        $interval_query = $q1; // use the query later to check how many obesveration for each item
-        break;
+            }
+            // derive the interval as sql-query although it is not using a table...only a long sql with select the values of the interval
+            $q1 = get_range_query($interval, $min_value, $max_value, $interval_count);
+            $interval_query = $q1; // use the query later to check how many obesveration for each item
+            break;
         case "discrete":
             $q1 = get_discrete_query($params). "  ";
             break;
-        case "geo":
-            // compute boxes and how many observations in each rectangle in the map.
-            $f_code = $params["requested_facet"];
-            $f_selected = derive_selections($params);
-            $geo_selection = $f_selected[$f_code]["selection_group"];
-            $box_check = get_geo_box_from_selection($geo_selection); // use this function to check if there are any selections
-            //print_r($box_check);
-            if (($box_check["count_boxes"]) > 0) {
-                $q1 = get_geo_query($params);
-        } else {
-            $q1 = "select 'null' as id, 'null' as name ;";
-        }
-        break;
     }
 
-    $last_facet_query.="--- Facet load of $f_code \n" . $q1 . ";\n";
     $rs2 = Connectionhelper::query($conn, $q1);
     $facet_contents[$f_code]['f_code'] = $f_code;
     $facet_contents[$f_code]['range_interval'] = $interval;
@@ -1683,7 +1343,7 @@ function get_facet_content($conn, $params)
             // use a special function of the counting in ranges since it using other parameters
             $direct_counts = get_range_counts($conn, $params, $interval_query, $f_code, $query, $direct_count_column, $direct_count_table);
         } else {
-            $direct_counts = get_counts($conn, $f_code, $params, $interval, $direct_count_table, $direct_count_column);
+            $direct_counts = get_discrete_counts($conn, $f_code, $params, $interval, $direct_count_table, $direct_count_column);
         }
     }
     // add extra information to a facet
@@ -1698,7 +1358,7 @@ function get_facet_content($conn, $params)
     }
     $tooltip_xml = "";
 
-    $facet_contents[$f_code]['report'] = " Aktuella filter   <BR>  ". $tooltip_text."  ".SqlFormatter::format($q1, false)."  ; \n  ".$direct_counts["sql"]." ;\n";
+    $facet_contents[$f_code]['report'] = " Current filter   <BR>  ". $tooltip_text."  ".SqlFormatter::format($q1, false)."  ; \n  ".$direct_counts["sql"]." ;\n";
     $facet_contents[$f_code]['report_html'] = $tooltip_text;
     $facet_contents[$f_code]['count_of_selections'] = $count_of_selections;
     $facet_contents[$f_code]['report_xml'] = $tooltip_xml;
@@ -1723,13 +1383,6 @@ function get_facet_content($conn, $params)
                     $name_to_display.="(" . $extra_row_info . ")";
                 }
                 break;
-            case "geo":
-                $facet_contents[$f_code]['rows'][$row_counter]['values'] = array("discrete" => $row["id"]);
-                $name_to_display = $row["id"];
-                if (!empty($extra_row_info)) {
-                    $name_to_display.="(" . $extra_row_info . ")";
-                }
-                break;
         }
         $facet_contents[$f_code]['rows'][$row_counter]['name'] = $name_to_display;
         if (isset($direct_counts["list"]["$au_id"])) {
@@ -1742,231 +1395,184 @@ function get_facet_content($conn, $params)
     return $facet_contents;
 }
 
-/*
-Function: find_start_row_linear
-Parameters:
-* $rows of the particular facet
-* $search_str the text string to position the facet
+class RowFinder {
+    /*
+    Function: find_start_row
+    Parameters:
+    * $rows of the particular facet
+    * $search_str the text string to position the facet
+    Returns: row of facet where the search element is closest to found
+    see also
+    <find_start_row_linear>
+    <find_closest_by_binary_search>
+    */
 
-Returns:
-row of facet where the search element is closest to found
-
-*/
-
-function find_start_row_linear($rows, $search_str)
-{
-    $position = 0;
-    $found = "false";
-    if (isset($rows)) {
-        foreach ($rows as $key => $row) {
-            $compare_to_str = substr($row["name"], 0, strlen($search_str));
-            $search_str = mb_strtoupper($search_str, "utf-8");
-            if (strcasecmp($search_str, $compare_to_str) == 0) {
-                $found = "true";
-                return $position;
-            }
-            $position++;
+    public static function find_start_row($rows, $search_str)
+    {
+        $pos = RowFinder::find_start_row_linear($rows, $search_str);
+        if ($pos == -1) {
+            $pos = RowFinder::find_closest_by_binary_search($rows, $search_str);
         }
+        return $pos;
     }
-    if ($found == "false") {
-        $return_position = -1;
-        return -1;
-    }
-}
 
-/*
-Function: find_start_row
-Parameters:
-* $rows of the particular facet
-* $search_str the text string to position the facet
-Returns:
-row of facet where the search element is closest to found
-see also
-<find_start_row_linear>
-<find_start_row_jumping>
-*/
+    /*
+    Function: find_start_row_linear
+    Parameters:
+    * $rows of the particular facet
+    * $search_str the text string to position the facet
+    Returns:
+    row of facet where the search element is closest to found
+    */
 
-function find_start_row($rows, $search_str)
-{
-    $pos = find_start_row_linear($rows, $search_str);
-    if ($pos == -1) {
-        $pos = find_start_row_jumping($rows, $search_str);
-    }
-    return $pos;
-}
-
-/*
-Function:  find_start_row_jumping
-Parameters:
-* $rows of the particular facet
-* $search_str the text string to position the facet
-
-logics:
-
-start search in the middle of the sorted list, then goes halv the way in the direction that is most likely.
-make jumps half the distances between known position
-from the start we know the interval is from 0 - end
-
-uses the function strcasecmp
-
-
-see:
-http://se2.php.net/strcasecmp
-
-CASE A:
-searchstring (S) is less than current name,
-go back half distance from guessed(E) position
->						 ----------------p1----------------
->                        S---------------E-----------------
->                        --------p2------------------------
-
-CASE B:
-searchstring (S) is greater then current name
-, go forward half distance from guessed position (E)
->	 					----------------p1----------------
->                       ------------------------p2--------
->                       ----------------S----------------E
-
-
-CASE C:
-Element found exactly match
-
-
-Returns:
-row of facet where the search element is closest to found
-*/
-
-function find_start_row_jumping($rows, $search_str)
-{
-    $row_counter = 0;
-    $start_position = 0;
-    $search_str = mb_strtoupper($search_str, "utf-8");
-    $end_position = count($rows) - 1;
-    $position = floor(($end_position - $start_position) / 2);
-    if (!empty($rows)) {
-        // make jumps half the distances between known position
-        // from the start we know the interval is from 0 - end
-        $found = false;
-        // loop until the difference is bigger than 1
-        while (($end_position - $start_position) > 1 && $found == false) {
-            $row = $rows[$position];
-            $compare_to_str = substr($row["name"], 0, strlen($search_str));
-            if (strcasecmp($search_str, $compare_to_str) == 0) {
-                $found = true;
-            } elseif (strcasecmp($search_str, $row["name"]) < 0) {
-                // searchstring is less than current name,
-                // go back half distance from guessed position
-                $start_position = $start_position;
-                $end_position = $position;
-                $position = $start_position + floor(($end_position - $start_position) / 2);
-                /*
-                ----------------p----------------
-                S---------------E----------------
-                --------p------------------------
-                */
-            } elseif (strcasecmp($search_str, $row["name"]) > 0) {
-                // searchstring is greater then current name
-                //, go forward half distance from guessed position
-                $start_position = $position;
-                $end_position = $end_position;
-                $position = $start_position + ceil(($end_position - $start_position) / 2);
-                /*
-                ----------------p----------------
-                ------------------------p--------
-                ----------------S---------------E
-                */
+    private static function find_start_row_linear($rows, $search_str)
+    {
+        // FIXME: Optimize!
+        $position = 0;
+        $found = "false";
+        if (isset($rows)) {
+            foreach ($rows as $key => $row) {
+                $compare_to_str = substr($row["name"], 0, strlen($search_str));
+                $search_str = mb_strtoupper($search_str, "utf-8");
+                if (strcasecmp($search_str, $compare_to_str) == 0) {
+                    $found = "true";
+                    return $position;
+                }
+                $position++;
             }
         }
-    }
-    return $position;
-}
-
-
-//***********************************************************************************************************************************************************************
-/*
-  function: build_xml_response
-  Make the XML being send to client
-  see also:
-  <build_facet_c_xml>
- */
-function build_xml_response($facet_c, $action_type, $duration, $start_row, $num_row,$filter_state_id=null)
-{
-    $xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
-    $xml .= "<data>";
-    $xml .= build_facet_c_xml($facet_c, $action_type, $start_row, $num_row);
-    $xml.="<duration><![CDATA[" . $duration . "]]></duration>";
-    $xml .= "</data>";
-    return $xml;
-}
-
-/*
-  function: build_facet_c_xml
-  Make the facet content XML being send to client
-  It returns the number of requested row, starting from the start_row
-  It also return a scroll_to_row when text-search is being used.
-
- */
-function build_facet_c_xml($data, $action_type, $start_row, $num_row)
-{
-    global $request_id;
-    $xml .= "<facets>";
-    if (!empty($data)) {
-        $facet = $data;
-        $xml .= "<facet_c>\n";
-        $xml .= "<request_id>$request_id</request_id>\n";
-        $xml .= "<f_code><![CDATA[" . $facet['f_code'] . "]]></f_code>\n";
-        $xml .= "<report><![CDATA[" . $facet['report'] . "]]></report>\n";
-        $xml .= "<report_html><![CDATA[" . $facet['report_html'] . "]]></report_html>\n";
-        $xml .= "<report_xml>" . $facet['report_xml'] . "</report_xml>\n";
-        $xml .= "<count_of_selections>" . $facet['count_of_selections'] . "</count_of_selections>\n";
-        $xml .= "<range_interval>" . $facet['range_interval'] . "</range_interval>\n";
-        $xml .= "<total_number_of_rows><![CDATA[" . $facet['total_number_of_rows'] . "]]></total_number_of_rows>\n";
-        if ($action_type == "populate_text_search") {
-            if ($start_row <= ($num_row / 2)) {
-                $scroll_to_row = $start_row;
-                $start_row = 0;
-            } else {
-                $scroll_to_row = $start_row;
-                $start_row = $start_row - round(($num_row / 2));
-            }
-            $xml .= "<start_row>" . $start_row . "</start_row>";
-            $xml .= "<scroll_to_row>" . $scroll_to_row . "</scroll_to_row>";
-        } else {
-            $xml .= "<start_row>" . $start_row . "</start_row>";
-            $xml .= "<scroll_to_row>" . $start_row . "</scroll_to_row>";
+        if ($found == "false") {
+            $return_position = -1;
+            return -1;
         }
-        $xml .= "<action_type><![CDATA[" . $action_type . "]]></action_type>";
-        $xml .= "<rows>\n";
+    }
+
+    /*
+    Function:  find_closest_by_binary_search
+    Parameters:
+    * $rows of the particular facet
+    * $search_str the text string to position the facet
+    */
+
+    private static function find_closest_by_binary_search($rows, $search_str, $key = "name")
+    {
         $row_counter = 0;
-        if (!empty($facet['rows'])) {
-            for ($i = $start_row; $i <= $start_row + $num_row && count($facet['rows']) > $i && !empty($facet['rows'][$i]); $i++) {
-                $row = $facet['rows'][$i];
-                if ($row['direct_counts'] != '') {
-                    $xml .= "<row>\n";
-                    // make a list of values of different type
-                    $xml .= "<values>\n";
-                    if (!empty($row["values"])) {
-                        foreach ($row["values"] as $value_type => $this_value) {
-                            $xml .= "<value_item>\n";
-                            $xml .= "<value_type><![CDATA[" . $value_type . "]]></value_type>\n";
-                            $xml .= "<value_id><![CDATA[" . $i . "]]></value_id>\n";
-                            $xml .= "<value><![CDATA[" . $this_value . "]]></value>\n";
-                            $xml .=" </value_item>\n";
-                        }
-                    }
-                    $xml .= "</values>\n";
-                    $xml .= "<name><![CDATA[" . $row['name'] . "]]></name>\n";
-                    $xml .= "<direct_counts><![CDATA[" . $row['direct_counts'] . "]]></direct_counts>\n";
-                    $xml .= "</row>\n";
-                    $row_counter++;
+        $start_position = 0;
+        $search_str = mb_strtoupper($search_str, "utf-8");
+        $end_position = count($rows) - 1;
+        $position = floor(($end_position - $start_position) / 2);
+        if (!empty($rows)) {
+            $found = false;
+            while (($end_position - $start_position) > 1 && $found == false) {
+                $row = $rows[$position];
+                $compare_to_str = substr($row[$key], 0, strlen($search_str));
+                if (strcasecmp($search_str, $compare_to_str) == 0) {
+                    $found = true;
+                } elseif (strcasecmp($search_str, $row[$key]) < 0) {
+                    $start_position = $start_position;
+                    $end_position = $position;
+                    $position = $start_position + floor(($end_position - $start_position) / 2);
+                } elseif (strcasecmp($search_str, $row[$key]) > 0) {
+                    $start_position = $position;
+                    $end_position = $end_position;
+                    $position = $start_position + ceil(($end_position - $start_position) / 2);
                 }
             }
         }
-        $xml .= "</rows>\n";
-        $xml .= "<rows_num>" . $row_counter . "</rows_num>";
-        $xml .= "</facet_c>\n";
+        return $position;
     }
-    $xml .= "</facets>";
-    return $xml;
+}
+
+class FacetXMLSerializer {
+
+    //***********************************************************************************************************************************************************************
+    /*
+    function: build_xml_response
+    Make the XML being send to client
+    see also:
+    <build_facet_c_xml>
+    */
+    public static function build_xml_response($facet_c, $action_type, $duration, $start_row, $num_row,$filter_state_id=null)
+    {
+        $xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
+        $xml .= "<data>";
+        $xml .= FacetXMLSerializer::build_facet_c_xml($facet_c, $action_type, $start_row, $num_row);
+        $xml.="<duration><![CDATA[" . $duration . "]]></duration>";
+        $xml .= "</data>";
+        return $xml;
+    }
+
+    /*
+    function: build_facet_c_xml
+    Make the facet content XML being send to client
+    It returns the number of requested row, starting from the start_row
+    It also return a scroll_to_row when text-search is being used.
+
+    */
+    public static function build_facet_c_xml($data, $action_type, $start_row, $num_row)
+    {
+        // FIXME: Does "global" work in static functions?
+        global $request_id;
+        $xml .= "<facets>";
+        if (!empty($data)) {
+            $facet = $data;
+            $xml .= "<facet_c>\n";
+            $xml .= "<request_id>$request_id</request_id>\n";
+            $xml .= "<f_code><![CDATA[" . $facet['f_code'] . "]]></f_code>\n";
+            $xml .= "<report><![CDATA[" . $facet['report'] . "]]></report>\n";
+            $xml .= "<report_html><![CDATA[" . $facet['report_html'] . "]]></report_html>\n";
+            $xml .= "<report_xml>" . $facet['report_xml'] . "</report_xml>\n";
+            $xml .= "<count_of_selections>" . $facet['count_of_selections'] . "</count_of_selections>\n";
+            $xml .= "<range_interval>" . $facet['range_interval'] . "</range_interval>\n";
+            $xml .= "<total_number_of_rows><![CDATA[" . $facet['total_number_of_rows'] . "]]></total_number_of_rows>\n";
+            if ($action_type == "populate_text_search") {
+                if ($start_row <= ($num_row / 2)) {
+                    $scroll_to_row = $start_row;
+                    $start_row = 0;
+                } else {
+                    $scroll_to_row = $start_row;
+                    $start_row = $start_row - round(($num_row / 2));
+                }
+                $xml .= "<start_row>" . $start_row . "</start_row>";
+                $xml .= "<scroll_to_row>" . $scroll_to_row . "</scroll_to_row>";
+            } else {
+                $xml .= "<start_row>" . $start_row . "</start_row>";
+                $xml .= "<scroll_to_row>" . $start_row . "</scroll_to_row>";
+            }
+            $xml .= "<action_type><![CDATA[" . $action_type . "]]></action_type>";
+            $xml .= "<rows>\n";
+            $row_counter = 0;
+            if (!empty($facet['rows'])) {
+                for ($i = $start_row; $i <= $start_row + $num_row && count($facet['rows']) > $i && !empty($facet['rows'][$i]); $i++) {
+                    $row = $facet['rows'][$i];
+                    if ($row['direct_counts'] != '') {
+                        $xml .= "<row>\n";
+                        // make a list of values of different type
+                        $xml .= "<values>\n";
+                        if (!empty($row["values"])) {
+                            foreach ($row["values"] as $value_type => $this_value) {
+                                $xml .= "<value_item>\n";
+                                $xml .= "<value_type><![CDATA[" . $value_type . "]]></value_type>\n";
+                                $xml .= "<value_id><![CDATA[" . $i . "]]></value_id>\n";
+                                $xml .= "<value><![CDATA[" . $this_value . "]]></value>\n";
+                                $xml .=" </value_item>\n";
+                            }
+                        }
+                        $xml .= "</values>\n";
+                        $xml .= "<name><![CDATA[" . $row['name'] . "]]></name>\n";
+                        $xml .= "<direct_counts><![CDATA[" . $row['direct_counts'] . "]]></direct_counts>\n";
+                        $xml .= "</row>\n";
+                        $row_counter++;
+                    }
+                }
+            }
+            $xml .= "</rows>\n";
+            $xml .= "<rows_num>" . $row_counter . "</rows_num>";
+            $xml .= "</facet_c>\n";
+        }
+        $xml .= "</facets>";
+        return $xml;
+    }
+
 }
 ?>

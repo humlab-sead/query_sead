@@ -422,7 +422,7 @@ function facet_text_search_callback(facet_id, search_text) {
 		dataType : "xml",
 		processData : false,
 		type : "POST",
-		url: "http://" + application_address + application_prefix_path + "server/fb_load.php",
+		url: "http://" + application_address + application_prefix_path + "api/load_facet.php",
 		success : function(xml) {
 			facet_handle_data_callback(xml);
 			//msg($(xml).text());

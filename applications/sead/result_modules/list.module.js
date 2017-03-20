@@ -63,12 +63,11 @@ function download_data(cache_id,application_name)
 	// make a ajax request
 	// http://dev.humlab.umu.se/frepalm/multibrowser_p3/server/get_data_table.php?cache_id=895&application_name=ships
 	// open the file that is being returned.
-//	var data_link="cache/zip_899_data_and_docs.zip";
 //window.open("server/"+data_link);
 	result_loading_indicator_set_state("on");
 	$.ajax({
 		type: "POST",
-		url: "server/get_data_table.php?cache_id="+cache_id+"&application_name="+application_name+"&link_only=1",
+		url: "/api/get_data_table.php?cache_id="+cache_id+"&application_name="+application_name+"&link_only=1",
 		cache: false,
 		dataType: "text",
 		processData: false,

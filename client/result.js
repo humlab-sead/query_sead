@@ -313,7 +313,7 @@ function result_load_data() {
 	
 	$.ajax({
 		type: "POST",
-		url: "http://" + application_address + application_prefix_path + "server/result_load.php",
+		url: "http://" + application_address + application_prefix_path + "api/load_result.php",
 		cache: false,
 		dataType: "xml",
 		processData: false,

@@ -33,6 +33,20 @@ class ConnectionHelper
         return $rs;
     }
 
+    public static function queryRows($conn, $q)
+    {
+        $rs = ConnectionHelper::query($conn, $q);
+        $rows = pg_fetch_all($rs);
+        return $rows;
+    }
+
+    public static function queryRow($conn, $q)
+    {
+        $rs = ConnectionHelper::query($conn, $q);
+        $row = pg_fetch_assoc($rs);
+        return $row;
+    }
+
     //***************************************************************************************************************************************************
     /**
     * Sanitizes the parameter supplied as need for sql execution. This is

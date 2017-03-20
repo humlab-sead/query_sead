@@ -51,7 +51,6 @@ define('CONNECTION_STRING',
 "port=" . $db_information['db_port']);
 
 $use_web_socket="yes";
-$last_facet_query="";
 $language_table="metainformation.tbl_languages";
 $phrases_schema="metainformation";
 $language_id_column="language_id";
