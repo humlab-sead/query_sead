@@ -4,49 +4,7 @@ file: custom_map_server_functions.php (SEAD)
 This file hold server function for the map component
 */
 
-function get_xy_statistics($conn, $lat,$lng, $result_code)
-{
-    global $result_definition;
-    return $info_text;
-}
 
-/*
-function: get_xy_info
-get the info for a coordinate in the result map
-returns a simple information-object in HTML.
-*/
-function get_xy_info($conn,$lat,$lng,$result_code)
-{
-    return	null;
-}
-
-function get_empty_zoom_and_center_coordinates()
-{
-	$coordinates_xml="	<data_extent><sw_lng>11.12353515625</sw_lng>
-                    <sw_lat>55.344554901123</sw_lat>
-                    <ne_lng>24.0666389465332</ne_lng>
-                    <ne_lat>68.1552658081055</ne_lat>
-                    </data_extent>";
-    return $coordinates_xml;
-}
-
-function build_wms_link($query_id)
-{
-    $base_link="http://geoserver.humlab.umu.se:8080/geoserver/sead/wfs?version=1.0.0&typeNames=sead:qsead_wms_map_result_publication&srs=EPSG:4326&viewparams:query_id:8&SERVICE=WFS&VERSION=1.0.0&REQUEST=GetFeature&TYPENAME=sead:qsead_wms_map_result_publication&SRSNAME=EPSG:4326";
-    return $base_link."&viewparams=query_id:".$query_id;
-}
-
-function store_site_ids($conn,&$site_id_list)
-{
-    $q="insert into metainformation.wms_map_result_publication DEFAULT VALUES returning * ; ";
-    $rs = pg_query($conn, $q); 
-    $row = pg_fetch_assoc($rs);
-    $query_id= $row["query_id"];
-    $data_query="insert into metainformation.wms_map_result_publication_sites (query_id,site_id) values ";
-    $data_query.= implode ( ",",array_map(function($x) use ($query_id){ return '('. implode (",",array($query_id,$x)).')'; },$site_id_list));
-    $rs = pg_query($conn, $data_query);
-    return $query_id;
-} 
 /*
  Function: result_render_map_view (SEAD)
 Render diagram  map data for SEAD

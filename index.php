@@ -181,7 +181,6 @@ include_once("interface.php");
     var current_view_state_id = "<?=$view_state_id?>";
     </script>
 
-
     <!--<script type="text/javascript" src="jslib/jquery-1.4.4-ships.js"></script>-->
     <!--<script type="text/javascript" src="jslib/jquery_1_8_ui/jquery-ui.min.js"></script>-->
     <!--<script type="text/javascript" src="jslib/jquery.easing.1.3.js"></script>-->
@@ -189,14 +188,6 @@ include_once("interface.php");
     <!--<script type="text/javascript" src="jslib/jquery.tooltip.min.js"></script>-->
     <!--<script type="text/javascript" src="jslib/highcharts-2.2.5/js/highcharts.js"></script>-->
     <!--<script type="text/javascript" src="jslib/highcharts-2.2.5/js/modules/exporting.js"></script>-->
-<?php
-    if($_SERVER['SERVER_NAME'] == "galactica.humlab.umu.se")
-        $mapkey = "ABQIAAAAN-sHYBjRfx7XbH1YgH6zQhQbdT_5QWJiYyBPD-oaC9uG2dLsZxQOMpj_Hip4wOOmpgiz5hCV3Z1ykg";
-    else if ($_SERVER['SERVER_NAME'] =="dev.humlab.umu.se")
-        $mapkey = "ABQIAAAAAj5eYnWmq65HcAX36QqmzRQtmSIXS468tVyf9_RONLh6ZG5SuhT2VC-TMhPSmAmbV49vwD2NAdRdHQ";
-    else
-        $mapkey = "ABQIAAAAi3a5ldLnZQZFnUtMgkxHjxTF7ArGPo0-IJkivSytNtrdcs4c7RQMmT0tvuvHRiCXNCxeFG7nafRWKQ";
-?>
     <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyDEnaCiVoQ54k1MFbUECGJttDU1Vj7pPOw&sensor=false"></script>
     <script type="text/javascript" src="client/user.js"></script>
     <script type="text/javascript">

@@ -33,6 +33,7 @@ Shared sequence:
 
 require_once(__DIR__ . "/../server/fb_server_funct.php");
 include_once(__DIR__ . "/../server/lib/Cache.php");
+require_once(__DIR__ . "/../server/facet_content_loader.php");
 
 if (!empty($_REQUEST["xml"])) {
     $xml=$_REQUEST["xml"];
@@ -68,7 +69,8 @@ if ($filter_by_text) {
 }
 
 if (!($f_content = DataCache::Get("_".$facet_params["client_language"].$applicationName, $f_str))) {
-    $f_content=get_facet_content($conn, $facet_params);
+    // ROGER $f_content=get_facet_content($conn, $facet_params);
+    $f_content=$facet_content_loaders[$type_of_facet_requested]->get_facet_content($conn, $facet_params);
     DataCache::Put("_".$facet_params["client_language"].$applicationName, $f_str, 1500, $f_content);
 }
 

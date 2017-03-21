@@ -20,6 +20,8 @@ require_once __DIR__ . '/language/t.php';
 require_once __DIR__ . '/fb_server_client_params_funct.php';
 require_once __DIR__ . '/html_render.php';
 
+require_once __DIR__ . '/facet_content_loader.php';
+
 /*
 * Funnction: *  render_column_meta_data
 * Copy definition data
@@ -918,7 +920,7 @@ function get_query_clauses($params, $f_code, $extra_tables, $f_list)
     return $query_info;
 }
 
-function get_range_counts($conn, $params, $q_interval, $f_code, $query, $direct_count_column, $direct_count_table)
+function get_range_counts($conn, $f_code, $params, $q_interval, $direct_count_table, $direct_count_column)
 {
     global $facet_definition;
     
@@ -1047,15 +1049,14 @@ Function: get_discrete_counts
 Arguments:
 * table over which to do counting
 * column over which to do counting
-* interval for range facets
+* payload (interval for range facets, not used for discrete facets)
 Returns:
 associative array with counts, the keys are the facet_term i.e the unique id of the row
 */
 
-function get_discrete_counts($conn, $f_code, $facet_params, $interval = 1, $direct_count_table, $direct_count_column)
+function get_discrete_counts($conn, $f_code, $facet_params, $payload, $direct_count_table, $direct_count_column)
 {
     global $facet_definition;
-    // "geo" removed so this must be a "discrete" facet!!
     $direct_counts = array();
     $combined_list = array();
     $data_tables[] = $direct_count_table;
@@ -1110,6 +1111,7 @@ function: get_range_query
 get the sql-query for facet with interval data by computing a sql-query by adding the interval number into a sql-text
 */
 
+// ==================> ROGER: MOVED TO FacetContentLoader
 function get_range_query($interval, $min_value, $max_value, $interval_count)
 {
     $pieces = array();
@@ -1125,6 +1127,7 @@ function get_range_query($interval, $min_value, $max_value, $interval_count)
     return $q1;
 }
 
+// ==================> ROGER: MOVED TO FacetContentLoader
 function get_text_filter_condition($facet_params, $query_column_name)
 {
     global $filter_by_text;
@@ -1138,7 +1141,7 @@ function get_text_filter_condition($facet_params, $query_column_name)
 function: get_discrete_query
 get the sql-query for facet with discrete data
 */
-
+// ==================> ROGER: MOVED TO FacetContentLoader
 function get_discrete_query($facet_params)
 {
     global $direct_count_table, $direct_count_column;
@@ -1178,6 +1181,7 @@ get additional information for a facet_row to be associated with a id in a array
 So one in a abstract term merges the content of two facets that has the same table and the same id for a row in the table.
 */
 
+// ==================> ROGER: MOVED TO FacetContentLoader
 function get_extra_row_info($f_code, $conn, $params)
 {
     global $facet_definition;
@@ -1214,6 +1218,7 @@ EOS;
     return $extra_row_info;
 }
 
+// ==================> ROGER: MOVED TO FacetContentLoader
 class RangeLimitCalculator {
 
     // compute max and min for range facet
@@ -1298,10 +1303,16 @@ Post functions:
 <build_xml_response>
 */
 
+// ==================> ROGER: MOVED TO FacetContentLoader
 function get_facet_content($conn, $params)
 {
-    global $direct_count_table, $direct_count_column, $indirect_count_table, $indirect_count_column,
-    $facet_definition;
+    global $facet_content_loaders, $facet_definition;
+    $f_code = $params["requested_facet"];
+    $facet = $facet_definition[$f_code]; 
+    $facet_type = $facet["facet_type"];
+    return $facet_content_loaders[$facet_type]->get_facet_content($conn, $params);
+
+    global $direct_count_table, $direct_count_column, $indirect_count_table, $indirect_count_column, $facet_definition;
     $facet_content = $search_string = $query_column_name = "";
     $f_code = $params["requested_facet"];
     $query_column = $facet_definition[$f_code]["id_column"];
@@ -1341,9 +1352,9 @@ function get_facet_content($conn, $params)
     if (isset($direct_count_column) && !empty($direct_count_column)) {
         if ($facet_definition[$f_code]["facet_type"] == "range") {
             // use a special function of the counting in ranges since it using other parameters
-            $direct_counts = get_range_counts($conn, $params, $interval_query, $f_code, $query, $direct_count_column, $direct_count_table);
+            $direct_counts = get_range_counts($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column);
         } else {
-            $direct_counts = get_discrete_counts($conn, $f_code, $params, $interval, $direct_count_table, $direct_count_column);
+            $direct_counts = get_discrete_counts($conn, $f_code, $params, NULL, $direct_count_table, $direct_count_column);
         }
     }
     // add extra information to a facet

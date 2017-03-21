@@ -230,7 +230,7 @@
         */
         public static function Put($group, $id, $ttl, $data)
         {
-            self::write($group, $id, $ttl, serialize($data));
+            //self::write($group, $id, $ttl, serialize($data));
         }
     }
 ?>
