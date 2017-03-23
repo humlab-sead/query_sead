@@ -65,6 +65,7 @@ require __DIR__ . '/../../server/fb_server_funct.php';
 require __DIR__ . '/site_queries.php';
 require __DIR__ . '/sample_group_queries.php';
 require_once __DIR__ . '/report_module.php';
+
 $cache_id = $_REQUEST["cache_id"];
 
 if (!($conn = pg_connect(CONNECTION_STRING))) {

@@ -112,151 +112,150 @@ $symbol_xml = $_REQUEST['symbol_xml'];
 
 $result_params = process_result_params($result_xml);
 
-switch($result_params["view_type"]) {
-	case "map":
-		$map_params=process_map_xml($map_xml);
-		if (!empty($symbol_xml)) {
-			$symbol_params=process_symbol_xml($symbol_xml);
-		}
-		$aggregation_code=$result_params["aggregation_code"];
-		$out = result_render_map_view($conn,$facet_params,$result_params,$map_params,$facet_xml,$result_xml,$map_xml,$aggregation_code);
-		$out = "<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>\n<result_html>$result_list</result_html>" . $out ;
-	    break;
-	case "diagram":
-	    // get the y_axis from the result_params
-		if (!empty($diagram_xml))
-		{
-			$diagram_params=process_diagram_params($diagram_xml);
-			$x_axis=$diagram_params["diagram_x_code"];
-			$group_client_id=$diagram_params["group_id"];
-		}
-		foreach($result_params["items"] as $item)
-		{
-			// First create header for the column.
-			foreach ($result_definition[$item]["result_item"] as $res_def_key =>$definition_item)
-			{
-				if ($res_def_key=='sum_item' || ($result_params["aggregation_code"]=='parish_level' && $res_def_key=='single_sum_item'))
-					$y_axis[]=$item;
-			}
-		}
+//if (!empty($result_params["aggregation_code"])) {
 
-		$aggregation_code=$result_params["aggregation_code"]; // parish_level, county_level, year_level
-
-		if (count($result_params["items"])<=1) {
-		// make a empty diagram if thera are none resultvariable (apart from the aggregation_code)
-			$out=result_render_empty_diagram($aggregation_code);
-		}
-		else
-		{ // make diagram data
-
-			$return_obj=get_group_y_data($conn,$y_axis,$facet_params, $result_params,$aggregation_code);
-			$y_items=$return_obj["y_items"];
-			$count_of_series=$return_obj["count_of_series"];
-            // check what type of group is selected as Y-values (stat_unit or aggregation_unit)
-            // assigne the first group if the group is unknown or undefined
-            // Otherwise it will be the value from the client post
-            // also check that the client_id is corrensponding to a value in the list of groups
-            // || empty($group_extra[$group_client_id]
-            if ($group_client_id=="undefined" ) 
+    switch($result_params["view_type"]) {
+        case "map":
+            $map_params=process_map_xml($map_xml);
+            if (!empty($symbol_xml)) {
+                $symbol_params=process_symbol_xml($symbol_xml);
+            }
+            $aggregation_code=$result_params["aggregation_code"];
+            $out = result_render_map_view($conn,$facet_params,$result_params,$map_params,$facet_xml,$result_xml,$map_xml,$aggregation_code);
+            $out = "<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>\n<result_html>$result_list</result_html>" . $out ;
+            break;
+        case "diagram":
+            // get the y_axis from the result_params
+            if (!empty($diagram_xml))
+            {
+                $diagram_params=process_diagram_params($diagram_xml);
+                $x_axis=$diagram_params["diagram_x_code"];
+                $group_client_id=$diagram_params["group_id"];
+            }
+            foreach($result_params["items"] as $item)
+            {
+                // First create header for the column.
+                foreach ($result_definition[$item]["result_item"] as $res_def_key =>$definition_item)
                 {
-                    $g_counter=0;
-                    if (!empty($y_items)) {
-                        foreach ($y_items as $key =>$group_element) {
-                            if ($g_counter==0)
-                                $group_client_id=$y_items[$key]["group_id"];		// set the group_client_id to the first item by default  (will be overwritten if possible)		
-                            $g_counter++;
-                        }
-                    }
-                }  else {
-                    $cmp_client_type=substr($group_client_id,0,9); // check for stat_unit, else it will be aggregation_unit
-                    if ($cmp_client_type=="stat_unit")
-                        $group_type="stat_unit";
-                    else
-                        $group_type="aggregation_unit";
+                    if ($res_def_key=='sum_item' || ($result_params["aggregation_code"]=='parish_level' && $res_def_key=='single_sum_item'))
+                        $y_axis[]=$item;
+                }
+            }
 
-                    if (empty($y_items[$group_client_id] )) {
+            $aggregation_code=$result_params["aggregation_code"]; // parish_level, county_level, year_level
+
+            if (count($result_params["items"])<=1) {
+            // make a empty diagram if thera are none resultvariable (apart from the aggregation_code)
+                $out=result_render_empty_diagram($aggregation_code);
+            }
+            else
+            { // make diagram data
+
+                $return_obj=get_group_y_data($conn,$y_axis,$facet_params, $result_params,$aggregation_code);
+                $y_items=$return_obj["y_items"];
+                $count_of_series=$return_obj["count_of_series"];
+                // check what type of group is selected as Y-values (stat_unit or aggregation_unit)
+                // assigne the first group if the group is unknown or undefined
+                // Otherwise it will be the value from the client post
+                // also check that the client_id is corrensponding to a value in the list of groups
+                // || empty($group_extra[$group_client_id]
+                if ($group_client_id=="undefined" ) 
+                    {
                         $g_counter=0;
                         if (!empty($y_items)) {
                             foreach ($y_items as $key =>$group_element) {
-                                    if ($g_counter==0 && ($group_type==$y_items[$key]["group_type"])) {
-                                        $group_client_id=$y_items[$key]["group_id"];				
-                                        $g_counter++;
+                                if ($g_counter==0)
+                                    $group_client_id=$y_items[$key]["group_id"];		// set the group_client_id to the first item by default  (will be overwritten if possible)		
+                                $g_counter++;
+                            }
+                        }
+                    }  else {
+                        $cmp_client_type=substr($group_client_id,0,9); // check for stat_unit, else it will be aggregation_unit
+                        if ($cmp_client_type=="stat_unit")
+                            $group_type="stat_unit";
+                        else
+                            $group_type="aggregation_unit";
+
+                        if (empty($y_items[$group_client_id] )) {
+                            $g_counter=0;
+                            if (!empty($y_items)) {
+                                foreach ($y_items as $key =>$group_element) {
+                                        if ($g_counter==0 && ($group_type==$y_items[$key]["group_type"])) {
+                                            $group_client_id=$y_items[$key]["group_id"];				
+                                            $g_counter++;
+                                        }
                                     }
                                 }
                             }
-                        }
-                    else 
-                        $group_client_id=$group_client_id;
+                        else 
+                            $group_client_id=$group_client_id;
+                    }
+                $max_count_series=25;
+                $d_str=(string) $result_params["view_type"]."_".generateUserSelectItemsCacheId($facet_params).derive_result_selection_str($result_xml).$aggregation_code.$group_client_id.$x_axis.$facet_params["client_language"];
+                if ( !$out = DataCache::Get("diagram_data_".$applicationName, $d_str)) { 
+                    $out = result_render_diagram_data($conn,$facet_params, $result_params,$x_axis,$y_axis,$y_items,$group_client_id,$aggregation_code,$max_count_series,$count_of_series);
+                    DataCache::Put("diagram_data_".$applicationName, $d_str, 1500,$out);    
                 }
-            $max_count_series=25;
-            $d_str=(string) $result_params["view_type"]."_".derive_selections_string($facet_params).derive_result_selection_str($result_xml).$aggregation_code.$group_client_id.$x_axis.$facet_params["client_language"];
-            if ( !$out = DataCache::Get("diagram_data_".$applicationName, $d_str)) { 
-                $out = result_render_diagram_data($conn,$facet_params, $result_params,$x_axis,$y_axis,$y_items,$group_client_id,$aggregation_code,$max_count_series,$count_of_series);
-                DataCache::Put("diagram_data_".$applicationName, $d_str, 1500,$out);    
             }
-        }
 
-        $current_request_id=$diagram_params['request_id'];
-        $out="<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>".$out;
+            $current_request_id=$diagram_params['request_id'];
+            $out="<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>".$out;
+
+            break;
+        case "pie_chart":
+            $pie_chart_params= process_pie_chart_xml($pie_chart_xml);
+            $aggregation_code=$result_params["aggregation_code"];
+            $out = result_render_pie_chart_view($conn,$facet_params,$result_params,$pie_chart_params,$facet_xml,$result_xml,$aggregation_code);
+            $out="<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>\n<result_html>test</result_html>".$out ;
+            break;
+        case "list":
+
+            if (!isset($conn)) {
+                break;
+            }
+            $f_str=(string) $result_params["view_type"]."_".generateUserSelectItemsCacheId($facet_params).derive_result_selection_str($result_xml).$facet_params["client_language"].$result_params["aggregation_code"];
+            
+            if (!isset($facet_state_id))
+            {
+                $cache_seq_id = $cache_seq ?? 'file_name_data_download_seq';
+                $row = ConnectionHelper::queryRow($conn, "select nextval('$cache_seq_id') as cache_id;");
+                $facet_state_id = $application_name . $row["cache_id"];
+                file_put_contents(__DIR__."/cache/".$facet_state_id."_facet_xml.xml",$facet_xml);
+            }
+            file_put_contents(__DIR__."/cache/".$facet_state_id."_result_xml.xml", $result_xml);
+
+            $data_link="/api/report/get_data_table.php?cache_id=".$facet_state_id."&application_name=$applicationName";
+            $data_link_text="/api/report/get_data_table_text.php?cache_id=".$facet_state_id."&application_name=$applicationName";
+
+            // new data link with a file_name that is unique point to facet_xml_file in the cache_catalogue
+            switch ($result_params["client_render"])
+            {
+                case "xml":
+                    $out=result_render_list_view_xml($conn,$facet_params,$result_params,$data_link,$facet_state_id,$data_link_text);
+                    break;
+                default: 
+                    if (!$out = DataCache::Get("result_list".$applicationName, $f_str)) { 
+                        $out = result_render_list_view($conn,$facet_params,$result_params,$data_link,$facet_state_id,$data_link_text);
+                        DataCache::Put("result_list".$applicationName, $f_str, 1500,$out);    
+                    }
+                    $out = "<![CDATA[".$out."]]>";   
+                    break;
+            }
+            
+            $facet_string_params=$result_params["session_id"]."_".generateUserSelectItemsCacheId($facet_params);
+            if (!$save_set_sql = DataCache::Get("save_sets_sql".$applicationName, $facet_string_params)) { 
+                $save_set_sql=get_save_query($facet_params,$result_params["session_id"], $conn);
+                DataCache::Put("save_sets_sql".$applicationName, $facet_string_params, 1500,$save_set_sql);    
+            }
+            $current_request_id=$result_params['request_id'];
 
         break;
-	case "pie_chart":
-		$pie_chart_params= process_pie_chart_xml($pie_chart_xml);
-		$aggregation_code=$result_params["aggregation_code"];
-		$out = result_render_pie_chart_view($conn,$facet_params,$result_params,$pie_chart_params,$facet_xml,$result_xml,$aggregation_code);
-		$out="<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>\n<result_html>test</result_html>".$out ;
-	    break;
-	case "list":
-		$f_str=(string) $result_params["view_type"]."_".derive_selections_string($facet_params).derive_result_selection_str($result_xml).$facet_params["client_language"].$result_params["aggregation_code"];
-		
-        if (!isset($facet_state_id))
-        {
-            if (isset($cache_seq))
-                    $rs5 = pg_query($conn, "select nextval('$cache_seq') as cache_id;");
-            else
-                    $rs5 = pg_query($conn, "select nextval('file_name_data_download_seq') as cache_id;");
-
-            while ($row = pg_fetch_assoc($rs5) )
-            {
-                    $facet_state_id=$application_name.$row["cache_id"];
-            }
-            // store $facet_xml in  file to be read by download command
-            file_put_contents(__DIR__."/cache/".$facet_state_id."_facet_xml.xml",$facet_xml);
-        }
-            // store $result_xml in  file 
-        file_put_contents(__DIR__."/cache/".$facet_state_id."_result_xml.xml",$result_xml);
-
-		$data_link="/api/get_data_table.php?cache_id=".$facet_state_id."&application_name=$applicationName";
-		$data_link_text="/api/get_data_table_text.php?cache_id=".$facet_state_id."&application_name=$applicationName";
-
-		// new data link with a file_name that is unique point to facet_xml_file in the cache_catalogue
-        switch ($result_params["client_render"])
-        {
-            case "xml":
-                $out=result_render_list_view_xml($conn,$facet_params,$result_params,$data_link,$facet_state_id,$data_link_text);
-                break;
-            default: 
-                if (!$out = DataCache::Get("result_list".$applicationName, $f_str)) { 
-                $out = result_render_list_view($conn,$facet_params,$result_params,$data_link,$facet_state_id,$data_link_text);
-                DataCache::Put("result_list".$applicationName, $f_str, 1500,$out);    
-            }
-            $out = "<![CDATA[".$out."]]>";   
-            break;
-        }
-		 
-		$facet_string_params=$result_params["session_id"]."_".derive_selections_string($facet_params);
-		if (!$save_set_sql = DataCache::Get("save_sets_sql".$applicationName, $facet_string_params)) { 
-			$save_set_sql=get_save_query($facet_params,$result_params["session_id"], $conn);
-			DataCache::Put("save_sets_sql".$applicationName, $facet_string_params, 1500,$save_set_sql);    
-		}
-		$current_request_id=$result_params['request_id'];
-
-	break;
-}
+    }
+//}
 
 header("Content-Type: text/xml");
 header("Character-Encoding: UTF-8");
-$meta_data_str=derive_selections_to_html($facet_params);
+$meta_data_str=generateUserSelectItemHTML($facet_params);
 // request id sent back to clietn
 $current_request_id=$result_params["request_id"];
 

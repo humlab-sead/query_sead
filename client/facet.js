@@ -394,17 +394,15 @@ function facet_load_data(load_obj) {
 		dataType: "xml",
 		processData: false,
 		data: "xml="+xml_request_document+"&application_name="+application_name,
-		global: false,
-		success: function(xml){
-			facet_handle_data_callback(xml);
-                        facet_reload_facet_objects_tmp();
-                        facet_set_loading_indicator_state(facet_obj.id, "off");
-                        refresh_selection_info_callback(xml);
-                   //    refresh_selection_info(load_obj);
-                     
-		
-		}
-	});
+		global: false
+	}).done(function(xml){
+        facet_handle_data_callback(xml);
+        facet_reload_facet_objects_tmp();
+        facet_set_loading_indicator_state(facet_obj.id, "off");
+        refresh_selection_info_callback(xml);
+    }).fail(function( jqXHR, textStatus, errorThrown ) {
+        console.log(textStatus);
+    });
 }
 
 

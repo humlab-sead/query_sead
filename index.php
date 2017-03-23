@@ -163,17 +163,14 @@ include_once("interface.php");
     <title><?php echo $applicationTitle?></title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <!--<link rel="stylesheet" type="text/css" href="jslib/jquery-ui-1.7.2/css/ui-lightness/jquery-ui-1.7.2.custom.css" />-->
     <link rel="stylesheet" type="text/css" href="//code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" />
-    <!--<link rel="stylesheet" type="text/css" href="jslib/jquery-ui-1.7/themes/base/ui.resizable.css" />-->
     <link rel="stylesheet" type="text/css" href="applications/sead/theme/style.css" />
 
     <script type="text/javascript" src="//code.jquery.com/jquery-3.2.0.min.js"></script>
     <script type="text/javascript" src="//code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    <!--<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>-->
-    <!--<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-tools/1.2.7/jquery.tools.min.js"></script>-->
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.9/highcharts.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.9/js/modules/exporting.js"></script>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyDEnaCiVoQ54k1MFbUECGJttDU1Vj7pPOw&sensor=false"></script>
 
     <script type="text/javascript" src="client/client_definitions.js"></script>
     <script type="text/javascript">
@@ -181,14 +178,6 @@ include_once("interface.php");
     var current_view_state_id = "<?=$view_state_id?>";
     </script>
 
-    <!--<script type="text/javascript" src="jslib/jquery-1.4.4-ships.js"></script>-->
-    <!--<script type="text/javascript" src="jslib/jquery_1_8_ui/jquery-ui.min.js"></script>-->
-    <!--<script type="text/javascript" src="jslib/jquery.easing.1.3.js"></script>-->
-    <!--<script type="text/javascript" src="jslib/jquery.tools.min.js"></script>-->
-    <!--<script type="text/javascript" src="jslib/jquery.tooltip.min.js"></script>-->
-    <!--<script type="text/javascript" src="jslib/highcharts-2.2.5/js/highcharts.js"></script>-->
-    <!--<script type="text/javascript" src="jslib/highcharts-2.2.5/js/modules/exporting.js"></script>-->
-    <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyDEnaCiVoQ54k1MFbUECGJttDU1Vj7pPOw&sensor=false"></script>
     <script type="text/javascript" src="client/user.js"></script>
     <script type="text/javascript">
         var application_address = "<?php echo get_js_server_address() ?>";
@@ -210,9 +199,8 @@ include_once("interface.php");
         // echo language_perform_update();
     echo language_create_javascript_languages_definition_array();
     echo language_create_javascript_translation_arrays();
-    require_once("applications/sead/script_config.php");
 ?>
-
+    <script type="text/javascript" src="client/client_ui_definitions.js"></script>
     <script type="text/javascript" src="client/util.js"></script>
     <script type="text/javascript" src="client/slot.js"></script>
     <script type="text/javascript" src="client/facet_list.js"></script>
@@ -223,8 +211,8 @@ include_once("interface.php");
     <script type="text/javascript" src="client/facet_view.js"></script>
     <script type="text/javascript" src="client/facet_presenter.js"></script>
     <script type="text/javascript" src="client/facet.js"></script>
-    <script language="javascript" src="client/nodejs-client.js"></script>
-    <script type="text/javascript"  src="client/notifyservice.js"></script>
+    <script type="text/javascript" src="client/nodejs-client.js"></script>
+    <script type="text/javascript" src="client/notifyservice.js"></script>
     <script type="text/javascript" src="client/layout.js"></script>
     <script type="text/javascript" src="client/control_bar.js"></script>
     <script type="text/javascript" src="client/result.js"></script>

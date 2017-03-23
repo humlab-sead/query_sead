@@ -4,7 +4,7 @@ class FacetContentLoader {
 
     protected function compileIntervalQuery($conn, $params, $f_code)
     {
-        return NULL;
+        return [ "interval" => NULL, "query" => NULL ];
     }
 
     protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
@@ -53,7 +53,7 @@ class FacetContentLoader {
         $sort_column = $query_column;
 
         // compute the intervall for a number of histogram items if it is defined as range facet
-        $interval_query = $this->compileIntervalQuery($conn, $params, $f_code);
+        list($interval, $interval_query) = $this->compileIntervalQuery($conn, $params, $f_code);
 
         $rs2 = Connectionhelper::query($conn, $interval_query);
 
@@ -76,8 +76,8 @@ class FacetContentLoader {
         //     $extra_row_info = $this->getExtraRowInfo($facet_definition[$f_code]["extra_row_info_facet"], $conn, $params);
         // }
 
-        $count_of_selections = derive_count_of_selection($params, $f_code);
-        $tooltip_text = ($count_of_selections != 0) ? derive_selections_to_html($params, $f_code) : "";
+        $count_of_selections = computeUserSelectItemCount($params, $f_code);
+        $tooltip_text = ($count_of_selections != 0) ? generateUserSelectItemHTML($params, $f_code) : "";
 
         $facet_contents[$f_code]['report'] = " Current filter   <BR>  ". $tooltip_text."  ".SqlFormatter::format($interval_query, false)."  ; \n  " . ($direct_counts["sql"] ?? "") . " ;\n";
         $facet_contents[$f_code]['report_html'] = $tooltip_text;
@@ -119,7 +119,7 @@ class FacetContentLoader {
 //     {
 //         global $facet_definition;
 //         $query_column = $facet_definition[$f_code]["id_column"];
-//         $f_list = derive_facet_list($params);
+//         $f_list = getKeysOfActiveFacets($params);
 //         $query = get_query_clauses($params, $f_code, $data_tables, $f_list);
 //         $query_column_name = $facet_definition[$f_code]["name_column"];
 //         $sort_column = $facet_definition[$f_code]["sort_column"];
@@ -176,7 +176,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
     // TODO: $facet is actually a $facet_key, change to real facet object instead (removed global dependencies above)
     private function getLowerUpperLimit($conn, $params, $facet)
     {
-        $f_selected = derive_selections($params);
+        $f_selected = getUserSelectItems($params);
 
         if (!isset($f_selected[$facet])) {
             foreach ($f_selected[$facet] as $skey => $selection_group) { // dig into the groups of selections of the facets
@@ -228,7 +228,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
         }
         // derive the interval as sql-query although it is not using a table...only a long sql with select the values of the interval
         $q1 = $this->getRangeQuery($interval, $min_value, $max_value, $interval_count);
-        return $q1;
+        return [ "interval" => $interval, "query" => $q1 ];
     }
 
     protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
@@ -253,7 +253,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
 
 }
 
-// depends on: derive_facet_list, get_query_clauses
+// depends on: getKeysOfActiveFacets, get_query_clauses
 class DiscreteFacetContentLoader extends FacetContentLoader {
 
     function getTextFilterClause($facet_params, $query_column_name)
@@ -269,27 +269,33 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
     protected function compileIntervalQuery($conn, $facet_params, $f_code)
     {
         global $direct_count_table, $direct_count_column, $facet_definition;
+
         $f_code = $facet_params["requested_facet"];
-        $f_list = derive_facet_list($facet_params);
+
+        $f_list = getKeysOfActiveFacets($facet_params);
         $query = get_query_clauses($facet_params, $f_code, $data_tables, $f_list);
+
         $query_column_name = $facet_definition[$f_code]["name_column"];
         $query_column = $facet_definition[$f_code]["id_column"];
+        $query_joins = $query["joins"];
         $sort_column = $facet_definition[$f_code]["sort_column"];
         $sort_order = $facet_definition[$f_code]["sort_order"];
         $find_cond = $this->getTextFilterClause($facet_params, $query_column_name);
-        $group_by_column_name = $query_column_name;
-
         $tables = $query["tables"];
         $where_clause = (trim($query["where"]) != '')  ?  " and \n " . $query["where"] : "";
+        $group_by_columns = (!empty($sort_column) ? "$sort_column, " : "") . "$query_column, $query_column_name ";
+        $sort_clause = (!empty($sort_column)) ? "order by $sort_column $sort_order" : "";
 
-        $q1 = "select  $query_column  as id , $query_column_name as name \n from " . $tables . " ".$query["joins"]. "  where  $find_cond   1=1 ";
-        $q1 .= $where_clause;
-        if (!empty($sort_column)) {
-            $q1.= " group by $sort_column, $query_column, $query_column_name  order by  $sort_column $sort_order";
-        } else {
-            $q1.= " group by $query_column, $query_column_name, $query_column ";
-        }
-        return $q1 . "   ";
+        $q1 =<<<EOT
+            select $query_column as id , $query_column_name as name
+            from $tables $query_joins
+            where $find_cond 1 = 1
+              $where_clause
+            group by $group_by_columns
+            $sort_clause
+EOT;
+
+        return [ "interval" => 1, "query" => $q1 ];
     }
 
     protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)

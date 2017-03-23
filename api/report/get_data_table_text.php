@@ -9,7 +9,7 @@ Sequence:
 * Process the result parameter from the client using  <process_result_params>
 * Get the SQL-query using function  <get_result_data_query>
 * Run the query and build the output
-* Build the documentation of the facet filter using <derive_selections_to_html>
+* Build the documentation of the facet filter using <generateUserSelectItemHTML>
 * Make  a zip-file for the documentation and datatable
 */
 
@@ -17,23 +17,18 @@ require_once (__DIR__ . '/../server/fb_server_funct.php');
 
 if (!($conn = pg_connect(CONNECTION_STRING))) { echo "Error: pg_connect failed.\n"; exit; }
 
-// The xml-data is containing facet information is processed and all parameters are put into an array for futher use.
-// $facet_xml_file_location="cache/".$_REQUEST['cache_id']."_facet_xml.xml";
-// $facet_xml=file_get_contents($facet_xml_file_location);
 $facet_xml = get_facet_xml_from_id($_REQUEST['cache_id']);
-
 $facet_params = fb_process_params($facet_xml);
 $facet_params=remove_invalid_selections($conn,$facet_params);
-
-// $result_xml_file_location="cache/".$_REQUEST['cache_id']."_result_xml.xml";
-// $result_xml=file_get_contents($result_xml_file_location);
 $result_xml = get_result_xml_from_id($_REQUEST['cache_id']);
-
 $result_params = process_result_params($result_xml);
-
-$aggregation_code=$result_params["aggregation_code"];
+$aggregation_code = $result_params["aggregation_code"];
 
 $q = get_result_data_query($facet_params, $result_params);
+
+if (empty($q)) {
+    exit;
+}
 
 $text_table_doc=" data hämtat ur databas genom följande operation \n".$q."\n";
 
@@ -99,7 +94,7 @@ $selection_html.=t($result_definition[$aggregation_code]["text"],$facet_params["
 $selection_html.=" <BR><h2>".t("Valda resultvariabler :", $facet_params["client_language"])." </h2><BR>";
 $selection_html.=$html_doc;
 $selection_html.="<BR><h2>".t("Aktuella filter: ",$facet_params["client_language"])."</h2>";
-$selection_html.=derive_selections_to_html($facet_params);
+$selection_html.=generateUserSelectItemHTML($facet_params);
 $selection_html.="<h2>".t("SQL-fråga: ",$facet_params["client_language"])." </h2>".$q;
 $selection_html.="</BODY>";
 $selection_html.="</HTML>";

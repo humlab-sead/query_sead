@@ -318,28 +318,26 @@ function result_load_data() {
 		dataType: "xml",
 		processData: false,
 		data: post_data,
-		global: false,
-		success: function(xml){
-                    
-			result_object.result_xml = xml;
-			
-			if(parseInt($("request_id", xml).text()) == global_result_request_id) {
-				//msg("Received result_xml "+$("request_id", xml).text()+" which matches global req_id "+global_result_request_id);
-				result_loading_indicator_set_state("off");
-        //                        alert('correct request');
-			}
-			else {
-				//msg("Dropping result_xml "+$("request_id", xml).text()+" because global req_id is "+global_result_request_id);
-				return;
-			}
-			
-			result_module_invoke_all("stop_loading_data");
-			result_module_invoke(result_object.view, "update");
-			result_loading_indicator_set_state("off");
-			result_update_status_area(xml);
-			
-		}
-	});
+		global: false
+	}).done(
+        function(xml, textStatus, jqXHR){
+            result_object.result_xml = xml;
+            if(parseInt($("request_id", xml).text()) == global_result_request_id) {
+                //msg("Received result_xml "+$("request_id", xml).text()+" which matches global req_id "+global_result_request_id);
+                result_loading_indicator_set_state("off");
+            }
+            else {
+                //msg("Dropping result_xml "+$("request_id", xml).text()+" because global req_id is "+global_result_request_id);
+                return;
+            }
+            result_module_invoke_all("stop_loading_data");
+            result_module_invoke(result_object.view, "update");
+            result_loading_indicator_set_state("off");
+            result_update_status_area(xml);
+            }
+    ).fail(function( jqXHR, textStatus, errorThrown ) {
+        console.log(textStatus);
+    });
 }
 
 function result_update_status_area(xml) {

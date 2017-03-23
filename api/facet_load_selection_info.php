@@ -5,6 +5,7 @@
 
 require_once(__DIR__ . "/../server/fb_server_funct.php");
 require_once(__DIR__ . "/../server/lib/Cache.php");
+require_once(__DIR__ . "/../server/connection_helper.php");
 
 if (!empty($_REQUEST["xml"])) {
     $xml=$_REQUEST["xml"];
@@ -12,19 +13,16 @@ if (!empty($_REQUEST["xml"])) {
 
 $facet_params = fb_process_params($xml);
 
-if (!($conn = pg_connect(CONNECTION_STRING))) {
-    echo "Error: pg_connect failed.\n";
-    exit;
-}
+$conn = ConnectionHelper::createConnection();
 
-$facet_params=remove_invalid_selections($conn, $facet_params);
+$facet_params = remove_invalid_selections($conn, $facet_params);
 
 $f_code = $facet_params["requested_facet"];
 
 $tooltip_text = "";
-$count_of_selections = derive_count_of_selection($facet_params, $f_code);
+$count_of_selections = computeUserSelectItemCount($facet_params, $f_code);
 if ($count_of_selections != 0) {
-    $tooltip_text = derive_selections_to_html($facet_params, $f_code);
+    $tooltip_text = generateUserSelectItemHTML($facet_params, $f_code);
 }
 
 $xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";

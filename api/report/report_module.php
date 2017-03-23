@@ -29,7 +29,7 @@ function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_tabl
     $facet_params = fb_process_params($facet_xml);
     $facet_params = remove_invalid_selections($conn, $facet_params);
 
-    $tmp_list = derive_facet_list($facet_params);
+    $tmp_list = getKeysOfActiveFacets($facet_params);
 
     //Add  as final facet
     $tmp_list[] = $f_code;
@@ -55,7 +55,7 @@ function get_select_info_as_html($conn, $cache_id) {
     $facet_xml = get_facet_xml_from_id($cache_id);
     $facet_params = fb_process_params($facet_xml);
     $facet_params = remove_invalid_selections($conn, $facet_params);
-    return derive_selections_to_html($facet_params);
+    return generateUserSelectItemHTML($facet_params);
 }
 /*
  * Class: sample_group_reporter
@@ -256,7 +256,7 @@ class site_reporter {
         } else {
             $html.= "<B> No filters </B>";
         }
-        // http://localhost/qviz_refactor/applications/sead/show_site_details.php?site_id=3&cache_id=sead680&application_name=sead
+        // http://localhost/qviz_refactor/api/report/show_site_details.php?site_id=3&cache_id=sead680&application_name=sead
         $html.= $this->reporter->format_rs($rs, 'site_id', 'show_site_details.php?', $cache_id);
 
         return $html;
@@ -358,7 +358,7 @@ class report_module {
         $facet_params = fb_process_params($facet_xml);
         $facet_params = remove_invalid_selections($conn, $facet_params);
 
-        $selection_matrix = derive_selections_to_matrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
+        $selection_matrix = generateUserSelectItemMatrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
         print_r($selection_matrix);
         if (isset($selection_matrix)) {
             $html = "Criterias :";
@@ -462,7 +462,6 @@ class report_module {
      *  returns: array Query result as numeric arrayArray
      */
     public static function rs_to_array($rs) {
-        // FIXME: Warning: pg_fetch_assoc(): Unable to jump to row 0 on PostgreSQL result index 26 in C:\Users\andreas\Documents\NetBeansProjects\ships\applications\sead\report_module.php on line 130
         if (pg_num_rows($rs) === 0) {
             return "";
         }

@@ -50,6 +50,10 @@ $result_params = process_result_params($result_xml);
 $aggregation_code=$result_params["aggregation_code"];
 $q= get_result_data_query($facet_params, $result_params);
 
+if (empty($q)) {
+    exit;
+}
+
 $objPHPExcel = new PHPExcel();
 $objPHPExcel->getProperties()->setCreator("$applicationTitle , QVIZ browser, HUMlab Umeå Universitet ")
 							 ->setLastModifiedBy("HUMlab Umeå Universitet")
@@ -71,7 +75,7 @@ $objWorksheet2->getStyle('B')->getAlignment()->setWrapText(true); /// set wrap t
 $objWorksheet2->setCellValueByColumnAndRow(0, 1, 'SQL:'); // add a heading
 $objWorksheet2->setCellValueByColumnAndRow(1, 1, $q); // add the SQL
 
-$selection_matrix=derive_selections_to_matrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
+$selection_matrix=generateUserSelectItemMatrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
 $objWorksheet1->setCellValueByColumnAndRow(0, 2, 'FILTERS');
 
 $columns_base=array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","X","Y","Z");

@@ -250,7 +250,7 @@ var sites = $(map_data_xml).find("points");
 			{	
 				info="latitude: "+latitude+"<BR>";
                                 info+="longitude: "+longitude+"<BR>";
-                                info+="<a href=\"applications/sead/show_site_details.php?application_name=sead&site_id="+$(this).find("id").text()+"\" target=\"_new\"> "+name+"</A>";//name+"";//<BR>Filter count of samples "+filtered_count +"<BR> Total samples:"+un_filtered_count;
+                                info+="<a href=\"api/report/show_site_details.php?application_name=sead&site_id="+$(this).find("id").text()+"\" target=\"_new\"> "+name+"</A>";//name+"";//<BR>Filter count of samples "+filtered_count +"<BR> Total samples:"+un_filtered_count;
 				letter="X";
 				g_markers[id]=createMarker(latlng, letter,name , info);;
 

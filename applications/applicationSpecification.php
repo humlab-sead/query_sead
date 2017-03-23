@@ -48,7 +48,7 @@ if(!isset($facetDefinitionFile))
 if(!isset($fbDefinitionFile))
     $fbDefinitionFile = "$applicationPath/fb_def.php";
 if(!isset($layoutFile))
-    $layoutFile = "$applicationPath/theme/layout.php";
+    $layoutFile = "$applicationPath/layout.php";
 if(!isset($applicationStyleSheet))
     $applicationStyleSheet = "$applicationPath/theme/style.css";
 if(!isset($applicationTitle))

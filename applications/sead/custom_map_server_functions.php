@@ -20,7 +20,7 @@ function result_render_map_view($conn,$facet_params,$result_params,$facet_xml,$r
 	
 	$lat_column="latitude_dd";
 	$long_column="longitude_dd";
-	$tmp_list=derive_facet_list($facet_params);
+	$tmp_list=getKeysOfActiveFacets($facet_params);
 	$tmp_list[]=$f_code; 
 	$interval=1;
 
@@ -30,7 +30,7 @@ function result_render_map_view($conn,$facet_params,$result_params,$facet_xml,$r
         $filtered_direct_counts= $direct_counts["list"];
 	}
 
-    $no_selection_params=erase_selections($facet_params);
+    $no_selection_params=eraseUserSelectItems($facet_params);
 
 	if (isset($direct_count_column) &&!empty($direct_count_column)  ) 
 	{

@@ -456,10 +456,8 @@ class sample_group_query {
     * @return type
     */
     public function render_site_query($sample_group_id) {
-        $q = "select  distinct
-            tbl_sites.site_name,
-            tbl_sites.site_id
-        FROM tbl_datasets
+        $q = "select distinct tbl_sites.site_name, tbl_sites.site_id
+        from tbl_datasets
         left  join tbl_analysis_entities
           on tbl_analysis_entities.dataset_id = tbl_datasets.dataset_id
         join tbl_physical_samples
@@ -468,8 +466,7 @@ class sample_group_query {
           on tbl_physical_samples.sample_group_id = tbl_sample_groups.sample_group_id
         inner  join tbl_sites
           on tbl_sample_groups.site_id = tbl_sites.site_id
-        WHERE
-            tbl_physical_samples.sample_group_id=$sample_group_id  ;    ";
+        where tbl_physical_samples.sample_group_id=$sample_group_id;";
         return $q;
     }
     
@@ -492,7 +489,7 @@ class sample_group_query {
             tbl_sites.site_name,
             tbl_sample_groups.sample_group_name,
             array_to_string(array_agg(dm.method_id::text||'_'||COALESCE(aepm.method_id::text,'NULL')::text||'|'||to_char(tbl_measured_values.measured_value, '99999999.999')),';') as dataset_value_composites
-        FROM tbl_datasets
+        from tbl_datasets
         left join tbl_analysis_entities
           on tbl_datasets.dataset_id=tbl_analysis_entities.dataset_id
         left join tbl_analysis_entity_prep_methods
@@ -509,11 +506,11 @@ class sample_group_query {
           on tbl_sites.site_id=tbl_sample_groups.site_id
         inner join tbl_measured_values
           on tbl_measured_values.analysis_entity_id=tbl_analysis_entities.analysis_entity_id
-        WHERE
+        where
           $filter
           $facet_filtered
-        GROUP BY
-          tbl_physical_samples.physical_sample_id ,
+        group by
+          tbl_physical_samples.physical_sample_id,
           tbl_physical_samples.sample_name,
           tbl_sites.site_name,
           tbl_sample_groups.sample_group_name";

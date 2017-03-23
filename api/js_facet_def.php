@@ -21,41 +21,38 @@ error_reporting( error_reporting() & ~E_NOTICE );
 require_once("applications/applicationSpecification.php");
 require_once('server/fb_server_funct.php');
 include_once("server/lib/Cache.php");
+include_once("server/connection_helper.php");
 
 // compute max and min for range facet
 function compute_max_min($conn)
 {
     global $facet_definition;
-    $q="";
+    $q = "";
+    $u = "";
     foreach ($facet_definition as $f_code => $element)
     {
-        if ($element["facet_type"]=="range")
+        if ($element["facet_type"] == "range")
         {
             $query_column=$element["id_column"];
             $query_table = $facet_definition[$f_code]["table"];
+            $query_cond = $facet_definition[$f_code]["query_cond"];
             $data_tables[] = $query_table;
-            //check if f_code exist in list, if not add it. since counting can be done also in result area and then using "abstract facet" that are not normally part of the list
             $f_list[] = $f_code;
-            // use the id's to compute direct resource counts
-            // filter is not being used be needed as parameter
+
             $query = get_query_clauses($params, $f_code, $data_tables, $f_list);
             
-            $extra_join = isset($query["joins"]) ? $query["joins"] . "  " : "";
+            $extra_join = $query["joins"] ?? "";
+            $where_clause = $query_cond != "" ? " where " . $query_cond . "  " : "";
 
-            $q.=" select '$f_code' as f_code,max(".$query_column."::real) as max,  min(".$query_column."::real) as min from ".$query_table. "  ". $extra_join;
-            
-            if ($facet_definition[$f_code]["query_cond"]!="")
-            {
-                $q.=" where ".$facet_definition[$f_code]["query_cond"]. "  ";
-            }
-            $q.="    union ";
+            $q .= " $u select '$f_code' as f_code,max($query_column::real) as max, min($query_column::real) as min from $query_table $extra_join $where_clause ";
+
+            $u  = "union";
         }
     }
-    $q=substr($q,0,-7);
     
     if ($q != "")
     {
-        if (($rs2 = pg_exec($conn, $q)) <= 0) { echo "Error: cannot execute   $q  \n"; pg_close($conn); exit; }
+        $rs2 = ConnectionHelper::execute($conn, $q);
         while ($row = pg_fetch_assoc($rs2))
         {
             $facet_range[$row["f_code"]]["max"]=$row["max"];
@@ -65,11 +62,11 @@ function compute_max_min($conn)
     return $facet_range;
 }
 
-if (!($conn = pg_connect(CONNECTION_STRING))) { echo "Error: pg_connect failed.\n"; exit; }
+$conn = ConnectionHelper::createConnection();
 
 if (!$facet_range = DataCache::Get("facet_min_max".$applicationName,"facet_range_data")) {
     $facet_range=compute_max_min($conn);
-    DataCache::Put("facet_min_max".$applicationName, "facet_range_data", 1500,$facet_range);
+    DataCache::Put("facet_min_max".$applicationName, "facet_range_data", 1500, $facet_range);
 }
 
 $out = "var facets = Array();\n";
@@ -84,12 +81,12 @@ foreach ($facet_definition as $facet_key => $element)
         $out .= "\tfacets[$i][\"name\"] = \"".$element["display_title"]."\";\n";
         $out .= "\tfacets[$i][\"display_title\"] = \"".$element["display_title"]."\";\n";
         
-        if (isset($element["counting_title"]) && !empty ($element["counting_title"]))
+        if (isset($element["counting_title"]) && !empty($element["counting_title"]))
         {
             $out .= "\tfacets[$i][\"counting_title\"] = \"".$element["counting_title"]."\";\n";
         }
         else {
-            $out .= "\tfacets[$i][\"counting_title\"] =\"Antal observationer\";\n";
+            $out .= "\tfacets[$i][\"counting_title\"] =\"Number of observations\";\n";
         }
         $out .= "\tfacets[$i][\"color\"] = \"003399\";\n";
         $out .= "\tfacets[$i][\"facet_type\"] = \"".$element["facet_type"]."\";\n";
