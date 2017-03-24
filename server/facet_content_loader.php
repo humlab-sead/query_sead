@@ -4,7 +4,7 @@ class FacetContentLoader {
 
     protected function compileIntervalQuery($conn, $params, $f_code)
     {
-        return [ "interval" => NULL, "query" => NULL ];
+        return [ NULL, NULL ];
     }
 
     protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
@@ -210,7 +210,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
             $pieces[] = "select " . $lower . " as lower, " . $upper . " as upper, '" . $lower . "=>" . $upper . "'::text as id,'' as name";
             $interval_counter++;
         }
-        $q1 = implode("\nunion all ",$pieces);
+        $q1 = implode("\nunion all ", $pieces);
         return $q1;
     }
 
@@ -228,7 +228,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
         }
         // derive the interval as sql-query although it is not using a table...only a long sql with select the values of the interval
         $q1 = $this->getRangeQuery($interval, $min_value, $max_value, $interval_count);
-        return [ "interval" => $interval, "query" => $q1 ];
+        return [ $interval, $q1 ];
     }
 
     protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
@@ -263,7 +263,7 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
         if ($find_str == "undefined") {
             $find_str = "%";
         }
-        return (!empty($find_str) && $filter_by_text == true) ? $query_column_name . " ILIKE '" . $find_str . "' AND \n" : "";
+        return (!empty($find_str) && $filter_by_text == true) ? " and " . $query_column_name . " ILIKE '" . $find_str . "' " : "";
     }
 
     protected function compileIntervalQuery($conn, $facet_params, $f_code)
@@ -282,20 +282,21 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
         $sort_order = $facet_definition[$f_code]["sort_order"];
         $find_cond = $this->getTextFilterClause($facet_params, $query_column_name);
         $tables = $query["tables"];
-        $where_clause = (trim($query["where"]) != '')  ?  " and \n " . $query["where"] : "";
+        $where_clause = (trim($query["where"]) != '')  ?  " and " . $query["where"] : "";
         $group_by_columns = (!empty($sort_column) ? "$sort_column, " : "") . "$query_column, $query_column_name ";
         $sort_clause = (!empty($sort_column)) ? "order by $sort_column $sort_order" : "";
 
         $q1 =<<<EOT
             select $query_column as id , $query_column_name as name
             from $tables $query_joins
-            where $find_cond 1 = 1
+            where 1 = 1
+              $find_cond
               $where_clause
             group by $group_by_columns
             $sort_clause
 EOT;
 
-        return [ "interval" => 1, "query" => $q1 ];
+        return [ 1, $q1 ];
     }
 
     protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)

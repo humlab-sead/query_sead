@@ -907,22 +907,28 @@ function get_range_counts($conn, $f_code, $params, $q_interval, $direct_count_ta
     // filter is not being used be needed as parameter
     $query = get_query_clauses($params, $f_code, $data_tables, $f_list);
     $query_column = $facet_definition[$f_code]["id_column"] . "::integer";
+    $query_tables = $query["tables"];
+    $where_clause = $query["where"] != '' ? " and  " . $query["where"] . " " : "";
+    $extra_join = $query["joins"] != "" ?  "  " . $query["joins"] . "  " : "";
 
-    if ($query["joins"] != "") {
-        $extra_join =  "  ".$query["joins"] . "  ";
-    }
-    $q = "select lower,upper,facet_term,count(facet_term)  as direct_count from (select  COALESCE(lower||'=>'||upper, 'data missing') as facet_term,group_column, lower,upper";
-    $q.= " from       ( select lower,upper , $direct_count_column  as group_column from " . $query["tables"] . "          left  join ";
-    $q.=" ( $q_interval ) as temp_interval  on   $query_column>=lower and $query_column<upper  $extra_join    ";
-    
-    if ($query["where"] != '') {
-        $q.=" and  " . $query["where"] . " ";
-    }
-    
-    $q.=" group by lower,upper ,$direct_count_column order by lower )  as tmp4  group by lower,upper, group_column )  as tmp3 "
-    . " where lower is not null and upper is not null "
-    . "group by lower,upper,facet_term  order by lower,upper";
-    
+    $q =<<<EOX
+        select lower, upper, facet_term, count(facet_term) as direct_count
+        from (select  COALESCE(lower||'=>'||upper, 'data missing') as facet_term,group_column, lower,upper
+              from  ( select lower,upper , $direct_count_column  as group_column
+                      from $query_tables
+                      left  join ( $q_interval ) as temp_interval
+                        on $query_column >= lower
+                       and $query_column < upper
+                      $extra_join $where_clause
+                      group by lower, upper ,$direct_count_column
+                      order by lower) as tmp4
+             group by lower, upper, group_column) as tmp3
+        where lower is not null
+          and upper is not null
+        group by lower, upper, facet_term
+        order by lower, upper
+EOX;
+
     if (($rs = pg_exec($conn, $q)) <= 0) {
         echo "Error: cannot execute query2b. direct counts  $q\n";
         pg_close($conn);
@@ -1186,7 +1192,6 @@ class FacetXMLSerializer {
     */
     public static function build_facet_c_xml($data, $action_type, $start_row, $num_row)
     {
-        // FIXME: Does "global" work in static functions?
         global $request_id;
         $xml .= "<facets>";
         if (!empty($data)) {
