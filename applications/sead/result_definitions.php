@@ -23,11 +23,6 @@ result_item["sort_item"][1..nn] - list of result_items for sorting the result li
 
 */
 
-function t_old($text)
-{
-	return $text;
-}
-
 $result_definition_item = array
 (
 	"sitename" =>

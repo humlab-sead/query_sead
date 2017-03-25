@@ -27,7 +27,6 @@ function: interface_render_facet_control_content
 Outputs the heading for the searchfilter panel
 */
 function interface_render_facet_control_content() {
-    global $language;
     $out = "";
     return $out;
 }
@@ -44,7 +43,6 @@ function interface_render_status_area_content() {
 /*
 function: interface_render_result_workspace_content
 Returns the needed and initial structure structure of the result area containing divs and tables. Later javasript functions will add more divs and table within this structure
-It uses definitions    "$language" to assign title to the different result tabs which are different for different applications (SEAD/SHIPS/DIABAS)
 
 */
 function interface_render_result_workspace_content() {
@@ -112,21 +110,6 @@ function interface_render_title_button($text, $terminating_button = false) {
 	<td class="$button_class"></td>
 	</tr></tbody></table>
 EOX;
-	return $out;
-}
-
-function interface_render_language_selection_button() {
-	$text = "Språk";
-	$out = "";
-	$out .= "<table style=\"border-collapse:collapse;height:14px;\"><tbody><tr>";
-	$out .= "<td class=\"title_button_left\"></td>";
-	$out .= "<td class=\"title_button_middle\" >".$text."</td>";
-	if($terminating_button) {
-		$out .= "<td class=\"title_button_right_round\"></td>";
-	} else {
-		$out .= "<td class=\"title_button_right\"></td>";
-	}
-	$out .= "</tr></tbody></table>";
 	return $out;
 }
 

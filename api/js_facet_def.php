@@ -45,7 +45,6 @@ function compute_max_min($conn)
             $where_clause = $query_cond != "" ? " where " . $query_cond . "  " : "";
 
             $q .= " $u select '$f_code' as f_code,max($query_column::real) as max, min($query_column::real) as min from $query_table $extra_join $where_clause ";
-
             $u  = "union";
         }
     }

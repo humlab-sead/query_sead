@@ -702,14 +702,6 @@ $facet_definition = array
 		"query_cond" =>"",
 		"parents" => array("others") //$facet_category[1]
 		 )
-); // end facet defition
-
-
-
-
-
-
-
-
+); 
 
 ?>

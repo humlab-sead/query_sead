@@ -404,7 +404,7 @@ EOS;
     public static function computeUserSelectItemCount($facetConfig, $requested = false)
     {
         // goes through the list of facets and print the selection of each facet and also the different type of selections
-        global $facet_definition, $language;
+        global $facet_definition;
         $activeKeys = FacetConfig::getKeysOfActiveFacets($facetConfig);
         $itemsSelectedByUser = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
         $count_of_selections = 0;
@@ -437,7 +437,7 @@ EOS;
     // FIXME FacetConfig::generateUserSelectItemHTML should be client side and use FacetConfig::generateUserSelectItemMatrix
     public static function generateUserSelectItemHTML($facetConfig, $requested = false)
     {
-        global $facet_definition, $language;
+        global $facet_definition;
         $activeKeys = FacetConfig::getKeysOfActiveFacets($facetConfig);
         $itemsSelectedByUser = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
         
@@ -501,7 +501,7 @@ EOS;
     public static function generateUserSelectItemMatrix($facetConfig, $requested = false)
     {
         
-        global $facet_definition, $language;
+        global $facet_definition;
         $activeKeys = FacetConfig::getKeysOfActiveFacets($facetConfig);
         $itemsSelectedByUser = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
         

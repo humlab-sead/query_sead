@@ -12,11 +12,8 @@ if (!empty($_REQUEST["xml"])) {
 }
 
 $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($xml);
-
 $conn = ConnectionHelper::createConnection();
-
 $facetConfig = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
-
 $f_code = $facetConfig["requested_facet"];
 
 $tooltip_text = "";
@@ -33,5 +30,4 @@ $xml .= "<count_of_selections>" . $count_of_selections . "</count_of_selections>
 $xml .= "</data>";
 
 header("Content-Type: text/xml");
-
 echo $xml;

@@ -2,18 +2,10 @@
 /*
 file: fb_def.php (SEAD)
 This file is setting the specific server-side parameters for the application to run into the framework.
-o Connection parameters to the databases
 o The defintion of the counting parameters
 o The database model as a graph reprented by edges and weights
 o Facet definitions in <facet_definitions.php (SEAD)>
 o Result definition in <result_definitions.php (SEAD)>
-
-database connection definition:
-* server
-* database
-* user
-* password
-* port
 
 Definition how to join tables ($join_columns):
 This is essentially a graph where the nodes are the tables and the edges are the join-condition.

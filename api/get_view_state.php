@@ -8,7 +8,4 @@ $view_state = ViewState::getViewState($view_state_id);
 header("Content-type: text/xml");
 echo $view_state;
 
-//header('Content-Type: application/json');
-//echo $view_state;
-
 ?>
