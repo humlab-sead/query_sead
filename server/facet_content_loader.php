@@ -31,7 +31,7 @@ class FacetContentLoader {
     *   (direct) count 1 number of geo-units or what is being defined in fb_def.php
     *   (indirect count 2 number of time-periods or  what is being defined in fb_def.php
     Preperation function:
-    <fb_process_params>
+    <FacetConfigDeserializer::deserializeFacetConfig>
 
     Functions used by interval facets:
     <getRangeQuery>
@@ -41,7 +41,7 @@ class FacetContentLoader {
     <get_discrete_counts>
 
     Post functions:
-    <build_xml_response>
+    <serializeFacetContent>
     */  
     public function get_facet_content($conn, $params)
     {
@@ -76,8 +76,8 @@ class FacetContentLoader {
         //     $extra_row_info = $this->getExtraRowInfo($facet_definition[$f_code]["extra_row_info_facet"], $conn, $params);
         // }
 
-        $count_of_selections = computeUserSelectItemCount($params, $f_code);
-        $tooltip_text = ($count_of_selections != 0) ? generateUserSelectItemHTML($params, $f_code) : "";
+        $count_of_selections = FacetConfig::computeUserSelectItemCount($params, $f_code);
+        $tooltip_text = ($count_of_selections != 0) ? FacetConfig::generateUserSelectItemHTML($params, $f_code) : "";
 
         $facet_contents[$f_code]['report'] = " Current filter   <BR>  ". $tooltip_text."  ".SqlFormatter::format($interval_query, false)."  ; \n  " . ($direct_counts["sql"] ?? "") . " ;\n";
         $facet_contents[$f_code]['report_html'] = $tooltip_text;
@@ -119,7 +119,7 @@ class FacetContentLoader {
 //     {
 //         global $facet_definition;
 //         $query_column = $facet_definition[$f_code]["id_column"];
-//         $f_list = getKeysOfActiveFacets($params);
+//         $f_list = FacetConfig::getKeysOfActiveFacets($params);
 //         $query = get_query_clauses($params, $f_code, $data_tables, $f_list);
 //         $query_column_name = $facet_definition[$f_code]["name_column"];
 //         $sort_column = $facet_definition[$f_code]["sort_column"];
@@ -176,7 +176,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
     // TODO: $facet is actually a $facet_key, change to real facet object instead (removed global dependencies above)
     private function getLowerUpperLimit($conn, $params, $facet)
     {
-        $f_selected = getUserSelectItems($params);
+        $f_selected = FacetConfig::getItemGroupsSelectedByUser($params);
 
         if (!isset($f_selected[$facet])) {
             foreach ($f_selected[$facet] as $skey => $selection_group) { // dig into the groups of selections of the facets
@@ -253,7 +253,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
 
 }
 
-// depends on: getKeysOfActiveFacets, get_query_clauses
+// depends on: FacetConfig::getKeysOfActiveFacets, get_query_clauses
 class DiscreteFacetContentLoader extends FacetContentLoader {
 
     function getTextFilterClause($facet_params, $query_column_name)
@@ -272,7 +272,7 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
 
         $f_code = $facet_params["requested_facet"];
 
-        $f_list = getKeysOfActiveFacets($facet_params);
+        $f_list = FacetConfig::getKeysOfActiveFacets($facet_params);
         $query = get_query_clauses($facet_params, $f_code, $data_tables, $f_list);
 
         $query_column_name = $facet_definition[$f_code]["name_column"];

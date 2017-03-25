@@ -26,10 +26,10 @@ function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_tabl
 
     $facet_xml = get_facet_xml_from_id($cache_id);
 
-    $facet_params = fb_process_params($facet_xml);
-    $facet_params = remove_invalid_selections($conn, $facet_params);
+    $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
+    $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
 
-    $tmp_list = getKeysOfActiveFacets($facet_params);
+    $tmp_list = FacetConfig::getKeysOfActiveFacets($facet_params);
 
     //Add  as final facet
     $tmp_list[] = $f_code;
@@ -53,9 +53,9 @@ function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_tabl
  */
 function get_select_info_as_html($conn, $cache_id) {
     $facet_xml = get_facet_xml_from_id($cache_id);
-    $facet_params = fb_process_params($facet_xml);
-    $facet_params = remove_invalid_selections($conn, $facet_params);
-    return generateUserSelectItemHTML($facet_params);
+    $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
+    $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
+    return FacetConfig::generateUserSelectItemHTML($facet_params);
 }
 /*
  * Class: sample_group_reporter
@@ -355,10 +355,10 @@ class report_module {
         $html = "No filtering";
         $facet_xml = get_facet_xml_from_id($cache_id);
 
-        $facet_params = fb_process_params($facet_xml);
-        $facet_params = remove_invalid_selections($conn, $facet_params);
+        $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
+        $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
 
-        $selection_matrix = generateUserSelectItemMatrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
+        $selection_matrix = FacetConfig::generateUserSelectItemMatrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
         print_r($selection_matrix);
         if (isset($selection_matrix)) {
             $html = "Criterias :";

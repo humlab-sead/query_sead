@@ -11,18 +11,18 @@ if (!empty($_REQUEST["xml"])) {
     $xml=$_REQUEST["xml"];
 }
 
-$facet_params = fb_process_params($xml);
+$facetConfig = FacetConfigDeserializer::deserializeFacetConfig($xml);
 
 $conn = ConnectionHelper::createConnection();
 
-$facet_params = remove_invalid_selections($conn, $facet_params);
+$facetConfig = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
 
-$f_code = $facet_params["requested_facet"];
+$f_code = $facetConfig["requested_facet"];
 
 $tooltip_text = "";
-$count_of_selections = computeUserSelectItemCount($facet_params, $f_code);
+$count_of_selections = FacetConfig::computeUserSelectItemCount($facetConfig, $f_code);
 if ($count_of_selections != 0) {
-    $tooltip_text = generateUserSelectItemHTML($facet_params, $f_code);
+    $tooltip_text = FacetConfig::generateUserSelectItemHTML($facetConfig, $f_code);
 }
 
 $xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";

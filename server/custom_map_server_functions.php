@@ -10,7 +10,7 @@ This file hold server function for the map component
 Render diagram  map data for SEAD
 */
 
-function result_render_map_view($conn,$facet_params,$result_params,$facet_xml,$result_xml)
+function result_render_map_view($conn,$facetConfig,$resultConfig,$facet_xml,$result_xml)
 {
 	global $facet_definition,$direct_count_table,$direct_count_column ;
 	$f_code="map_result";
@@ -20,25 +20,25 @@ function result_render_map_view($conn,$facet_params,$result_params,$facet_xml,$r
 	
 	$lat_column="latitude_dd";
 	$long_column="longitude_dd";
-	$tmp_list=getKeysOfActiveFacets($facet_params);
+	$tmp_list=FacetConfig::getKeysOfActiveFacets($facetConfig);
 	$tmp_list[]=$f_code; 
 	$interval=1;
 
-	if (isset($direct_count_column) &&!empty($direct_count_column)  ) 
+	if (isset($direct_count_column) && !empty($direct_count_column)  ) 
 	{
-        $direct_counts=get_discrete_counts($conn,  $f_code,  $facet_params,$interval, $direct_count_table,$direct_count_column);
-        $filtered_direct_counts= $direct_counts["list"];
+        $direct_counts = get_discrete_counts($conn,  $f_code,  $facetConfig,$interval, $direct_count_table,$direct_count_column);
+        $filtered_direct_counts = $direct_counts["list"];
 	}
 
-    $no_selection_params=eraseUserSelectItems($facet_params);
+    $no_selection_params = FacetConfig::eraseUserSelectItems($facetConfig);
 
-	if (isset($direct_count_column) &&!empty($direct_count_column)  ) 
+	if (isset($direct_count_column) && !empty($direct_count_column)  ) 
 	{
-	    $direct_counts=get_discrete_counts($conn,  $f_code,  $no_selection_params,$interval, $direct_count_table,$direct_count_column);
-		$un_filtered_direct_counts= $direct_counts["list"];
+	    $direct_counts = get_discrete_counts($conn,  $f_code,  $no_selection_params,$interval, $direct_count_table,$direct_count_column);
+		$un_filtered_direct_counts = $direct_counts["list"];
 	}
 
-	$query = get_query_clauses( $facet_params, $f_code, $data_tables,$tmp_list);
+	$query = get_query_clauses($facetConfig, $f_code, $data_tables, $tmp_list);
 	$extra_join=$query["joins"];
 	$table_str=$query["tables"];
 

@@ -50,41 +50,37 @@ http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_map_respons
 
 Shared sequence for list, diagram, and map:
 	* initiate database connection using definition in fb_def.php see  <fb_def.php (SHIPS)> and <fb_def.php (SEAD)>
-	* Process facet_xml post using <fb_process_params> and store the post into a composite array
-	* Remove invalid discrete selection with the function <remove_invalid_selections>
-	* Process result_xml post document using <process_result_params> storing the post into a composite array/objects
+	* Process facet_xml post using <FacetConfigDeserializer::deserializeFacetConfig> and store the post into a composite array
+	* Remove invalid discrete selection with the function <FacetConfig::removeInvalidUserSelections>
+	* Process result_xml post document using <ResultConfigDeserializer::deserializeResultConfig> storing the post into a composite array/objects
 
 Sequence for list-data operation:
 	* Make cache-data identifier using function derive_selection 
-	* Render list using  <result_render_list_view>
+	* Render list using  <result_render_list_view_html>
 	* Save the query into a table (SEAD only?)
 
 Sequence for diagram load operation:
-	* Process the postdocument for the diagram options using <process_diagram_params>, stores the result in composite array
+	* Process the postdocument for the diagram options using <ResultConfigDeserializer::deserializeDiagramConfig>, stores the result in composite array
 	* Add all result_items from the result_xml document as potential y-axis in the diagram
 	* Derive the combinations of result variables and aggregations units e.g. one result variable for all parishes/units or one parish/unit and all result variables using the function get_group_y_data in custum_server_functions.php
 	* Handle exception if the client has not sent a valid/undefined y-variable or aggregation unit (such as county or a parish)
 	* Render the diagram data to be used using <result_render_diagram_data> in custom_server_functions.php. This will return the xml-data to be sent back to the client.
 
 Sequence for map load operation:
-	* Process xml-document for map-parameters using function using <process_map_xml>. It stores the parameters into a composite array.
+	* Process xml-document for map-parameters using function using <ResultConfigDeserializer::deserializeMapConfig>. It stores the parameters into a composite array.
 	* Process symbol-xml document (if present) and make array for point symbols (SEAD/DIABAS)
 	* Render the map output for the client, which is different for each application (SEAD/SHIPS/DIABAS etc)
 	* Functions on client-side are also different to handle the different kind of map-output.
 
-	<custom_map_server_functions.php (SHIPS)>
-	<custom_map_server_functions.php (SEAD)>
-	<custom_server_funct.php (DIABAS)> <DIABAS> has a seperate repositories and will maybe be integrated later.
-	<custom_map_server_functions.php (CITIZMAP)>
-	<custom_map_server_functions.php (MJCB)>
-	<custom_map_server_functions.php (HSM)> <HSM>  has a seperate repositories and will maybe be integrated later.
+	<custom_map_server_functions.php>
 */
 
 require_once __DIR__ . '/../server/fb_server_funct.php';
+require_once __DIR__ . '/../server/custom_map_server_functions.php';
 require_once __DIR__ . '/../server/lib/Cache.php';
 require_once __DIR__ . '/../server/connection_helper.php';
 
-global $result_definition_item,$application_name,$cache_seq; 
+global $result_definition_item, $application_name, $cache_seq; 
 
 $conn = ConnectionHelper::createConnection();
 
@@ -95,13 +91,13 @@ $facet_state_id = $_REQUEST['facet_state_id'];
 
 if (!empty($facet_state_id))
 {
-    $facet_xml=get_facet_xml_from_id($facet_state_id);
+    $facet_xml = get_facet_xml_from_id($facet_state_id);
 } else {
     $facet_xml = $_REQUEST['facet_xml'];
 }
 
-$facet_params = fb_process_params($facet_xml); 
-$facet_params = remove_invalid_selections($conn,$facet_params);
+$facetConfig = FacetConfigDeserializer::deserializeFacetConfig($facet_xml); 
+$facetConfig = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
 
 // The xml-data contains result information, and is processed and all parameters are put into an array for futher use.
 
@@ -110,48 +106,49 @@ $diagram_xml = $_REQUEST['diagram_xml'];
 $map_xml = $_REQUEST['map_xml'];
 $symbol_xml = $_REQUEST['symbol_xml'];
 
-$result_params = process_result_params($result_xml);
+$resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
 
-//if (!empty($result_params["aggregation_code"])) {
 
-    switch($result_params["view_type"]) {
+    switch($resultConfig["view_type"]) {
+
         case "map":
-            $map_params=process_map_xml($map_xml);
+            $map_params = ResultConfigDeserializer::deserializeMapConfig($map_xml);
             if (!empty($symbol_xml)) {
-                $symbol_params=process_symbol_xml($symbol_xml);
+                $symbol_params = ResultConfigDeserializer::deserializeMapSymbolConfig($symbol_xml);
             }
-            $aggregation_code=$result_params["aggregation_code"];
-            $out = result_render_map_view($conn,$facet_params,$result_params,$map_params,$facet_xml,$result_xml,$map_xml,$aggregation_code);
-            $out = "<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>\n<result_html>$result_list</result_html>" . $out ;
+            $aggregation_code=$resultConfig["aggregation_code"];
+            $out = result_render_map_view($conn,$facetConfig,$resultConfig,$map_params,$facet_xml,$result_xml,$map_xml,$aggregation_code);
+            $out = "<aggregation_code>".$resultConfig["aggregation_code"]."</aggregation_code>\n<result_html>$result_list</result_html>" . $out ;
             break;
+
         case "diagram":
-            // get the y_axis from the result_params
+            // get the y_axis from the resultConfig
             if (!empty($diagram_xml))
             {
-                $diagram_params=process_diagram_params($diagram_xml);
-                $x_axis=$diagram_params["diagram_x_code"];
-                $group_client_id=$diagram_params["group_id"];
+                $diagram_params = ResultConfigDeserializer::deserializeDiagramConfig($diagram_xml);
+                $x_axis = $diagram_params["diagram_x_code"];
+                $group_client_id = $diagram_params["group_id"];
             }
-            foreach($result_params["items"] as $item)
+            foreach($resultConfig["items"] as $item)
             {
                 // First create header for the column.
-                foreach ($result_definition[$item]["result_item"] as $res_def_key =>$definition_item)
+                foreach ($result_definition[$item]["result_item"] as $res_def_key => $definition_item)
                 {
-                    if ($res_def_key=='sum_item' || ($result_params["aggregation_code"]=='parish_level' && $res_def_key=='single_sum_item'))
+                    if ($res_def_key=='sum_item' || ($resultConfig["aggregation_code"]=='parish_level' && $res_def_key=='single_sum_item'))
                         $y_axis[]=$item;
                 }
             }
 
-            $aggregation_code=$result_params["aggregation_code"]; // parish_level, county_level, year_level
+            $aggregation_code = $resultConfig["aggregation_code"]; // parish_level, county_level, year_level
 
-            if (count($result_params["items"])<=1) {
+            if (count($resultConfig["items"])<=1) {
             // make a empty diagram if thera are none resultvariable (apart from the aggregation_code)
                 $out=result_render_empty_diagram($aggregation_code);
             }
             else
             { // make diagram data
 
-                $return_obj=get_group_y_data($conn,$y_axis,$facet_params, $result_params,$aggregation_code);
+                $return_obj=get_group_y_data($conn,$y_axis,$facetConfig, $resultConfig,$aggregation_code);
                 $y_items=$return_obj["y_items"];
                 $count_of_series=$return_obj["count_of_series"];
                 // check what type of group is selected as Y-values (stat_unit or aggregation_unit)
@@ -170,16 +167,15 @@ $result_params = process_result_params($result_xml);
                             }
                         }
                     }  else {
-                        $cmp_client_type=substr($group_client_id,0,9); // check for stat_unit, else it will be aggregation_unit
-                        if ($cmp_client_type=="stat_unit")
-                            $group_type="stat_unit";
-                        else
-                            $group_type="aggregation_unit";
+
+                        $cmp_client_type = substr($group_client_id,0,9); // check for stat_unit, else it will be aggregation_unit
+
+                        $group_type = $cmp_client_type == "stat_unit" ? "stat_unit" : "aggregation_unit";
 
                         if (empty($y_items[$group_client_id] )) {
                             $g_counter=0;
                             if (!empty($y_items)) {
-                                foreach ($y_items as $key =>$group_element) {
+                                foreach ($y_items as $key => $group_element) {
                                         if ($g_counter==0 && ($group_type==$y_items[$key]["group_type"])) {
                                             $group_client_id=$y_items[$key]["group_id"];				
                                             $g_counter++;
@@ -191,29 +187,24 @@ $result_params = process_result_params($result_xml);
                             $group_client_id=$group_client_id;
                     }
                 $max_count_series=25;
-                $d_str=(string) $result_params["view_type"]."_".generateUserSelectItemsCacheId($facet_params).derive_result_selection_str($result_xml).$aggregation_code.$group_client_id.$x_axis.$facet_params["client_language"];
+                $d_str=(string) $resultConfig["view_type"]."_".FacetConfig::generateUserSelectItemsCacheId($facetConfig).derive_result_selection_str($result_xml).$aggregation_code.$group_client_id.$x_axis.$facetConfig["client_language"];
                 if ( !$out = DataCache::Get("diagram_data_".$applicationName, $d_str)) { 
-                    $out = result_render_diagram_data($conn,$facet_params, $result_params,$x_axis,$y_axis,$y_items,$group_client_id,$aggregation_code,$max_count_series,$count_of_series);
+                    $out = result_render_diagram_data($conn,$facetConfig, $resultConfig,$x_axis,$y_axis,$y_items,$group_client_id,$aggregation_code,$max_count_series,$count_of_series);
                     DataCache::Put("diagram_data_".$applicationName, $d_str, 1500,$out);    
                 }
             }
 
             $current_request_id=$diagram_params['request_id'];
-            $out="<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>".$out;
+            $out="<aggregation_code>".$resultConfig["aggregation_code"]."</aggregation_code>".$out;
 
             break;
-        case "pie_chart":
-            $pie_chart_params= process_pie_chart_xml($pie_chart_xml);
-            $aggregation_code=$result_params["aggregation_code"];
-            $out = result_render_pie_chart_view($conn,$facet_params,$result_params,$pie_chart_params,$facet_xml,$result_xml,$aggregation_code);
-            $out="<aggregation_code>".$result_params["aggregation_code"]."</aggregation_code>\n<result_html>test</result_html>".$out ;
-            break;
+
         case "list":
 
             if (!isset($conn)) {
                 break;
             }
-            $f_str=(string) $result_params["view_type"]."_".generateUserSelectItemsCacheId($facet_params).derive_result_selection_str($result_xml).$facet_params["client_language"].$result_params["aggregation_code"];
+            $f_str=(string) $resultConfig["view_type"]."_".FacetConfig::generateUserSelectItemsCacheId($facetConfig).derive_result_selection_str($result_xml).$facetConfig["client_language"].$resultConfig["aggregation_code"];
             
             if (!isset($facet_state_id))
             {
@@ -228,38 +219,36 @@ $result_params = process_result_params($result_xml);
             $data_link_text="/api/report/get_data_table_text.php?cache_id=".$facet_state_id."&application_name=$applicationName";
 
             // new data link with a file_name that is unique point to facet_xml_file in the cache_catalogue
-            switch ($result_params["client_render"])
+            switch ($resultConfig["client_render"])
             {
                 case "xml":
-                    $out=result_render_list_view_xml($conn,$facet_params,$result_params,$data_link,$facet_state_id,$data_link_text);
+                    $out=result_render_list_view_xml($conn,$facetConfig,$resultConfig,$data_link,$facet_state_id,$data_link_text);
                     break;
                 default: 
                     if (!$out = DataCache::Get("result_list".$applicationName, $f_str)) { 
-                        $out = result_render_list_view($conn,$facet_params,$result_params,$data_link,$facet_state_id,$data_link_text);
+                        $out = result_render_list_view_html($conn,$facetConfig,$resultConfig,$data_link,$facet_state_id,$data_link_text);
                         DataCache::Put("result_list".$applicationName, $f_str, 1500,$out);    
                     }
                     $out = "<![CDATA[".$out."]]>";   
                     break;
             }
-            
-            $facet_string_params=$result_params["session_id"]."_".generateUserSelectItemsCacheId($facet_params);
-            if (!$save_set_sql = DataCache::Get("save_sets_sql".$applicationName, $facet_string_params)) { 
-                $save_set_sql=get_save_query($facet_params,$result_params["session_id"], $conn);
-                DataCache::Put("save_sets_sql".$applicationName, $facet_string_params, 1500,$save_set_sql);    
-            }
-            $current_request_id=$result_params['request_id'];
+            // $facet_string_params=$resultConfig["session_id"]."_".FacetConfig::generateUserSelectItemsCacheId($facetConfig);
+            // if (!$save_set_sql = DataCache::Get("save_sets_sql".$applicationName, $facet_string_params)) { 
+            //     $save_set_sql=get_save_query($facetConfig,$resultConfig["session_id"], $conn);
+            //     DataCache::Put("save_sets_sql".$applicationName, $facet_string_params, 1500,$save_set_sql);    
+            // }
+            $current_request_id=$resultConfig['request_id'];
 
         break;
     }
-//}
 
 header("Content-Type: text/xml");
 header("Character-Encoding: UTF-8");
-$meta_data_str=generateUserSelectItemHTML($facet_params);
+$meta_data_str=FacetConfig::generateUserSelectItemHTML($facetConfig);
 // request id sent back to clietn
-$current_request_id=$result_params["request_id"];
+$current_request_id=$resultConfig["request_id"];
 
-$meta_xml="<current_selections><![CDATA[".$meta_data_str."]]></current_selections>";;
+$meta_xml = "<current_selections><![CDATA[".$meta_data_str."]]></current_selections>";;
 $xml = "<xml><response>".$out."</response>".$meta_xml."<request_id>" . $current_request_id . "</request_id></xml>";
 
 echo $xml;

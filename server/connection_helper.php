@@ -7,7 +7,7 @@ class ConnectionHelper
     public static function createConnection()
     {
         if (!($conn = pg_connect(CONNECTION_STRING))) {
-            echo "Error: pg_connect failed.\n";
+            error_log("Error: pg_connect failed.\n");
             exit;
         }
         return $conn;
@@ -16,7 +16,7 @@ class ConnectionHelper
     public static function execute($conn, $q)
     {
         if (($rs = pg_exec($conn, $q)) <= 0) {
-            echo "Error: cannot execute:  " . SqlFormatter::format($q, false) . "  \n";
+            error_log("Error: cannot execute:  " . SqlFormatter::format($q, false) . "  \n");
             pg_close($conn);
             exit;
         }
@@ -26,7 +26,7 @@ class ConnectionHelper
     public static function query($conn, $q)
     {
         if (($rs = pg_query($conn, $q)) <= 0) {
-            echo "Error: cannot execute query: " .SqlFormatter::format($q, false) . "  \n";
+            error_log("Error: cannot execute query: " . SqlFormatter::format($q, false) . "  \n");
             pg_close($conn);
             exit;
         }

@@ -4,12 +4,12 @@ file: get_data_table.php
 this file makes download of data and documenation
 A dialogbox is shown to allow the user to save the result file.
 Sequence:
-* Process the facet view state using <fb_process_params>
-* Remove invalid selection using <remove_invalid_selections>
-* Process the result parameter from the client using  <process_result_params>
+* Process the facet view state using <FacetConfigDeserializer::deserializeFacetConfig>
+* Remove invalid selection using <FacetConfig::removeInvalidUserSelections>
+* Process the result parameter from the client using  <ResultConfigDeserializer::deserializeResultConfig>
 * Get the SQL-query using function  <get_result_data_query>
 * Run the query and build the output
-* Build the documentation of the facet filter using <generateUserSelectItemHTML>
+* Build the documentation of the facet filter using <FacetConfig::generateUserSelectItemHTML>
 * Make  a zip-file for the documentation and datatable
 */
 
@@ -18,13 +18,13 @@ require_once (__DIR__ . '/../server/fb_server_funct.php');
 if (!($conn = pg_connect(CONNECTION_STRING))) { echo "Error: pg_connect failed.\n"; exit; }
 
 $facet_xml = get_facet_xml_from_id($_REQUEST['cache_id']);
-$facet_params = fb_process_params($facet_xml);
-$facet_params=remove_invalid_selections($conn,$facet_params);
+$facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
+$facet_params=FacetConfig::removeInvalidUserSelections($conn,$facet_params);
 $result_xml = get_result_xml_from_id($_REQUEST['cache_id']);
-$result_params = process_result_params($result_xml);
-$aggregation_code = $result_params["aggregation_code"];
+$resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
+$aggregation_code = $resultConfig["aggregation_code"];
 
-$q = get_result_data_query($facet_params, $result_params);
+$q = get_result_data_query($facet_params, $resultConfig);
 
 if (empty($q)) {
     exit;
@@ -38,7 +38,7 @@ $delimiter="\t";
 
 $item_counter=1;
 $use_count_item=false;
-foreach($result_params["items"] as $headline)
+foreach($resultConfig["items"] as $headline)
 {
     if ($item_counter==1 && $headline!="parish_level")
     {
@@ -94,7 +94,7 @@ $selection_html.=t($result_definition[$aggregation_code]["text"],$facet_params["
 $selection_html.=" <BR><h2>".t("Valda resultvariabler :", $facet_params["client_language"])." </h2><BR>";
 $selection_html.=$html_doc;
 $selection_html.="<BR><h2>".t("Aktuella filter: ",$facet_params["client_language"])."</h2>";
-$selection_html.=generateUserSelectItemHTML($facet_params);
+$selection_html.=FacetConfig::generateUserSelectItemHTML($facet_params);
 $selection_html.="<h2>".t("SQL-fråga: ",$facet_params["client_language"])." </h2>".$q;
 $selection_html.="</BODY>";
 $selection_html.="</HTML>";

@@ -38,17 +38,17 @@ if (!($conn = pg_connect(CONNECTION_STRING))) { echo "Error: pg_connect failed.\
 // $facet_xml=file_get_contents($facet_xml_file_location);
 $facet_xml = get_facet_xml_from_id($_REQUEST['cache_id']);
 
-$facet_params = fb_process_params($facet_xml); 
-$facet_params=remove_invalid_selections($conn,$facet_params);
+$facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml); 
+$facet_params=FacetConfig::removeInvalidUserSelections($conn,$facet_params);
 
 // $result_xml_file_location="cache/".$_REQUEST['cache_id']."_result_xml.xml";
 // $result_xml=file_get_contents($result_xml_file_location);
 $result_xml = get_result_xml_from_id($_REQUEST['cache_id']);
 
-$result_params = process_result_params($result_xml);
+$resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
 
-$aggregation_code=$result_params["aggregation_code"];
-$q= get_result_data_query($facet_params, $result_params);
+$aggregation_code=$resultConfig["aggregation_code"];
+$q= get_result_data_query($facet_params, $resultConfig);
 
 if (empty($q)) {
     exit;
@@ -75,7 +75,7 @@ $objWorksheet2->getStyle('B')->getAlignment()->setWrapText(true); /// set wrap t
 $objWorksheet2->setCellValueByColumnAndRow(0, 1, 'SQL:'); // add a heading
 $objWorksheet2->setCellValueByColumnAndRow(1, 1, $q); // add the SQL
 
-$selection_matrix=generateUserSelectItemMatrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
+$selection_matrix=FacetConfig::generateUserSelectItemMatrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
 $objWorksheet1->setCellValueByColumnAndRow(0, 2, 'FILTERS');
 
 $columns_base=array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","X","Y","Z");
@@ -122,7 +122,7 @@ $item_counter=1;
 $use_count_item=false; //this is use to flag if aggregation is used and then indicate the usage.
 
 $column_counter=0;
-foreach($result_params["items"] as $headline)
+foreach($resultConfig["items"] as $headline)
 {
     if ($item_counter==1 && $headline!="parish_level")
     {

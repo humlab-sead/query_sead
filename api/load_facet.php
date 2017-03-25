@@ -23,49 +23,50 @@ http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/facet_response_xml
 http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/facet_response.xsd
 
 Shared sequence:
-* Process facet_params using <fb_process_params> and build compoosite array of the facet_xml-document being posted from the client
-* Remove invalid selections using <remove_invalid_selections> since selections are keep at the client altough the might be filter out.
+* Process facet_params using <FacetConfigDeserializer::deserializeFacetConfig> and build compoosite array of the facet_xml-document being posted from the client
+* Remove invalid selections using <FacetConfig::removeInvalidUserSelections> since selections are keep at the client altough the might be filter out.
 * Derive a compsosite ID for caching of the facet content.
 * Render the data for the facet using function <get_facet_content>
 * Computing start_row and limit if the text-search is being used.
-* Output the parts of the facet's data to the client using <FacetXMLSerializer::build_xml_response>, depending on how much data the client requests or defined by text-search start_row
+* Output the parts of the facet's data to the client using <FacetSerializer::serializeFacetContent>, depending on how much data the client requests or defined by text-search start_row
 */
 
 require_once __DIR__ . '/../server/connection_helper.php';
 require_once(__DIR__ . "/../server/fb_server_funct.php");
 include_once(__DIR__ . "/../server/lib/Cache.php");
 require_once(__DIR__ . "/../server/facet_content_loader.php");
+require_once(__DIR__ . "/../server/facet_serializer.php");
 
 if (!empty($_REQUEST["xml"])) {
     $xml=$_REQUEST["xml"];
 }
 
-$load_options = fb_process_params($xml);
+$facetConfig = FacetConfigDeserializer::deserializeFacetConfig($xml);
 
 $conn = ConnectionHelper::createConnection();
 
-#$f_code     = $load_options["f_action"][0];
-$f_action      = $load_options["f_action"][1];
-$f_code        = $load_options["requested_facet"];
+$f_action      = $facetConfig["f_action"][1];
+$f_code        = $facetConfig["requested_facet"];
 $facet         = $facet_definition[$f_code];
 $facet_type    = $facet["facet_type"];
-$facet_options = $load_options["facet_collection"][$f_code];
-$load_options  = remove_invalid_selections($conn, $load_options);
+$facet_options = $facetConfig["facet_collection"][$f_code];
 
-function computeCacheKey($load_options)
+$facetConfig   = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
+
+function computeCacheKey($facetConfig)
 {
     global $filter_by_text;
-    $f_code = $load_options["requested_facet"];
-    $flist_str = implode("", getKeysOfActiveFacets($load_options));
-    $filter = $filter_by_text ? $load_options["facet_collection"][$f_code]["facet_text_search"] : "no_text_filter";
-    return $f_code.$flist_str.generateUserSelectItemsCacheId($load_options).$load_options["client_language"].$filter;
+    $f_code = $facetConfig["requested_facet"];
+    $flist_str = implode("", FacetConfig::getKeysOfActiveFacets($facetConfig));
+    $filter = $filter_by_text ? $facetConfig["facet_collection"][$f_code]["facet_text_search"] : "no_text_filter";
+    return $f_code.$flist_str.FacetConfig::generateUserSelectItemsCacheId($facetConfig).$facetConfig["client_language"].$filter;
 }
 
-$cache_id = computeCacheKey($load_options);
+$cache_id = computeCacheKey($facetConfig);
 
-if (!($f_content = DataCache::Get("_".$load_options["client_language"].$applicationName, $cache_id))) {
-    $f_content=$facet_content_loaders[$facet_type]->get_facet_content($conn, $load_options);
-    DataCache::Put("_".$load_options["client_language"].$applicationName, $cache_id, 1500, $f_content);
+if (!($f_content = DataCache::Get("_".$facetConfig["client_language"].$applicationName, $cache_id))) {
+    $f_content=$facet_content_loaders[$facet_type]->get_facet_content($conn, $facetConfig);
+    DataCache::Put("_".$facetConfig["client_language"].$applicationName, $cache_id, 1500, $f_content);
 }
 
 // Make a list of selection to exclude
@@ -74,7 +75,7 @@ if (!($f_content = DataCache::Get("_".$load_options["client_language"].$applicat
 $query_offset=$facet_options["facet_start_row"];
 $query_limit=$facet_options["facet_number_of_rows"];
 
-$action_type=$load_options["f_action"][1];
+$action_type=$facetConfig["f_action"][1];
 if ($action_type=="populate_text_search") {
     // get the textfilter where to position the requested facet
     // skip scroll to row if filter_by_text is true?
@@ -98,7 +99,7 @@ if ($facet_type=="range") {
     $query_limit=250;
 }
 
-$response = FacetXMLSerializer::build_xml_response($f_content[$f_code], $action_type, $duration, $query_offset, $query_limit, $filter_state_id);
+$response = FacetSerializer::serializeFacetContent($f_content[$f_code], $action_type, $query_offset, $query_limit, $filter_state_id);
 header("Content-Type: text/xml");
 
 echo $response;

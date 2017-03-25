@@ -14,22 +14,20 @@ require_once __DIR__ . '/lib/dijkstra.php';
 require_once __DIR__ . '/connection_helper.php';
 require_once __DIR__ . "/../applications/applicationSpecification.php";
 require_once __DIR__ . "/../applications/sead/fb_def.php";
-require_once __DIR__ . "/../applications/sead/custom_server_funct.php";
 require_once __DIR__ . "/lib/SqlFormatter.php";
 require_once __DIR__ . '/language/t.php';
 require_once __DIR__ . '/fb_server_client_params_funct.php';
 require_once __DIR__ . '/html_render.php';
-
 require_once __DIR__ . '/facet_content_loader.php';
 
 /*
 * Funnction: *  render_column_meta_data
 * Copy definition data
 */
-function render_column_meta_data($result_definition, $result_params, $facet_params)
+function render_column_meta_data($result_definition, $resultConfig, $facet_params)
 {
     $data_item_counter = 0;
-    foreach ($result_params["items"] as $result_params_key) {
+    foreach ($resultConfig["items"] as $result_params_key) {
         // First create header for the column.
         foreach ($result_definition[$result_params_key]["result_item"] as $result_column_type => $result_definition_item) {
             foreach ($result_definition_item as $item_type => $result_item) {
@@ -56,11 +54,11 @@ function render_column_meta_data($result_definition, $result_params, $facet_para
 
 //***************************************************************************************************************************************************
 /*
-Function: result_render_list_view
+Function: result_render_list_view_html
 Function for retrieving data for the result list and transforming that data into an html table.
 Parameters:
 $facet_params -  An array containing info about the current view-status.
-$result_params -  An array containing the statistic variables the user wants to show data for.
+$resultConfig -  An array containing the statistic variables the user wants to show data for.
 */
 
 function render_data_rows_as_html($conn, $rs, $max_result_display_rows, $header_data, $cache_id)
@@ -180,35 +178,51 @@ function render_result_array_as_xml($result_array)
     return xml_encode($result_array);
 }
 
-function result_render_list_view_xml($conn, $facet_params, $result_params, $data_link, $cache_id, $data_link_text)
+function result_render_list_view_xml($conn, $facet_params, $resultConfig, $data_link, $cache_id, $data_link_text)
 {
     global $facet_definition, $result_definition, $max_result_display_rows;
-    $q = get_result_data_query($facet_params, $result_params). " ";
+    $q = get_result_data_query($facet_params, $resultConfig). " ";
     if (empty($q)) {
         return "";
     }
     $rs = ConnectionHelper::query($conn, $q);
-    $column_meta_data = render_column_meta_data($result_definition, $result_params, $facet_params);
-    $result_array=render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column_meta_data, $cache_id);
-    $result_data_xml= render_result_array_as_xml($result_array);
+    $column_meta_data = render_column_meta_data($result_definition, $resultConfig, $facet_params);
+    $result_array = render_data_rows_as_array($conn, $rs, $max_result_display_rows, $column_meta_data, $cache_id);
+    $result_data_xml = render_result_array_as_xml($result_array);
     return $result_data_xml;
 }
 
-function result_render_list_view($conn, $facet_params, $result_params, $data_link, $cache_id, $data_link_text)
+function create_result_table_header($tot_records, $tot_columns, $save_data_link_xls, $save_data_link_text) {
+    global $max_result_display_rows;
+    $use_xls = ($tot_records * $tot_columns) < 10000;
+    $phrase = "Your search resulted in $tot_records records.";
+    if ($tot_records > $max_result_display_rows)
+        $phrase .= "The first $max_result_display_rows records are displayed below ";
+    $phrase .= " <a href=\"$save_data_link_text\" id=\"download_link\" >Save data as text to file.</a>";
+    if ($use_xls)
+        $phrase .= "  <a href=\"$save_data_link_xls\" id=\"download_link2\">Save data to Excel.</a>";
+    return $phrase;
+}
+
+function result_render_list_view_html($conn, $facet_params, $resultConfig, $data_link, $cache_id, $data_link_text)
 {
     global $facet_definition, $result_definition, $max_result_display_rows;
-    $q = get_result_data_query($facet_params, $result_params);
+    $q = get_result_data_query($facet_params, $resultConfig);
     if (empty($q)) {
         return "";
     }
     $rs = ConnectionHelper::query($conn, $q);
-    $html_table = create_custom_result_table_header($rs, $facet_params, $result_params, "server/" . $data_link, $cache_id, "server/" .$data_link_text);
+    $tot_records = pg_num_rows($rs);
+    $tot_columns = count($resultConfig["items"]);
+    
+    $html_table = create_result_table_header($tot_records, $tot_columns, "server/" . $data_link, "server/" .$data_link_text);
+
     $q=SqlFormatter::format($q, false);
     $html_table.="   <!-- BEGIN SQL -->\n";
     $html_table.="   <!-- ".SqlFormatter::format($q, false)."-->";
     $html_table.="   <!-- END SQL -->\n";
     // Draw the column headlines
-    $column_meta_data=  render_column_meta_data($result_definition, $result_params, $facet_params);
+    $column_meta_data=  render_column_meta_data($result_definition, $resultConfig, $facet_params);
     $html_table.=HTMLRender::render_html_header_from_array("result_output_table", $column_meta_data);
     $html_table.= "<tbody>";
     $html_table.=render_data_rows_as_html($conn, $rs, $max_result_display_rows, $column_meta_data, $cache_id);
@@ -264,20 +278,17 @@ function save_facet_xml($conn, $facet_xml)
     return $facet_state_id;
 }
 
-function prepare_result_params($facet_params, $result_params)
+function prepare_result_params($facet_params, $resultConfig)
 {
     // prepares params for theq query builder.
     // return need params.
-    // use aggregation level from result_params
+    // use aggregation level from resultConfig
     // aggregation code.
-    //  use asum level unless
-    // if any item is on Linnosa /county level
-    // if any item is on city level, use city level aggregation
     // add N/A for single sum_items or remove them?
     //
     global $facet_definition, $result_definition;
 
-    if (empty($result_params["items"])) {
+    if (empty($resultConfig["items"])) {
         return NULL;
     }
 
@@ -289,7 +300,7 @@ function prepare_result_params($facet_params, $result_params)
     $sep = "";
 
     // Control which columns and tables should be used in the select clause, depending on what is choosen in the gui.
-    foreach ($result_params["items"] as $item) {
+    foreach ($resultConfig["items"] as $item) {
         // The columns are stringed together., first item is the aggregation_level
           if (empty($item) || $result_definition[$item]["result_item"]) {
               continue;
@@ -351,9 +362,9 @@ see also:
 <get_facet_content>
 <get_joins>
 */
-function get_result_data_query($facet_params, $result_params)
+function get_result_data_query($facet_params, $resultConfig)
 {
-    $return_object = prepare_result_params($facet_params, $result_params);
+    $return_object = prepare_result_params($facet_params, $resultConfig);
 
     if (empty($return_object) || empty($return_object["data_fields"])) {
         return "";
@@ -366,7 +377,7 @@ function get_result_data_query($facet_params, $result_params)
     $sort_fields = $return_object["sort_fields"];
     $data_tables = $return_object["data_tables"];
     $f_code = "result_facet";
-    $tmp_list = getKeysOfActiveFacets($facet_params);
+    $tmp_list = FacetConfig::getKeysOfActiveFacets($facet_params);
     //Add result_facet as final facet
     $tmp_list[] = $f_code;
     
@@ -599,7 +610,7 @@ class query_builder
         global $list_of_alias_tables;
         $query = array();
         $table_list = array();
-        $facet_selections = getUserSelectItems($facet_params);
+        $facet_selections = FacetConfig::getItemGroupsSelectedByUser($facet_params);
         if (isset($facet_definition[$f_code]["query_cond_table"]) && !empty($facet_definition[$f_code]["query_cond_table"])) {
             foreach ($facet_definition[$f_code]["query_cond_table"] as $cond_key => $cond_table) {
                 $extra_tables[] = $cond_table;
@@ -896,7 +907,7 @@ function get_range_counts($conn, $f_code, $params, $q_interval, $direct_count_ta
     $data_tables[] = $query_table;
     $data_tables[] = $direct_count_table;
     
-    $f_list = getKeysOfActiveFacets($params);
+    $f_list = FacetConfig::getKeysOfActiveFacets($params);
     
     //check if f_code exist in list, if not add it. since counting can be done also in result area and then using "abstract facet" that are not normally part of the list
     if (!in_array($f_code, $f_list)) {
@@ -970,7 +981,7 @@ get sql-query for counting of discrete-facet
 function get_discrete_count_query2($count_facet, $facet_params, $summarize_type = "count")
 {
     global $facet_definition;
-    $f_list = getKeysOfActiveFacets($facet_params);
+    $f_list = FacetConfig::getKeysOfActiveFacets($facet_params);
     if (!empty($facet_params["requested_facet"])) {
         $requested_facet=$facet_params["requested_facet"];
         $extra_tables[]=isset($facet_definition[$requested_facet]["alias_table"]) ? $facet_definition[$requested_facet]["alias_table"]:    $facet_definition[$requested_facet]["table"];
@@ -1034,7 +1045,7 @@ function get_discrete_counts($conn, $f_code, $facet_params, $payload, $direct_co
     $data_tables[] = $direct_count_table;
     $query_table =isset($facet_definition["alias_table"]) ? $facet_definition["alias_table"] : $facet_definition[$f_code]["table"];
     $data_tables[] = $query_table;
-    $f_list = getKeysOfActiveFacets($facet_params);
+    $f_list = FacetConfig::getKeysOfActiveFacets($facet_params);
     //check if f_code exist in list, if not add it. since counting can be done also in result area and then using "abstract facet" that are not normally part of the list
     if (isset($f_list)) {
         if (!in_array($f_code, $f_list)) {
@@ -1064,17 +1075,6 @@ function get_discrete_counts($conn, $f_code, $facet_params, $payload, $direct_co
     $combined_list["sql"]=  $q ;
     return $combined_list;
 }
-
-
-// // ==================> ROGER: MOVED TO FacetContentLoader
-// function get_facet_content($conn, $params)
-// {
-//     global $facet_content_loaders, $facet_definition;
-//     $f_code = $params["requested_facet"];
-//     $facet = $facet_definition[$f_code]; 
-//     $facet_type = $facet["facet_type"];
-//     return $facet_content_loaders[$facet_type]->get_facet_content($conn, $params);
-// }
 
 class RowFinder {
     /*
@@ -1164,95 +1164,4 @@ class RowFinder {
     }
 }
 
-class FacetXMLSerializer {
-
-    //***********************************************************************************************************************************************************************
-    /*
-    function: build_xml_response
-    Make the XML being send to client
-    see also:
-    <build_facet_c_xml>
-    */
-    public static function build_xml_response($facet_c, $action_type, $duration, $start_row, $num_row,$filter_state_id=null)
-    {
-        $xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
-        $xml .= "<data>";
-        $xml .= FacetXMLSerializer::build_facet_c_xml($facet_c, $action_type, $start_row, $num_row);
-        $xml.="<duration><![CDATA[" . $duration . "]]></duration>";
-        $xml .= "</data>";
-        return $xml;
-    }
-
-    /*
-    function: build_facet_c_xml
-    Make the facet content XML being send to client
-    It returns the number of requested row, starting from the start_row
-    It also return a scroll_to_row when text-search is being used.
-
-    */
-    public static function build_facet_c_xml($data, $action_type, $start_row, $num_row)
-    {
-        global $request_id;
-        $xml .= "<facets>";
-        if (!empty($data)) {
-            $facet = $data;
-            $xml .= "<facet_c>\n";
-            $xml .= "<request_id>$request_id</request_id>\n";
-            $xml .= "<f_code><![CDATA[" . $facet['f_code'] . "]]></f_code>\n";
-            $xml .= "<report><![CDATA[" . $facet['report'] . "]]></report>\n";
-            $xml .= "<report_html><![CDATA[" . $facet['report_html'] . "]]></report_html>\n";
-            $xml .= "<report_xml>" . $facet['report_xml'] . "</report_xml>\n";
-            $xml .= "<count_of_selections>" . $facet['count_of_selections'] . "</count_of_selections>\n";
-            $xml .= "<range_interval>" . $facet['range_interval'] . "</range_interval>\n";
-            $xml .= "<total_number_of_rows><![CDATA[" . $facet['total_number_of_rows'] . "]]></total_number_of_rows>\n";
-            if ($action_type == "populate_text_search") {
-                if ($start_row <= ($num_row / 2)) {
-                    $scroll_to_row = $start_row;
-                    $start_row = 0;
-                } else {
-                    $scroll_to_row = $start_row;
-                    $start_row = $start_row - round(($num_row / 2));
-                }
-                $xml .= "<start_row>" . $start_row . "</start_row>";
-                $xml .= "<scroll_to_row>" . $scroll_to_row . "</scroll_to_row>";
-            } else {
-                $xml .= "<start_row>" . $start_row . "</start_row>";
-                $xml .= "<scroll_to_row>" . $start_row . "</scroll_to_row>";
-            }
-            $xml .= "<action_type><![CDATA[" . $action_type . "]]></action_type>";
-            $xml .= "<rows>\n";
-            $row_counter = 0;
-            if (!empty($facet['rows'])) {
-                for ($i = $start_row; $i <= $start_row + $num_row && count($facet['rows']) > $i && !empty($facet['rows'][$i]); $i++) {
-                    $row = $facet['rows'][$i];
-                    if ($row['direct_counts'] != '') {
-                        $xml .= "<row>\n";
-                        // make a list of values of different type
-                        $xml .= "<values>\n";
-                        if (!empty($row["values"])) {
-                            foreach ($row["values"] as $value_type => $this_value) {
-                                $xml .= "<value_item>\n";
-                                $xml .= "<value_type><![CDATA[" . $value_type . "]]></value_type>\n";
-                                $xml .= "<value_id><![CDATA[" . $i . "]]></value_id>\n";
-                                $xml .= "<value><![CDATA[" . $this_value . "]]></value>\n";
-                                $xml .=" </value_item>\n";
-                            }
-                        }
-                        $xml .= "</values>\n";
-                        $xml .= "<name><![CDATA[" . $row['name'] . "]]></name>\n";
-                        $xml .= "<direct_counts><![CDATA[" . $row['direct_counts'] . "]]></direct_counts>\n";
-                        $xml .= "</row>\n";
-                        $row_counter++;
-                    }
-                }
-            }
-            $xml .= "</rows>\n";
-            $xml .= "<rows_num>" . $row_counter . "</rows_num>";
-            $xml .= "</facet_c>\n";
-        }
-        $xml .= "</facets>";
-        return $xml;
-    }
-
-}
 ?>
