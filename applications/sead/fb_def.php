@@ -24,39 +24,36 @@ This will later on be concatenated into the join clause (usually theta joins)
 a.b_id = b.id
 
 */
-exec("hostname", $hostname);
 
 require_once __DIR__."/credentials.php";
+require_once __DIR__."/../../server/connection_helper.php";
 
-@ini_set('log_errors','On');                                        // enable or disable php error logging (use 'On' or 'Off')
-@ini_set('display_errors','Off');                                   // enable or disable public display of errors (use 'On' or 'Off')
-@ini_set('error_log',__DIR__ . '/api/cache/query-SEAD-errors.log');   // path to server-writable log file
+@ini_set('log_errors','On');
+@ini_set('display_errors','Off');
+@ini_set('error_log', '/tmp/query-SEAD-errors.log');
 
 $current_view_state_id = 7;
+
 $cache_seq="metainformation.file_name_data_download_seq"; // which seq to use for find id for filenames to download
 
-function t_sead($text) {
-    return $text;
-}
-
 define('CONNECTION_STRING',
-"host=" . $db_information['db_host'] . " " .
-"user=" . $db_information['db_user'] . " " .
-"dbname=" . $db_information['db_database'] . " " .
-"password=" . $db_information['db_password'] . " " .
-"port=" . $db_information['db_port']);
+    "host=" . $db_information['db_host'] . " " .
+    "user=" . $db_information['db_user'] . " " .
+    "dbname=" . $db_information['db_database'] . " " .
+    "password=" . $db_information['db_password'] . " " .
+    "port=" . $db_information['db_port']);
 
-$use_web_socket="yes";
 $language_table="metainformation.tbl_languages";
 $phrases_schema="metainformation";
 $language_id_column="language_id";
 $view_state_table="metainformation.tbl_view_states";
 
 // Global variable for keeping track of requests. Is used in the client. Is sent from the client with the post and is just echoed back.
-$request_id = "";
+$request_id = "";  // ROGER Not used??
+
 $filter_by_text=true;
+
 include_once("result_definitions.php"); // this file holds all result_defintion items
-$counter=0;
 
 $result_definition["site_level"]["text"]="Site level";
 $result_definition["site_level"]["applicable"]="0";
@@ -110,35 +107,25 @@ $indirect_count_column="tbl_dating_periods.dating_period_id";
 // If you now how to related they become related.
 // Defintion of the database model
 
-if (!($conn = pg_connect(CONNECTION_STRING))) {
-    echo "Error: pg_connect failed.\n";
-    exit;
-} else {
-    
-    $q2 = "select * from metainformation.tbl_foreign_relations";
-    if (($rs2 = pg_query($conn, $q2)) <= 0) {
-        print "Error: cannot execute query2. $q2  \n";
-        print pg_last_error();
-        pg_close($conn);
-        exit;
-    }
-    while ($row = pg_fetch_assoc($rs2))
-    {
-        $sourceTable=$row["source_table"];
-        $sourceColumn=$row["source_column"];
-        $targetTable=$row["target_table"];
-        $targetColumn=$row["target_column"];
-        
-        $join_columns[$sourceTable][$targetTable]= array (
-        "home_columns" => array ( $sourceTable.".\"".$sourceColumn."\""),
-        "remote_columns" => array ( $targetTable.".\"".$targetColumn."\""),
-        "join_condition"=> " inner join ".$targetTable. " on
-        (".$sourceTable.".\"".$sourceColumn."\"=".$targetTable.".\"".$targetColumn."\")
-        ",
-        "weight"=>$row["weight"]);
-    }
-    pg_close($conn);
+$conn = ConnectionHelper::createConnection();
+
+$q2 = "select * from metainformation.tbl_foreign_relations";
+
+$rs2 = ConnectionHelper::query($conn, $q2);
+
+while ($row = pg_fetch_assoc($rs2))
+{
+    $sourceTable = $row["source_table"];
+    $sourceColumn = $row["source_column"];
+    $targetTable = $row["target_table"];
+    $targetColumn = $row["target_column"];
+    $join_columns[$sourceTable][$targetTable] = array (
+        "home_columns" => array ( "$sourceTable.\"$sourceColumn\""),
+        "remote_columns" => array ( "$targetTable.\"$targetColumn\""),
+        "join_condition" => " inner join $targetTable on ($sourceTable.\"$sourceColumn\"=$targetTable.\"$targetColumn\")\n",
+        "weight" => $row["weight"]);
 }
+pg_close($conn);
 
 //Defining the graph of tables
 // Make all joins unidirectional, so it will be the same join condition whatever direction you go.
@@ -213,8 +200,8 @@ foreach ($join_columns as $key => $pair)
 {
     foreach ($pair as $key2 => $element)
     {
-        $weight=$join_columns[$key][$key2]["weight"];
-        $ourMap[$f_tables[$key]][$f_tables[$key2]] =$weight;
+        $weight = $join_columns[$key][$key2]["weight"];
+        $ourMap[$f_tables[$key]][$f_tables[$key2]] = $weight;
     }
 }
 ?>

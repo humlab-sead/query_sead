@@ -2,7 +2,7 @@
 
 error_reporting(E_ERROR | E_WARNING | E_PARSE); // | E_NOTICE);
 
-class HTMLRender {
+class RenderHTML {
 
     public static function render_html_header_from_array($table_id, $header_array)
     {

@@ -37,9 +37,7 @@ include_once(__DIR__ . "/../server/lib/Cache.php");
 require_once(__DIR__ . "/../server/facet_content_loader.php");
 require_once(__DIR__ . "/../server/facet_serializer.php");
 
-if (!empty($_REQUEST["xml"])) {
-    $xml=$_REQUEST["xml"];
-}
+$xml = (!empty($_REQUEST["xml"])) ? $_REQUEST["xml"] : NULL;
 
 $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($xml);
 
@@ -64,42 +62,32 @@ function computeCacheKey($facetConfig)
 
 $cache_id = computeCacheKey($facetConfig);
 
-if (!($f_content = DataCache::Get("_".$facetConfig["client_language"].$applicationName, $cache_id))) {
-    $f_content=$facet_content_loaders[$facet_type]->get_facet_content($conn, $facetConfig);
-    DataCache::Put("_".$facetConfig["client_language"].$applicationName, $cache_id, 1500, $f_content);
+if (!($facetContent = DataCache::Get("_".$facetConfig["client_language"].$applicationName, $cache_id))) {
+    $facetContent=$facet_content_loaders[$facet_type]->get_facet_content($conn, $facetConfig);
+    DataCache::Put("_".$facetConfig["client_language"].$applicationName, $cache_id, 1500, $facetContent);
 }
 
 // Make a list of selection to exclude
 // if the action type is populate with text search then do the following, otherwise just do as normal... scroll or selection change
 
-$query_offset=$facet_options["facet_start_row"];
-$query_limit=$facet_options["facet_number_of_rows"];
+$query_offset = $facet_options["facet_start_row"];
+$query_limit = $facet_options["facet_number_of_rows"];
+$action_type = $facetConfig["f_action"][1];
 
-$action_type=$facetConfig["f_action"][1];
 if ($action_type=="populate_text_search") {
-    // get the textfilter where to position the requested facet
-    // skip scroll to row if filter_by_text is true?
-    
     $find_str = $facet_options["facet_text_search"];
-    $facet_rows=$f_content[$f_code]["rows"];
-    $start_row=find_start_row($facet_rows, $find_str); // start in the center of the loadin
-    
-    $query_offset=$start_row;
-    
-    if ($query_offset>$f_content[$f_code]['total_number_of_rows']-12) {
-        $query_offset=$f_content[$f_code]['total_number_of_rows']-12;
-    }
-    if ($query_offset<=0) {
-        $query_offset=0;
-    }
+    $facet_rows = $facetContent[$f_code]["rows"];
+    $query_offset = RowFinder::findIndex($facet_rows, $find_str);
+    $query_offset = max(0, min($query_offset, $facetContent[$f_code]['total_number_of_rows'] - 12));
 }
 
-if ($facet_type=="range") {
-    $query_offset=0;
-    $query_limit=250;
+if ($facet_type == "range") {
+    $query_offset = 0;
+    $query_limit = 250;
 }
 
-$response = FacetSerializer::serializeFacetContent($f_content[$f_code], $action_type, $query_offset, $query_limit, $filter_state_id);
+$response = FacetSerializer::serializeFacetContent($facetContent[$f_code], $action_type, $query_offset, $query_limit, $filter_state_id);
+
 header("Content-Type: text/xml");
 
 echo $response;

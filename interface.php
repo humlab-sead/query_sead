@@ -112,5 +112,4 @@ function interface_render_title_button($text, $terminating_button = false) {
 EOX;
 	return $out;
 }
-
 ?>

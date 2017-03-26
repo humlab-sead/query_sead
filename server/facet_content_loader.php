@@ -233,7 +233,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
 
     protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
     {
-        return get_range_counts($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column);
+        return RangeFacetCounter::get_range_counts($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column);
     }
 
     protected function getCategoryItemValue($row)
@@ -301,7 +301,7 @@ EOT;
 
     protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
     {
-        return get_discrete_counts($conn, $f_code, $params, NULL, $direct_count_table, $direct_count_column);
+        return DiscreteFacetCounter::get_discrete_counts($conn, $f_code, $params, NULL, $direct_count_table, $direct_count_column);
     }
 
     protected function getCategoryItemValue($row)

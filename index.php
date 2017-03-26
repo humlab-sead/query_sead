@@ -89,7 +89,6 @@ view_state - which view state to start from
 client_language -  which language to be used sv_SE
 
 Initialization sequence:
-* <js_config.php> defines application properties
 * <interface.php>  outlines  properties and heading of the html-pagee
 * layout.php - outlines the div and table structure and this is different for each application (SEAD/SHIPS/DIABAS) see <layout.php (SHIPS)> and <layout.php (SEAD)>
 * Stylesheet to be used. style.css
@@ -151,7 +150,7 @@ The client is mainly sending request to server using
 (see applications/sead/theme/images/SeadLogo.jpg)
 
 */
-require_once("js_config.php");
+require_once("applications/applicationSpecification.php");
 include_once("interface.php");
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -176,8 +175,8 @@ include_once("interface.php");
 
     <script type="text/javascript" src="client/user.js"></script>
     <script type="text/javascript">
-        var application_address = "<?php echo get_js_server_address() ?>";
-        var application_prefix_path = "<?php echo get_js_server_prefix_path() ?>";
+        var application_address = "<?php echo getServerName() ?>";
+        var application_prefix_path = "<?php echo getServerPrefixPath() ?>";
         var application_name = "<?php echo getApplication() ?>";
         var filter_by_text = "<?php echo $filter_by_text ?>";
         var currentUser = new User();

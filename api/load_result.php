@@ -254,14 +254,4 @@ $xml = "<xml><response>".$out."</response>".$meta_xml."<request_id>" . $current_
 echo $xml;
 pg_close($conn);
 
-function get_js_server_address() {
-	return $_SERVER['SERVER_NAME'];
-}
-
-function get_js_server_prefix_path() {
-	$path = $_SERVER['PHP_SELF'];
-	$pathinfo = pathinfo($path);
-	return $pathinfo['dirname']."/";
-}
-
 ?>

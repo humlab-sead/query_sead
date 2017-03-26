@@ -4,6 +4,7 @@ file: custom_map_server_functions.php (SEAD)
 This file hold server function for the map component
 */
 
+require_once __DIR__ . '/connection_helper.php';
 
 /*
  Function: result_render_map_view (SEAD)
@@ -26,7 +27,7 @@ function result_render_map_view($conn,$facetConfig,$resultConfig,$facet_xml,$res
 
 	if (isset($direct_count_column) && !empty($direct_count_column)  ) 
 	{
-        $direct_counts = get_discrete_counts($conn,  $f_code,  $facetConfig,$interval, $direct_count_table,$direct_count_column);
+        $direct_counts = DiscreteFacetCounter::get_discrete_counts($conn,  $f_code,  $facetConfig,$interval, $direct_count_table,$direct_count_column);
         $filtered_direct_counts = $direct_counts["list"];
 	}
 
@@ -34,24 +35,20 @@ function result_render_map_view($conn,$facetConfig,$resultConfig,$facet_xml,$res
 
 	if (isset($direct_count_column) && !empty($direct_count_column)  ) 
 	{
-	    $direct_counts = get_discrete_counts($conn,  $f_code,  $no_selection_params,$interval, $direct_count_table,$direct_count_column);
+	    $direct_counts = DiscreteFacetCounter::get_discrete_counts($conn,  $f_code,  $no_selection_params,$interval, $direct_count_table,$direct_count_column);
 		$un_filtered_direct_counts = $direct_counts["list"];
 	}
 
 	$query = get_query_clauses($facetConfig, $f_code, $data_tables, $tmp_list);
-	$extra_join=$query["joins"];
-	$table_str=$query["tables"];
+	$extra_join = $query["joins"];
+	$query_tables = $query["tables"];
+	$query_where = $query["where"] != '' ? " and " . $query["where"] : "";	
 
-	if ($extra_join!="")
-		$and_command=" and ";
-	$q.="select  distinct $name_column as name , $lat_column,$long_column,  " . $query_column." as id_column from ".$table_str."   $extra_join where 1=1   ";
+	$q.="select distinct $name_column as name, $lat_column, $long_column, $query_column as id_column " .
+        "from $query_tables $extra_join " .
+        "where 1 = 1 $query_where ";
 
-	if ($query["where"]!='') 
-	{
-		$q.=" and  ".$query["where"];	
-	}
-
-	if (($rs = pg_query($conn, $q)) <= 0) { echo "Error: cannot execute query map. $q \n"; exit; }
+	$rs = ConnectionHelper::query($conn, $q);
 
 	$out.="<sql_info>";
 	$out.="<![CDATA[".$q."]]>";
