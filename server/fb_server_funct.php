@@ -8,7 +8,7 @@ This file holds for handling queries and returns content for the client.
 see also:
 
 image_functions - <fb_server_image_funct.php>
-parameters functions - <fb_server_client_params_funct.php>
+parameters functions - <facet_config.php>
 */
 require_once __DIR__ . '/lib/dijkstra.php';
 require_once __DIR__ . '/connection_helper.php';
@@ -16,7 +16,7 @@ require_once __DIR__ . "/../applications/applicationSpecification.php";
 require_once __DIR__ . "/../applications/sead/fb_def.php";
 require_once __DIR__ . "/lib/SqlFormatter.php";
 require_once __DIR__ . '/language/t.php';
-require_once __DIR__ . '/fb_server_client_params_funct.php';
+require_once __DIR__ . '/facet_config.php';
 require_once __DIR__ . '/html_render.php';
 require_once __DIR__ . '/facet_content_loader.php';
 require_once __DIR__ . '/query_builder.php';

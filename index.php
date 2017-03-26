@@ -186,6 +186,11 @@ include_once("interface.php");
 
     <script type="text/javascript">
 <?php
+
+@ini_set('log_errors','On');
+@ini_set('display_errors','Off');
+@ini_set('error_log', __FILE__ . '../../errors.log');
+
     require_once("api/js_facet_def.php");
     echo "</script>";
     require_once("api/js_result_def.php");

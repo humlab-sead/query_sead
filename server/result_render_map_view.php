@@ -1,6 +1,6 @@
 <?php
 /*
-file: custom_map_server_functions.php (SEAD)
+file: result_render_map_view.php (SEAD)
 This file hold server function for the map component
 */
 

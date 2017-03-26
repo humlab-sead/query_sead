@@ -28,14 +28,14 @@ Shared sequence:
 * Derive a compsosite ID for caching of the facet content.
 * Render the data for the facet using function <get_facet_content>
 * Computing start_row and limit if the text-search is being used.
-* Output the parts of the facet's data to the client using <FacetSerializer::serializeFacetContent>, depending on how much data the client requests or defined by text-search start_row
+* Output the parts of the facet's data to the client using <FacetContentSerializer::serializeFacetContent>, depending on how much data the client requests or defined by text-search start_row
 */
 
 require_once __DIR__ . '/../server/connection_helper.php';
 require_once(__DIR__ . "/../server/fb_server_funct.php");
 include_once(__DIR__ . "/../server/lib/Cache.php");
 require_once(__DIR__ . "/../server/facet_content_loader.php");
-require_once(__DIR__ . "/../server/facet_serializer.php");
+require_once(__DIR__ . "/../server/facet_content_serializer.php");
 
 $xml = (!empty($_REQUEST["xml"])) ? $_REQUEST["xml"] : NULL;
 
@@ -86,7 +86,7 @@ if ($facet_type == "range") {
     $query_limit = 250;
 }
 
-$response = FacetSerializer::serializeFacetContent($facetContent[$f_code], $action_type, $query_offset, $query_limit, $filter_state_id);
+$response = FacetContentSerializer::serializeFacetContent($facetContent[$f_code], $action_type, $query_offset, $query_limit, $filter_state_id);
 
 header("Content-Type: text/xml");
 

@@ -30,7 +30,7 @@ require_once __DIR__."/../../server/connection_helper.php";
 
 @ini_set('log_errors','On');
 @ini_set('display_errors','Off');
-@ini_set('error_log', '/tmp/query-SEAD-errors.log');
+@ini_set('error_log', __FILE__ . '../../errors.log');
 
 $current_view_state_id = 7;
 

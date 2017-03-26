@@ -24,7 +24,7 @@ However the function always have the same name, but depending in which applicati
 Apart from the generic result workspace items there will be different XML-schemas for different result tabs.
 Sometimes a result modules can used multiple XML-schemas.
 
-see <fb_server_client_params_funct.php> for function that parses XML document from client.
+see <facet_config.php> for function that parses XML document from client.
 
 Facet xml post: 
 http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/facet_post_xml.html
@@ -72,11 +72,11 @@ Sequence for map load operation:
 	* Render the map output for the client, which is different for each application (SEAD/SHIPS/DIABAS etc)
 	* Functions on client-side are also different to handle the different kind of map-output.
 
-	<custom_map_server_functions.php>
+	<result_render_map_view.php>
 */
 
 require_once __DIR__ . '/../server/fb_server_funct.php';
-require_once __DIR__ . '/../server/custom_map_server_functions.php';
+require_once __DIR__ . '/../server/result_render_map_view.php';
 require_once __DIR__ . '/../server/lib/Cache.php';
 require_once __DIR__ . '/../server/connection_helper.php';
 
