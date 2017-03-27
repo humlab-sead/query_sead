@@ -107,8 +107,8 @@ function FacetRender(_type_render)
         //setting up containers for title, buttons and search form to top of facet
         top_middle_cell.append(
                 "<table class=\"facet_controls_bar\"><tbody class=\"facet_controls_bar\"><tr><td><span id=\"facet_" + _facet.id + "_title\" class=\"facet_title\"></span></td><td class=\"facet_text_search_container\"></td><td style=\"text-align:right;\"><span class=\"facet_aux_control_area\"></span>\n\
-                            <span><img class=\"facet_collapse_button\" src=\"applications/" + application_name + "/theme/images/button_minimize.png\" /></span>\n\
-                            <span><img class=\"facet_close_button\" src=\"applications/"  + application_name + "/theme/images/button_close.png\" /></span></td>\n\
+                            <span><img class=\"facet_collapse_button\" src=\"client/theme/images/button_minimize.png\" /></span>\n\
+                            <span><img class=\"facet_close_button\" src=\"client/theme/images/button_close.png\" /></span></td>\n\
                     </tbody>\n\
                 </table>");
 

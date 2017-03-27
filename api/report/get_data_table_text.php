@@ -7,24 +7,26 @@ Sequence:
 * Process the facet view state using <FacetConfigDeserializer::deserializeFacetConfig>
 * Remove invalid selection using <FacetConfig::removeInvalidUserSelections>
 * Process the result parameter from the client using  <ResultConfigDeserializer::deserializeResultConfig>
-* Get the SQL-query using function  <get_result_data_query>
+* Get the SQL-query using function  <compileQuery>
 * Run the query and build the output
 * Build the documentation of the facet filter using <FacetConfig::generateUserSelectItemHTML>
 * Make  a zip-file for the documentation and datatable
 */
 
-require_once (__DIR__ . '/../server/fb_server_funct.php');
+require_once (__DIR__ . '/../server/connection_helper.php');
+require_once (__DIR__ . '/../server/cache_helper.php');
+require_once (__DIR__ . '/../server/result_query_compiler.php');
 
-if (!($conn = pg_connect(CONNECTION_STRING))) { echo "Error: pg_connect failed.\n"; exit; }
+$conn = ConnectionHelper::createConnection();
 
-$facet_xml = get_facet_xml_from_id($_REQUEST['cache_id']);
+$facet_xml = CacheHelper::get_facet_xml_from_id($_REQUEST['cache_id']);
 $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
 $facet_params=FacetConfig::removeInvalidUserSelections($conn,$facet_params);
 $result_xml = get_result_xml_from_id($_REQUEST['cache_id']);
 $resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
 $aggregation_code = $resultConfig["aggregation_code"];
 
-$q = get_result_data_query($facet_params, $resultConfig);
+$q = ResultQueryCompiler::compileQuery($facet_params, $resultConfig);
 
 if (empty($q)) {
     exit;
@@ -86,7 +88,7 @@ $selection_html.="<HTML>";
 $selection_html.= "<HEAD>";
 $selection_html.= " <TITLE> $applicationTitle - ".t("beskrivning av sökparametrar", $facet_params["client_language"])."</TITLE>";
 $selection_html.= "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">";
-$selection_html.= "<link rel=\"stylesheet\" type=\"text/css\" href= \"applications/sead/theme/style.css\"  />";
+$selection_html.= "<link rel=\"stylesheet\" type=\"text/css\" href= \"/client/theme/style.css\"  />";
 $selection_html.= "</HEAD>";
 $selection_html.=" <BODY><h1> $applicationTitle - ".t("beskrivning av sökparametrar", $facet_params["client_language"])."</h1><BR>";
 $selection_html.=" <h2>".t("Summeringsnivå : ", $facet_params["client_language"])."</h2><BR>";

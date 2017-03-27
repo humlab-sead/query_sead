@@ -1,7 +1,7 @@
 <?php
 
-require_once __DIR__ . "/../applications/sead/fb_def.php";
-require_once __DIR__ . "/../server/connection_helper.php";
+require_once __DIR__ . "/config/bootstrap_application.php";
+require_once __DIR__ . "/connection_helper.php";
 
 class ViewState {
 

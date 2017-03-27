@@ -184,5 +184,5 @@ var result_diagram_workspace_container_max_height = 10000;
 var result_diagram_workspace_container_fixed_width = 800;
 var result_diagram_workspace_container_fixed_height = 800;
 
-var button_maximize_url = "applications/"+application_name+"/theme/images/button_max.png";
-var button_minimize_url = "applications/"+application_name+"/theme/images/button_minimize.png";
+var button_maximize_url = "client/theme/images/button_max.png";
+var button_minimize_url = "client/theme/images/button_minimize.png";

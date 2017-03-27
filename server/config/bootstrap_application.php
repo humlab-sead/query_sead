@@ -1,6 +1,6 @@
 <?php
 /*
-file: fb_def.php (SEAD)
+file: bootstrap_application.php (SEAD)
 This file is setting the specific server-side parameters for the application to run into the framework.
 o The defintion of the counting parameters
 o The database model as a graph reprented by edges and weights
@@ -25,12 +25,12 @@ a.b_id = b.id
 
 */
 
-require_once __DIR__."/credentials.php";
-require_once __DIR__."/../../server/connection_helper.php";
+require_once __DIR__ . "/credentials.php";
+require_once __DIR__ . "/../connection_helper.php";
 
 @ini_set('log_errors','On');
 @ini_set('display_errors','Off');
-@ini_set('error_log', __FILE__ . '../../errors.log');
+@ini_set('error_log', __DIR__ . '/../../errors.log');
 
 $current_view_state_id = 7;
 
@@ -96,7 +96,7 @@ $result_definition["aggregate_all"]['aggregation_selector'] = true;
 $result_definition["aggregate_all"]["result_item"]["link_item_filtered"][]=$result_definition_item["aggregate_all_filtered"] ;
 $result_definition["aggregate_all"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
 
-include_once(__DIR__."/facet_definitions.php");
+include_once(__DIR__ . "/facet_definitions.php");
 
 $direct_count_table="tbl_analysis_entities";
 $direct_count_column="tbl_analysis_entities.analysis_entity_id";

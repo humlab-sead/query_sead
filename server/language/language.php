@@ -4,8 +4,8 @@ file: language.php
 Get the phrase client and store into the database in the specified language
 */
 
-require_once("applications/applicationSpecification.php");
-require_once("applications/sead/fb_def.php");
+require_once(__DIR__ . "/../config/environment.php");
+require_once(__DIR__ . "/../config/bootstrap_application.php");
 
 function language_show_translation_panel() {
 }

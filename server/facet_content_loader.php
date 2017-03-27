@@ -1,5 +1,9 @@
 <?php
 
+require_once(__DIR__ . '/facet_content_counter.php');
+require_once(__DIR__ . '/cache_helper.php');
+require_once(__DIR__ . '/query_builder.php');
+
 class FacetContentLoader {
 
     protected function compileIntervalQuery($conn, $params, $f_code)
@@ -28,8 +32,8 @@ class FacetContentLoader {
     row structure:
     *   row id
     *   display name
-    *   (direct) count 1 number of geo-units or what is being defined in fb_def.php
-    *   (indirect count 2 number of time-periods or  what is being defined in fb_def.php
+    *   (direct) count 1 number of geo-units or what is being defined in bootstrap_application.php
+    *   (indirect count 2 number of time-periods or  what is being defined in bootstrap_application.php
     Preperation function:
     <FacetConfigDeserializer::deserializeFacetConfig>
 
@@ -120,7 +124,7 @@ class FacetContentLoader {
 //         global $facet_definition;
 //         $query_column = $facet_definition[$f_code]["id_column"];
 //         $f_list = FacetConfig::getKeysOfActiveFacets($params);
-//         $query = get_query_clauses($params, $f_code, $data_tables, $f_list);
+//         $query = QueryBuildService::compileQuery($params, $f_code, $data_tables, $f_list);
 //         $query_column_name = $facet_definition[$f_code]["name_column"];
 //         $sort_column = $facet_definition[$f_code]["sort_column"];
 //         $tables = $query["tables"];
@@ -253,7 +257,6 @@ class RangeFacetContentLoader extends FacetContentLoader {
 
 }
 
-// depends on: FacetConfig::getKeysOfActiveFacets, get_query_clauses
 class DiscreteFacetContentLoader extends FacetContentLoader {
 
     function getTextFilterClause($facet_params, $query_column_name)
@@ -273,7 +276,7 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
         $f_code = $facet_params["requested_facet"];
 
         $f_list = FacetConfig::getKeysOfActiveFacets($facet_params);
-        $query = get_query_clauses($facet_params, $f_code, $data_tables, $f_list);
+        $query = QueryBuildService::compileQuery($facet_params, $f_code, $data_tables, $f_list);
 
         $query_column_name = $facet_definition[$f_code]["name_column"];
         $query_column = $facet_definition[$f_code]["id_column"];
@@ -320,7 +323,24 @@ EOT;
 
 }
 
-
 $facet_content_loaders = array("discrete" => new DiscreteFacetContentLoader(), "range" => new RangeFacetContentLoader());
+
+class FacetContentService {
+
+    public static function load($conn, $facetConfig)
+    {
+        global $applicationName, $facet_content_loaders, $facet_definition;
+        $facetCode  = $facetConfig["requested_facet"];
+        $facetType = $facet_definition[$facetCode]["facet_type"];
+        $cacheId = CacheHelper::computeFacetConfigCacheId($facetConfig);
+        $contextId = "_" . $facetConfig["client_language"] . $applicationName;
+        if (!($facetContent = CacheHelper::Get($contextId, $cacheId))) {
+            $facetContent = $facet_content_loaders[$facetType]->get_facet_content($conn, $facetConfig);
+            CacheHelper::Put($contextId, $cacheId, 1500, $facetContent);
+        }
+        return $facetContent;
+    }
+
+}
 
 ?>

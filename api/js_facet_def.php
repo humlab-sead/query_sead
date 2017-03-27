@@ -5,9 +5,7 @@ This file returns the facet_defintion to the client in javas-script format
 
 Information of the facets are defined in
 
-* <fb_def.php (SHIPS)>
-* <fb_def.php (SEAD)>
-* <fb_def.php (diabas)>
+* <bootstrap_application.php (SHIPS)>
 
 id  - id of the facet
 name -  name of the facet which will be use used a the title
@@ -18,10 +16,10 @@ category - for grouping of facets in facet control area
 
 */
 error_reporting( error_reporting() & ~E_NOTICE );
-require_once("applications/applicationSpecification.php");
-require_once('server/fb_server_funct.php');
+require_once("server/config/environment.php");
 include_once("server/lib/Cache.php");
 include_once("server/connection_helper.php");
+require_once('server/query_builder.php');
 
 // compute max and min for range facet
 function compute_max_min($conn)
@@ -39,7 +37,7 @@ function compute_max_min($conn)
             $data_tables[] = $query_table;
             $f_list[] = $f_code;
 
-            $query = get_query_clauses($params, $f_code, $data_tables, $f_list);
+            $query = QueryBuildService::compileQuery($params, $f_code, $data_tables, $f_list);
             
             $extra_join = $query["joins"] ?? "";
             $where_clause = $query_cond != "" ? " where " . $query_cond . "  " : "";

@@ -15,7 +15,7 @@ See also:
 <layout.php (SEAD)>
 */ 
 require_once "server/language/t.php";
-require_once "applications/applicationSpecification.php";
+require_once "server/config/environment.php";
 
 $facet_control = "<div id=\"facet_control\"></div>";
 $status_area = interface_render_status_area_content();
@@ -50,7 +50,7 @@ function interface_render_result_workspace_content() {
     <table id="result_workspace_table_top" style="z-index:2;"><tbody>
 	 <tr id="result_workspace_tab_area">
 	 <td style=""><div class="result_loading_indicator"></div></td>
-	 <td id="result_max_min_button_cell"><span class="js_link"><img id="result_max_min_button" style="cursor:pointer;" src="applications/sead/theme/images/button_expand.png" alt="button_expand.png"/></span></td></tr>
+	 <td id="result_max_min_button_cell"><span class="js_link"><img id="result_max_min_button" style="cursor:pointer;" src="client/theme/images/button_expand.png" alt="button_expand.png"/></span></td></tr>
 	 </tbody></table>
      <table id="result_workspace_table" class="generic_table"><tbody>
 	 <tr>

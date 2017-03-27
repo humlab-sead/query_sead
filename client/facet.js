@@ -347,10 +347,10 @@ function facet_set_loading_indicator_state(facet_id, state) {
 	state = state.toLowerCase();
 	
 	if(state == "on") {
-		$("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"applications/"+application_name+"/theme/images/loadingf.gif\" class=\"facet_load_indicator\" />");
+		$("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"client/theme/images/loadingf.gif\" class=\"facet_load_indicator\" />");
 	}
 	else if(state == "off") {
-		$("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"applications/"+application_name+"/theme/images/loaded.gif\" class=\"facet_load_indicator\" />");
+		$("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"client/theme/images/loaded.gif\" class=\"facet_load_indicator\" />");
 	}
 }
 
@@ -374,7 +374,7 @@ function facet_load_data(load_obj) {
 	facet_set_loading_indicator_state(load_obj.facet_requesting, "on");
 	var facet_obj = facet_presenter.facet_list.facet_get_facet_by_id(load_obj.facet_requesting);
 	if(load_obj.action_reason == "populate" || load_obj.action_reason == "populate_text_search") {
-		//$("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"applications/"+application_name+"/theme/images/loadingf.gif\" class=\"facet_load_indicator\" />");
+		//$("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"client/theme/images/loadingf.gif\" class=\"facet_load_indicator\" />");
 		//facet_set_loading_indicator_state(facet_obj.id, "on");
 	}
 	
@@ -565,11 +565,11 @@ function refresh_selection_info_callback(xml)
             }
             if ($(xml).find("count_of_selections").text()=='')
             {
-                $("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"applications/"+application_name+"/theme/images/loaded.gif\" class=\"facet_load_indicator\" />");
+                $("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"client/theme/images/loaded.gif\" class=\"facet_load_indicator\" />");
             }
             else
             {
-                      $("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"applications/"+application_name+"/theme/images/button_clear.png\" />");
+                      $("#"+facet_obj.dom_id).find(".facet_aux_control_area").html("<img src=\"client/theme/images/button_clear.png\" />");
                  }
             facet_add_tooltip(t("Ta bort alla val"), $("#"+facet_obj.dom_id).find(".facet_aux_control_area"));
             $("#"+facet_obj.dom_id).find(".facet_aux_control_area").unbind("click"); // remove the any events first
@@ -891,7 +891,7 @@ function facet_expand_facet(facet_obj) {
 	var slot_obj = slot_get_slot_by_id(facet_obj.slot_id);
 	var facet_dom_obj = $("#"+facet_obj.dom_id);
 	
-	facet_dom_obj.find(".facet_collapse_button").attr("src", "applications/"+application_name+"/theme/images/button_minimize.png");
+	facet_dom_obj.find(".facet_collapse_button").attr("src", "client/theme/images/button_minimize.png");
 	
 	facet_dom_obj.find(".facet_table").css("height", facet_height+"px");
 	
@@ -970,7 +970,7 @@ function facet_collapse_facet(facet_obj) {
 	//collapse
 	facet_obj.item_list_container_table_height = facet_dom_obj.find(".facet_content_container_table").css("height");
 	
-	facet_dom_obj.find(".facet_collapse_button").attr("src", "applications/"+application_name+"/theme/images/button_max.png");
+	facet_dom_obj.find(".facet_collapse_button").attr("src", "client/theme/images/button_max.png");
 	
 	facet_dom_obj.find(".facet_table").css("height", "0px");
 

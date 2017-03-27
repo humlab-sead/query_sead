@@ -6,9 +6,7 @@ This file is generating a java-script output contain the result variable to be u
 I also load which result modules that are present.
 
 Information of the result_definition are defined in
-* <fb_def.php (SHIPS)>
-* <fb_def.php (SEAD)>
-* <fb_def.php (diabas)>
+* <bootstrap_application.php>
 
 The array has this format:
 id - id of the result_definition
@@ -17,11 +15,11 @@ input_type - radio or checkbox(default)
 default - default or not (0 or 1)
 
 */
-require_once("applications/applicationSpecification.php");
-require_once("applications/sead/fb_def.php");
-// loads the javascript library for the result modules of the current applications
+require_once(__DIR__ . "/../server/config/environment.php");
+require_once(__DIR__ . "/../server/config/bootstrap_application.php");
+// loads the javascript library for the result modules 
 $modules = array();
-$path = "applications/".$applicationName."/result_modules";
+$path = "client/result_modules";
 $dir = scandir($path);
 foreach($dir as $entry) {
     if($entry != "." && $entry != ".." && is_file($path."/".$entry) && substr($entry, -2, 2) == "js") {

@@ -87,7 +87,7 @@ function facet_geo_marker_tool_enable(facet_obj) {
 	
 	var tool_btn_dom = $("#filter_tool_btn")[0];
 	
-	$(tool_btn_dom).css("background-image", "url('applications/"+application_name+"/theme/images/geo_filter_tool_btn_selected.png')");
+	$(tool_btn_dom).css("background-image", "url('client/theme/images/geo_filter_tool_btn_selected.png')");
 	var m = $("#geo_canvas").children()[0];
 	$(m).css("cursor", "crosshair");
 	
@@ -134,7 +134,7 @@ function facet_geo_marker_tool_disable(facet_obj) {
 	
 	var tool_btn_dom = $("#filter_tool_btn")[0];
 	
-	$(tool_btn_dom).css("background-image", "url('applications/"+application_name+"/theme/images/geo_filter_tool_btn_deselected.png')");
+	$(tool_btn_dom).css("background-image", "url('client/theme/images/geo_filter_tool_btn_deselected.png')");
 	
 	/* V2
 	if(typeof(filter_tool_event_listener) != "undefined") {
@@ -161,14 +161,14 @@ function facet_geo_create_marker(position_input, type, text) {
 	}
 	
 	if(type == "handle") {
-		var marker_icon_url="applications/"+application_name+"/theme/images/geo_marker.png"
-		 // V2 new GIcon(false, "applications/"+application_name+"/theme/images/geo_marker.png");
+		var marker_icon_url="client/theme/images/geo_marker.png"
+		 // V2 new GIcon(false, "client/theme/images/geo_marker.png");
 		 
 	}
 	else if(type == "close") {
-		var marker_icon_url="applications/"+application_name+"/theme/images/button_close.png"
+		var marker_icon_url="client/theme/images/button_close.png"
 		
-		//v2 var marker_icon = new GIcon(false, "applications/"+application_name+"/theme/images/button_close.png");
+		//v2 var marker_icon = new GIcon(false, "client/theme/images/button_close.png");
 	}
 	
 	
@@ -753,7 +753,7 @@ function facet_geo_filter_controlV3(container_div, map)
     container_div.style.padding = '5px';
 
     var container = $("<div id=\"filter_tool_btn_container\"></div>")[0];
-    var tool_btn = $(container).append("<div id=\"filter_tool_btn\" style=\"width:27px;height:24px;background-image:url('applications/" + application_name + "/theme/images/geo_filter_tool_btn_deselected.png');position:relative;top:4px;left:-5px;\"></div>")[0];
+    var tool_btn = $(container).append("<div id=\"filter_tool_btn\" style=\"width:27px;height:24px;background-image:url('client/images/geo_filter_tool_btn_deselected.png');position:relative;top:4px;left:-5px;\"></div>")[0];
     container_div.appendChild(container);
 
     google.maps.event.addDomListener(tool_btn, 'click', function() {
@@ -878,7 +878,7 @@ var row_id=0;
 		
 	}
 
-//	$("#"+facet_obj.dom_id).find(".facet_loading_indicator").html("<img src=\"applications/"+application_name+"/theme/images/loaded.gif\" class=\"facet_load_indicator\" />");
+//	$("#"+facet_obj.dom_id).find(".facet_loading_indicator").html("<img src=\"client/theme/images/loaded.gif\" class=\"facet_load_indicator\" />");
 }
 
 

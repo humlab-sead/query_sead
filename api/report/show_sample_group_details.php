@@ -12,7 +12,7 @@
   <!-- DataTables -->
   <link rel="stylesheet" href="../../jslib/datatables-1.9.4/media/css/jquery.dataTables.css">
   <link rel="stylesheet" href="../../jslib/TableTools-2.1.5/media/css/TableTools.css">
-  <link rel="stylesheet" href="theme/reporting.css">
+  <link rel="stylesheet" href="/client/theme/reporting.css">
   <script type="text/javascript" charset="utf-8" language="javascript" src="../../jslib/datatables-1.9.4/media/js/jquery.js"></script>
   <script type="text/javascript" charset="utf-8" language="javascript" src="../../jslib/datatables-1.9.4/media/js/jquery.dataTables.min.js"></script>
   <script type="text/javascript" charset="utf-8" language="javascript" src="../../jslib/TableTools-2.1.5/media/js/TableTools.min.js"></script>
@@ -62,8 +62,7 @@
 *
 *
 */
-require __DIR__ . '/../../server/fb_server_funct.php';
-require __DIR__ . '/sample_group_queries.php';
+require_once __DIR__ . '/sample_group_queries.php';
 require_once __DIR__ . '/report_module.php';
 
 if (isset($_REQUEST["sample_group_id"]) && !empty($_REQUEST["sample_group_id"]) && is_numeric($_REQUEST["sample_group_id"])) {

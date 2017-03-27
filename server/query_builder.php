@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/lib/dijkstra.php';
+require_once __DIR__ . '/facet_config.php';
 
 //***************************************************************************************************************************************************
 /*
@@ -204,7 +206,7 @@ class QueryBuilder
         return $joins;
     }
 
-    public function get_query_information($edge_list, $numeric_edge_list, $lookup_list_tables, $facet_definition, $facetConfig, $f_code, $extra_tables, $f_list)
+    public function get_query_information($edge_list, $numeric_edge_list, $lookup_list_tables, $facet_definition, $facetConfig, $f_code, $extra_tables, $activeFacets)
     {
         global $list_of_alias_tables;
         $query = array();
@@ -218,58 +220,57 @@ class QueryBuilder
         
         $query_column = $query_where = "";
         
-        if (isset($f_list)) {
+        if (isset($activeFacets)) {
 
             // list must exist, ie there must be some filters in order build a query
 
-            $facet_positions = array_flip($f_list);
+            $facet_positions = array_flip($activeFacets);
 
-            foreach ($f_list as $pos => $facet) {
+            foreach ($activeFacets as $pos => $facetCode) {
 
-                if (!isset($facet_selections[$facet])) {
+                if (!isset($facet_selections[$facetCode])) {
                     continue;
                 }
                 
-                while (list($skey1, $selection_group) = each($facet_selections[$facet])) {
+                while (list($skey1, $selection_group) = each($facet_selections[$facetCode])) {
 
-                    // tricky condition here!2009-11-28
-                    $affects_query = ($facet_positions[$f_code] > $facet_positions[$facet] ||
-                        ($facet_definition[$f_code]["facet_type"] == "range" && $facet_positions[$f_code] == $facet_positions[$facet]) ||
-                        ($facet_definition[$f_code]["facet_type"] == "geo" && $facet_positions[$f_code] == $facet_positions[$facet]));
+                    $affects_query = ($facet_positions[$f_code] > $facet_positions[$facetCode] ||
+                        ($facet_definition[$f_code]["facet_type"] == "range" && $facet_positions[$f_code] == $facet_positions[$facetCode]) ||
+                        ($facet_definition[$f_code]["facet_type"] == "geo" && $facet_positions[$f_code] == $facet_positions[$facetCode]));
 
                     if (!$affects_query) {
                         continue;
                     }
                     
-                    $table_with_selections = isset($facet_definition[$facet]["alias_table"]) ? $facet_definition[$facet]["alias_table"] : $facet_definition[$facet]["table"] ;
+                    $table_with_selections = isset($facet_definition[$facetCode]["alias_table"]) ? $facet_definition[$facetCode]["alias_table"] : $facet_definition[$facetCode]["table"] ;
                     
-                    switch ($facet_definition[$facet]["facet_type"]) {
+                    switch ($facet_definition[$facetCode]["facet_type"]) {
                         case "range":
-                            $query_where.=get_range_selection_clauses($f_code, $facet, $selection_group)."      AND ";
-                            if (!empty($facet_definition[$facet]["query_cond_table"])) {
-                                foreach ($facet_definition[$facet]["query_cond_table"] as $cond_table) {
+                            $query_where.=get_range_selection_clauses($f_code, $facetCode, $selection_group)."      AND ";
+                            if (!empty($facet_definition[$facetCode]["query_cond_table"])) {
+                                foreach ($facet_definition[$facetCode]["query_cond_table"] as $cond_table) {
                                     $table_list[$cond_table] = true;
                             }
                         }
-                        $query_where_list[$table_with_selections][]=get_range_selection_clauses($f_code, $facet, $selection_group);
-                        $subselect_where[$table_with_selections]=get_range_selection_clauses($f_code, $facet, $selection_group). "   AND ";
+                        $query_where_list[$table_with_selections][]=get_range_selection_clauses($f_code, $facetCode, $selection_group);
+                        $subselect_where[$table_with_selections]=get_range_selection_clauses($f_code, $facetCode, $selection_group). "   AND ";
                         break;
                         case "discrete":
                             if (!empty($selection_group)) {
-                                $query_where.= get_discrete_selection_clauses($f_code, $facet, $selection_group). "     AND ";
-                                if (!empty($facet_definition[$facet]["query_cond_table"])) {
-                                    foreach ($facet_definition[$facet]["query_cond_table"] as $cond_table) {
+                                $query_where.= get_discrete_selection_clauses($f_code, $facetCode, $selection_group). "     AND ";
+                                if (!empty($facet_definition[$facetCode]["query_cond_table"])) {
+                                    foreach ($facet_definition[$facetCode]["query_cond_table"] as $cond_table) {
                                         $table_list[$cond_table] = true;
                                 }
                             }
-                            $query_where_list[$table_with_selections][]=get_discrete_selection_clauses($f_code, $facet, $selection_group);
-                            $subselect_where[$table_with_selections]=get_discrete_selection_clauses($f_code, $facet, $selection_group). "   AND ";
+                            $query_where_list[$table_with_selections][]=get_discrete_selection_clauses($f_code, $facetCode, $selection_group);
+                            $subselect_where[$table_with_selections]=get_discrete_selection_clauses($f_code, $facetCode, $selection_group). "   AND ";
                         }
                         break;
                         case "geo":
-                            $query_where.=get_geo_filter_clauses($f_code, $facet, $selection_group). "     AND " ;
-                            $query_where_list[$table_with_selections][]=get_geo_filter_clauses($f_code, $facet, $selection_group);
-                            $subselect_where[$table_with_selections]=get_geo_filter_clauses($f_code, $facet, $selection_group). "  AND ";
+                            $query_where.=get_geo_filter_clauses($f_code, $facetCode, $selection_group). "     AND " ;
+                            $query_where_list[$table_with_selections][]=get_geo_filter_clauses($f_code, $facetCode, $selection_group);
+                            $subselect_where[$table_with_selections]=get_geo_filter_clauses($f_code, $facetCode, $selection_group). "  AND ";
                             break;
                     }
                     
@@ -278,7 +279,7 @@ class QueryBuilder
                 }
             }
         }
-        // array_flip
+
         if (!empty($extra_tables)) {
             foreach ($extra_tables as $value) {
                 $table_list[$value] = true; // data table is added to the list of tables makes unique
@@ -361,6 +362,40 @@ class QueryBuilder
         }
         return $edge_list;
     }
+
 }
 
+class QueryBuildService {
+
+    //***************************************************************************************************************************************************
+    /*
+    Function: compileQuery
+    This the core of the dynamic query builder.     It's input are previous selected filters and the code of the facet that triggered the action.
+    It is also use an array of filter to filter by text each facet result,
+    Parameters:
+    * $facetConfig all params, selections, text_filter, positions of facets ie the view.state of the client)
+    * the target facet to which the query should populate/compute counts etc
+    * $data_tables, any extra tables that should be part of the query, the function uses the tables via get_joins to join the tables
+    * $activeFacets, the list of the facets in the view-state
+    Logics:
+    *  Get all selection preceding the target facet.
+    *  Make query-where statements depending on which type of facets (range or discrete)
+    Exceptions:
+    * a - for target facets (f_code) of "discrete" type it should be affected by all selection from facets preceeding the requested/target facets.
+    * b - for "range" facet it should also include the condition of the range-facets itself, although the bound should be expanded to show values outside the limiting range.
+
+    Returns:
+    select clauses (not used)
+    where clauses
+    join conditions
+    tables to used
+    */
+    public static function compileQuery($facetConfig, $facetCode, $extra_tables, $activeFacets)
+    {
+        global $facet_definition, $join_columns, $f_tables, $ourMap;
+        $query_builder = new QueryBuilder();
+        $query_info = $query_builder->get_query_information($join_columns, $ourMap, $f_tables, $facet_definition, $facetConfig, $facetCode, $extra_tables, $activeFacets);
+        return $query_info;
+    }
+}
 ?>

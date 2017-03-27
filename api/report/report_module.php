@@ -1,6 +1,9 @@
 <?php
 
-//require_once __DIR__ . "/../../server/fb_server_funct.php";
+require_once(__DIR__ . '/../../server/cache_helper.php');
+require_once(__DIR__ . '/../../server/connection_helper.php');
+require_once(__DIR__ . '/../../server/facet_config.php');
+require_once(__DIR__ . '/../../server/query_builder.php');
 
 /**
  * function: get_f_code_filter_query
@@ -19,12 +22,9 @@
 function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_table = null) {
     global $facet_definition;
 
-    if (!($conn = pg_connect(CONNECTION_STRING))) {
-        echo "Error: pg_connect failed.\n";
-        exit;
-    }
+    $conn = ConnectionHelper::createConnection();
 
-    $facet_xml = get_facet_xml_from_id($cache_id);
+    $facet_xml = CacheHelper::get_facet_xml_from_id($cache_id);
 
     $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
     $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
@@ -33,7 +33,7 @@ function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_tabl
 
     //Add  as final facet
     $tmp_list[] = $f_code;
-    $query_info = get_query_clauses($facet_params, $f_code, $data_table, $tmp_list);
+    $query_info = QueryBuildService::compileQuery($facet_params, $f_code, $data_table, $tmp_list);
     $query_column = $facet_definition[$f_code]["id_column"];
     $q = "select  distinct $query_column  from " . $query_info["tables"];
     if (!empty($query_info["joins"])) {
@@ -52,7 +52,7 @@ function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_tabl
  * returns: html text about selection in filters
  */
 function get_select_info_as_html($conn, $cache_id) {
-    $facet_xml = get_facet_xml_from_id($cache_id);
+    $facet_xml = CacheHelper::get_facet_xml_from_id($cache_id);
     $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
     $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
     return FacetConfig::generateUserSelectItemHTML($facet_params);

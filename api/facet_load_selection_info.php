@@ -1,11 +1,9 @@
 <?php
 
-// require_once('fb_server_funct.php');
-// include_once ("lib/Cache.php");
-
-require_once(__DIR__ . "/../server/fb_server_funct.php");
-require_once(__DIR__ . "/../server/lib/Cache.php");
+require_once(__DIR__ . "/../server/config/bootstrap_application.php");
 require_once(__DIR__ . "/../server/connection_helper.php");
+require_once(__DIR__ . "/../server/lib/Cache.php");
+require_once(__DIR__ . "/../server/facet_config.php");
 
 if (!empty($_REQUEST["xml"])) {
     $xml=$_REQUEST["xml"];

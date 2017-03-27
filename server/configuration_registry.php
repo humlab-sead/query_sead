@@ -5,9 +5,9 @@
  * and open the template in the editor.
  */
 
-require_once("../applications/applicationSpecification.php");
-require_once("../applications/sead/fb_def.php");
-include_once ("../server/lib/Cache.php");
+require_once(__DIR__ . "/config/environment.php");
+require_once(__DIR__ . "/config/bootstrap_application.php");
+include_once(__DIR__ . "/lib/Cache.php");
 
 class ConfigurationRegistry 
 {

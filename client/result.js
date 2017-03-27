@@ -370,7 +370,7 @@ function result_loading_indicator_set_state(state) {
 	state = state.toLowerCase();
 	
 	if(state == "on") {
-		$(".result_loading_indicator").html("<img style=\"margin-top:2px;\" src=\"applications/"+application_name+"/theme/images/loadingf.gif\" class=\"facet_load_indicator\" /> <span style=\"position:relative;top:-5px;\">"+t("Laddar")+"...</span>");
+		$(".result_loading_indicator").html("<img style=\"margin-top:2px;\" src=\"client/theme/images/loadingf.gif\" class=\"facet_load_indicator\" /> <span style=\"position:relative;top:-5px;\">"+t("Laddar")+"...</span>");
 		
 		$(".result_loading_indicator").animate({
 			"opacity" : "1.0"
@@ -581,14 +581,14 @@ function result_render_result_variable_item(item, has_children, level) {
 	var parent_icon_html = "";
 	if(has_children) {
 		classes += " result_variable_parent";
-		parent_icon_html += "<img class=\"result_variable_tree_btn\" src=\"applications/ships/theme/images/tree_btn_closed.png\" />&nbsp;";
+		parent_icon_html += "<img class=\"result_variable_tree_btn\" src=\"client/theme/images/tree_btn_closed.png\" />&nbsp;";
 		
 
 	}
 	else {
-		parent_icon_html += "<img src=\"applications/"+application_name+"/theme/images/tree_btn_placeholder.png\" />&nbsp;";
+		parent_icon_html += "<img src=\"client/theme/images/tree_btn_placeholder.png\" />&nbsp;";
 		if(level == 1) {
-		parent_icon_html += "<img src=\"applications/"+application_name+"/theme/images/tree_btn_placeholder.png\" />&nbsp;";
+		parent_icon_html += "<img src=\"client/theme/images/tree_btn_placeholder.png\" />&nbsp;";
 		}
 	}
 	
@@ -1229,7 +1229,7 @@ function result_agg_type_change_trigger(id) {
 
    Description:
      This function renders the selectable content for the result variable area.
-	 There are two types possible interactions: checkboxes and radiogroup. (This is defined in client_ui_definition.js in applications/applicationName/theme )
+	 There are two types possible interactions: checkboxes and radiogroup. (This is defined in client_ui_definition.js in client/theme )
 
    see also:
    <result_switch_view>
@@ -1287,11 +1287,11 @@ function result_render_control() {
 			
 			if($(result_variable_container).find(".result_variable_child_container").is(":hidden") == true) {
 				$(result_variable_container).find(".result_variable_child_container").show(150);
-				$(result_variable_container).find(".result_variable_tree_btn").attr("src", "applications/"+application_name+"/theme/images/tree_btn_open.png");
+				$(result_variable_container).find(".result_variable_tree_btn").attr("src", "client/theme/images/tree_btn_open.png");
 			}
 			else {
 				$(result_variable_container).find(".result_variable_child_container").hide(150);
-				$(result_variable_container).find(".result_variable_tree_btn").attr("src", "applications/"+application_name+"/theme/images/tree_btn_closed.png");
+				$(result_variable_container).find(".result_variable_tree_btn").attr("src", "client/theme/images/tree_btn_closed.png");
 			}
 		});
 		
@@ -1454,15 +1454,15 @@ function result_maximize_toggle() {
 	if(result_object.maximized == false) {
 		result_module_invoke_all("pre_maximize");
 		result_maximize();
-		$("#result_max_min_button").attr("src", "applications/"+application_name+"/theme/images/button_contract.png");
-		$("#result_max_min_button").attr("alt", "applications/"+application_name+"/theme/images/button_contract.png");
+		$("#result_max_min_button").attr("src", "client/theme/images/button_contract.png");
+		$("#result_max_min_button").attr("alt", "client/theme/images/button_contract.png");
 		//result_module_invoke_all("post_maximize"); //this will be invoked as a callback at the end of the animation instead
 	}
 	else {
 		//result_module_invoke_all("pre_minimize");
 		result_minimize();
-		$("#result_max_min_button").attr("src", "applications/"+application_name+"/theme/images/button_expand.png");
-		$("#result_max_min_button").attr("alt", "applications/"+application_name+"/theme/images/button_expand.png");
+		$("#result_max_min_button").attr("src", "client/theme/images/button_expand.png");
+		$("#result_max_min_button").attr("alt", "client/theme/images/button_expand.png");
 
 		//result_module_invoke_all("post_minimize"); //this will be invoked as a callback at the end of the animation instead
 	}

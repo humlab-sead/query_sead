@@ -27,28 +27,21 @@
 
 date_default_timezone_set('Europe/Stockholm');
 
-require_once 'lib/PHPExcel/PHPExcel.php';
-require('fb_server_funct.php');
+require_once (__DIR__ . '/../server/lib/PHPExcel/PHPExcel.php');
+require_once (__DIR__ . '/../server/result_query_compiler.php');
+require_once (__DIR__ . '/../server/connection_helper.php');
+require_once (__DIR__ . '/../server/cache_helper.php');
 
-if (!($conn = pg_connect(CONNECTION_STRING))) { echo "Error: pg_connect failed.\n"; exit; }
+$conn = ConnectionHelper::createConnection();
 
-
-// The xml-data is containing facet information is processed and all parameters are put into an array for futher use.
-// $facet_xml_file_location="cache/".$_REQUEST['cache_id']."_facet_xml.xml";
-// $facet_xml=file_get_contents($facet_xml_file_location);
-$facet_xml = get_facet_xml_from_id($_REQUEST['cache_id']);
-
+$facet_xml = CacheHelper::get_facet_xml_from_id($_REQUEST['cache_id']);
 $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml); 
-$facet_params=FacetConfig::removeInvalidUserSelections($conn,$facet_params);
-
-// $result_xml_file_location="cache/".$_REQUEST['cache_id']."_result_xml.xml";
-// $result_xml=file_get_contents($result_xml_file_location);
+$facet_params = FacetConfig::removeInvalidUserSelections($conn,$facet_params);
 $result_xml = get_result_xml_from_id($_REQUEST['cache_id']);
-
 $resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
 
 $aggregation_code=$resultConfig["aggregation_code"];
-$q= get_result_data_query($facet_params, $resultConfig);
+$q = ResultQueryCompiler::compileQuery($facet_params, $resultConfig);
 
 if (empty($q)) {
     exit;
@@ -116,7 +109,7 @@ if (isset($selection_matrix))
 	}
 }
 
-if (($rs = pg_query($conn, $q)) <= 0) { echo "Error: cannot execute query3. $q \n"; exit; }
+$rs = ConnectionHelper::query($conn, $q);
 
 $item_counter=1;
 $use_count_item=false; //this is use to flag if aggregation is used and then indicate the usage.

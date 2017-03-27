@@ -394,9 +394,9 @@ function facet_text_search_callback(facet_id, search_text) {
 	
 	search_text=search_text.replace('&', ''); // remove any "&" sign since it brakes the url and arguments see bug http://bugs.humlab.umu.se/view.php?id=119
 	var facet_obj = facet_presenter.facet_list.facet_get_facet_by_id(facet_id);
-	$("#"+facet_obj.dom_id).find(".facet_loading_indicator").attr('src','applications/'+application_name+'/theme/images/loadingf.gif');
+	$("#"+facet_obj.dom_id).find(".facet_loading_indicator").attr('src','client/theme/images/loadingf.gif');
 
-	//$("#"+facet_obj.dom_id).find(".facet_loading_indicator").html("<img src=\"applications/"+application_name+"/theme/images/loadingf.gif\" class=\"facet_load_indicator\" />");
+	//$("#"+facet_obj.dom_id).find(".facet_loading_indicator").html("<img src=\"client/theme/images/loadingf.gif\" class=\"facet_load_indicator\" />");
 	
 	//var facet_obj = facet_presenter.facet_list.facet_get_facet_by_id(facet_id);
 	

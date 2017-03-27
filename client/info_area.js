@@ -28,7 +28,7 @@ function info_area_render_login_box() {
 	
 	box += "<div id=\"background_overlay\"></div>";
 	box += "<div id=\"login_box\">";
-	box += "<div id=\"login_box_close_button\" style=\"color:red;position:absolute;left:224px;top:24px;background-color:#00639f;cursor:pointer;\"><img src=\"applications/sead/theme/images/button_close.png\"></div>";
+	box += "<div id=\"login_box_close_button\" style=\"color:red;position:absolute;left:224px;top:24px;background-color:#00639f;cursor:pointer;\"><img src=\"client/theme/images/button_close.png\"></div>";
 	box += "<table id=\"login_table\" class=\"generic_table\"><tbody>";
 	box += "<tr>";
 	box += "<td class=\"generic_table_top_left\"></td><td class=\"generic_table_top_middle\"></td><td class=\"generic_table_top_right\"></td>"; //top row
@@ -169,7 +169,7 @@ function info_area_open_view_state_save_box() {
 	
 	
 	var html = "<div id=\"viewstate_save_popup\">";
-	html += "<img id=\"viewstate_save_popup_close_btn\" style=\"float:right;\" src=\"applications/sead/theme/images/button_close.png\" />";
+	html += "<img id=\"viewstate_save_popup_close_btn\" style=\"float:right;\" src=\"client/theme/images/button_close.png\" />";
 	html += "<div class=\"content_container\"></div></div>";
 	
 	var html_obj = $(html);
@@ -212,7 +212,7 @@ function info_area_open_view_state_load_box() {
 	
 	$("#load_view_state_button").css("color", "#bbb");
 	
-	var html = "<div id=\"viewstate_load_popup\"><img id=\"viewstate_load_popup_close_btn\" style=\"float:right;\" src=\"applications/sead/theme/images/button_close.png\" /><span style=\"font-size:12px;font-weight:bold;\">"+t("Vynummer")+"</span><br/><input id=\"view_state_select_box\" type=\"text\" style=\"width:60px;\" value=\""
+	var html = "<div id=\"viewstate_load_popup\"><img id=\"viewstate_load_popup_close_btn\" style=\"float:right;\" src=\"client/theme/images/button_close.png\" /><span style=\"font-size:12px;font-weight:bold;\">"+t("Vynummer")+"</span><br/><input id=\"view_state_select_box\" type=\"text\" style=\"width:60px;\" value=\""
 	+current_view_state_id+"\" /><input type=\"submit\" value=\""+t("Ladda")+"\" /><hr /><div><span style=\"font-weight:bold;\">"+t("Dina senaste vyer")+"</span><div id=\"latest_view_states_container\"></div></div></div>";
 	
 	var html_obj = $(html);
@@ -307,7 +307,7 @@ function info_area_open_language_selection_dialog() {
 	
 	$("#language_selection_button").css("color", "#bbb");
 	
-	var html = "<div id=\"language_selection_dialog\"><img id=\"language_selection_dialog_close_btn\" style=\"float:right;cursor:pointer;\" src=\"applications/sead/theme/images/button_close.png\" />";
+	var html = "<div id=\"language_selection_dialog\"><img id=\"language_selection_dialog_close_btn\" style=\"float:right;cursor:pointer;\" src=\"client/theme/images/button_close.png\" />";
 	
 	html += "<table ><tbody>";
 	html += "<tr><td style=\"vertical-align:middle;\"><span class=\"language_selection_language_title\">"+t("Välj språk")+"</span></td></tr>";

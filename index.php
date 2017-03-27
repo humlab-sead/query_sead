@@ -1,9 +1,15 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <?php
+
+error_reporting(E_ERROR | E_WARNING | E_PARSE); // | E_NOTICE);
+
+@ini_set('log_errors','On');
+@ini_set('display_errors','Off');
+@ini_set('error_log', __DIR__ . '/errors.log');
+
 session_start();
 $sid = session_id();
 
-error_reporting(E_ERROR | E_WARNING | E_PARSE); // | E_NOTICE);
 require_once("server/language/language.php");
 
 $view_state_id = empty($_GET["view_state"]) ? get_default_view_state() : $_GET["view_state"];
@@ -33,7 +39,6 @@ Infrastructure:
 - Php5 (http://www.php.net)
 - Database backend postgressql 8.4 (http://www.postgresql.org/)
 - PostGIS 1.4 (http://postgis.refractions.net/)
-- Minnesota map-server (http://mapserver.org/)
 - Batik rasterizer (http://xmlgraphics.apache.org/batik/tools/rasterizer.html)
 - jquery http://jquery.com/
 - Highchart (educational use) http://www.highcharts.com/
@@ -44,14 +49,12 @@ Postgres installation notes:
 - psql -p 5433 -d postgistemplate -c "SELECT postgis_full_version();"
 - createdb -p 5433 -T postgistemplate -O ships ships
 - pg_restore -p 5433 -d ships -U postgres ships.dump
-- create user regio
 
 Batik rasterizer (jar-files):
 - Located in jslib/highchart/exporting_server/batik-1.7
 - Sun java should be used
 
-Directort permission notes:
-- cache needs to have write permissions
+Directory permission notes:
 - api/cache and subdirectories need to have write permissionss
 
 Javascript libries:
@@ -90,7 +93,7 @@ client_language -  which language to be used sv_SE
 
 Initialization sequence:
 * <interface.php>  outlines  properties and heading of the html-pagee
-* layout.php - outlines the div and table structure and this is different for each application (SEAD/SHIPS/DIABAS) see <layout.php (SHIPS)> and <layout.php (SEAD)>
+* MOVED TO index.php: layout.php - outlines the div and table structure and this is different for each application (SEAD/SHIPS/DIABAS) see <layout.php (SHIPS)> and <layout.php (SEAD)>
 * Stylesheet to be used. style.css
 * <js_facet_def.php> getting the javascript defintions for the facets
 * <js_result_def.php> getting the javascript defintion of the result variables and load the result modules from the result_modules directory
@@ -135,23 +138,18 @@ Result map oriented user activities (SHIPS):
 * Download coordinate file for map layer without background map via a link to a file on the server (pgw-file))
 * Download legend as a image by calling <map_legend_image.php>
 
-Result diagram oriented user activities (SHIPS):
-* Select which result variable to use as x-axis.
-* Select the diagram mode "one variable for all aggregation units"  and select which variable to use from the list
-* Select the diagram mode "one aggregation unit all result variables" and select which aggregation unit to use from the list which show all select variables
-* Show a tooltip for a datapoint.
-* Print the diagram
-* Download the diagram as png, or svg
-
 The client is mainly sending request to server using
 * <facet_load_data> in <facet.js> for facet content (discrete values, intervals and geo-information)
 * <result_load_data> in <result.js> for content into the result area (map, diagram and "list-like" information"
 
-(see applications/sead/theme/images/SeadLogo.jpg)
+(see client/theme/images/SeadLogo.jpg)
 
 */
-require_once("applications/applicationSpecification.php");
+
+
+require_once("server/config/environment.php");
 include_once("interface.php");
+
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -159,7 +157,7 @@ include_once("interface.php");
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
     <link rel="stylesheet" type="text/css" href="//code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" />
-    <link rel="stylesheet" type="text/css" href="applications/sead/theme/style.css" />
+    <link rel="stylesheet" type="text/css" href="client/theme/style.css" />
 
     <script type="text/javascript" src="//code.jquery.com/jquery-3.2.0.min.js"></script>
     <script type="text/javascript" src="//code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
@@ -186,10 +184,6 @@ include_once("interface.php");
 
     <script type="text/javascript">
 <?php
-
-@ini_set('log_errors','On');
-@ini_set('display_errors','Off');
-@ini_set('error_log', __FILE__ . '../../errors.log');
 
     require_once("api/js_facet_def.php");
     echo "</script>";
@@ -315,7 +309,7 @@ include_once("interface.php");
         </tr>
     </table>
 </DIV>
-<img id="umu_logo" src="applications/sead/theme/images/umu.png" />
+<img id="umu_logo" src="client/theme/images/umu.png" />
 <table>
     <tr>
         <td style="vertical-align:top;">
@@ -376,7 +370,7 @@ include_once("interface.php");
                             <td class="generic_table_middle_left"></td>
                         <td class="generic_table_middle_middle content_container">
                         <SPAN ID="LOGO_AREA">
-                        <IMG SRC="applications/sead/theme/images/SeadLogo.jpg" ALT="LOGO_sead">
+                        <IMG SRC="client/theme/images/SeadLogo.jpg" ALT="LOGO_sead">
                         <BR>
                         An international standard database for environmental archaeology data is under development at the Environmental Archaeology Lab (MAL), in collaboration with HUMlab, at Umeå University, Sweden.
 <BR><BR>
@@ -384,19 +378,19 @@ SEAD is financed by The Swedish Research Council and Umeå University Faculty of
 <BR><BR>
 <BR>
 <BR>
-<a href src="http://www.idesam.umu.se/english/mal/?languageId=1"><img src="applications/sead/theme/images/logo_mal_x116_notext.jpg"></a >
+<a href src="http://www.idesam.umu.se/english/mal/?languageId=1"><img src="client/theme/images/logo_mal_x116_notext.jpg"></a >
 <BR>
 <BR>
 <BR>
-<a href src="http://www.humlab.umu.se"><img src="applications/sead/theme/images/logo_humlab_x116.gif"></a >
+<a href src="http://www.humlab.umu.se"><img src="client/theme/images/logo_humlab_x116.gif"></a >
 <BR>
 <BR>
 <BR>
-<a href src="http://www.umu.se"><img src="applications/sead/theme/images/logo_umu_x116.gif"></a >
+<a href src="http://www.umu.se"><img src="client/theme/images/logo_umu_x116.gif"></a >
 <BR>
 <BR>
 <BR>
-<a href src="http://www.lunduniversity.lu.se/"><img src="applications/sead/theme/images/450.gif" width="116"></a >
+<a href src="http://www.lunduniversity.lu.se/"><img src="client/theme/images/450.gif" width="116"></a >
 <BR>
 <BR>
                         </span>

@@ -2,8 +2,10 @@
 
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
+require_once(__DIR__ . '/query_builder.php');
+
 /*
-file: fb_server_client_params_funct.php
+file: facet_config.php
 This file holds all functions to process and handle params and xml-data from client
 */
 
@@ -228,7 +230,7 @@ class FacetConfig
             }
             $activeKeys = self::getKeysOfActiveFacets($facetConfig);
             
-            $query = get_query_clauses($facetConfig, $facetKey, $data_tables, $activeKeys);
+            $query = QueryBuildService::compileQuery($facetConfig, $facetKey, $data_tables, $activeKeys);
             
             $query_column = $facet_definition[$facetKey]["id_column"];
             $query_column_name = $facet_definition[$facetKey]["name_column"];
@@ -358,48 +360,8 @@ EOS;
     }
 
     /*
-    function generateUserSelectItemsCacheId
-    this function derives the selections from params as a string for generating caching-ids.
+    function computeUserSelectItemCount
     */
-
-    public static function generateUserSelectItemsCacheId($facetConfig)
-    {
-        global $facet_definition;
-
-        $activeKeys = self::getKeysOfActiveFacets($facetConfig);
-        $itemsSelectedByUser = self::getItemGroupsSelectedByUser($facetConfig);
-        if (empty($activeKeys)) {
-            return "";
-        }
-
-        $cache_id = "";
-        foreach ($activeKeys as $pos => $facetKey) {
-            if (!isset($itemsSelectedByUser[$facetKey])) {
-                continue;
-            }
-            $facetType = $facet_definition[$facetKey]["facet_type"];
-            foreach ($itemsSelectedByUser[$facetKey] as $skey => $selection_group) {
-                foreach ($selection_group as $y => $selection) {
-                    $selection_list_discrete = array();
-                    foreach ($selection as $z => $item) {
-                        $item = (array) $item;
-                        $value = $facetKey . "_" . $item["selection_type"] . "_" . $item["selection_value"];
-                        if ($facetType == "discrete") {
-                            $selection_list_discrete[] = $value;
-                        } else {
-                            $cache_id .= $value;
-                        }
-                    }
-                    if ($facetType == "discrete") {
-                        sort($selection_list_discrete);
-                        $cache_id .= implode('_', $selection_list_discrete);
-                    }
-                }
-            }
-        }
-        
-        return $cache_id;
-    }
 
     public static function computeUserSelectItemCount($facetConfig, $requested = false)
     {

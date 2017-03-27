@@ -9,7 +9,7 @@
   <META NAME="Description" CONTENT="Details of SEAD ">
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8" />
   <link rel="stylesheet" href="../../jslib/datatables-1.9.4/media/css/jquery.dataTables.css">
-  <link rel="stylesheet" href="theme/reporting.css">
+  <link rel="stylesheet" href="/client/theme/reporting.css">
   <link rel="stylesheet" href="../../jslib/TableTools-2.1.5/media/css/TableTools.css">
   <script type="text/javascript" charset="utf-8" language="javascript" src="../../jslib/datatables-1.9.4/media/js/jquery.js"></script>
   <script type="text/javascript" charset="utf-8" language="javascript" src="../../jslib/datatables-1.9.4/media/js/jquery.dataTables.min.js"></script>
@@ -53,9 +53,7 @@
 * - <site_reporter->sample_group_report>
 * - <site_reporter->dataset_report>
 */
-require __DIR__ . '/../../server/fb_server_funct.php';
-require __DIR__ . '/site_queries.php';
-
+require_once __DIR__ . '/site_queries.php';
 require_once __DIR__ . '/report_module.php';
 
 $cache_id = $_REQUEST["cache_id"];
@@ -77,7 +75,7 @@ $site_reporter = new site_reporter();
 echo $site_reporter->site_info_report($conn, $site_id, $cache_id);
 echo $site_reporter->dating_report($conn, $site_id, $cache_id);
 echo $site_reporter->reference_report($conn, $site_id, $cache_id);
-echo $site_reporter->sample_group_report($conn, $site_id, $applicationName, $cache_id);
+echo $site_reporter->sample_group_report($conn, $site_id, "sead", $cache_id);
 echo $site_reporter->dataset_report($conn, $site_id, $cache_id);
 echo $site_reporter->species_report($conn, $site_id, $cache_id);
 echo $site_reporter->measured_values_report($conn, $site_id, $cache_id);
