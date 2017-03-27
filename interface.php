@@ -11,8 +11,7 @@ Ordinary sequence:
 4 - <interface_render_info_area>
 
 See also:
-<layout.php (SHIPS)> 
-<layout.php (SEAD)>
+REMOVED: <layout.php (SEAD)>
 */ 
 require_once "server/language/t.php";
 require_once "server/config/environment.php";

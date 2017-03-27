@@ -1,6 +1,6 @@
 <?php
 /*
-file: js_result_def.php
+file: get_result_definitions.php
 This file is generating a java-script output contain the result variable to be used in the client-interfaces.
 
 I also load which result modules that are present.
@@ -17,6 +17,7 @@ default - default or not (0 or 1)
 */
 require_once(__DIR__ . "/../server/config/environment.php");
 require_once(__DIR__ . "/../server/config/bootstrap_application.php");
+
 // loads the javascript library for the result modules 
 $modules = array();
 $path = "client/result_modules";
@@ -32,7 +33,6 @@ foreach($dir as $entry) {
     }
 }
 
-echo "<script type=\"text/javascript\" >";
 echo "var result_modules = Array();\n";
 foreach($modules as $module) {
     echo "result_modules.push('".$module."');\n";
@@ -85,7 +85,6 @@ foreach ($result_definition as $result_key => $element)
         $i++;
     }
 }
-$out .= "</script>";
 echo $out;
 
 ?>

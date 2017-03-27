@@ -11,7 +11,7 @@ About:
  * map
  * REMOVED piechart
 NO LONGER VALID: Since this framework is made for different domain some of the function are defined differently for different domain.
-NO LONGER VALID: Domain speicific function are stored in applications/ships and  applications/sead applications/diabas applications/xxx
+NO LONGER VALID: Domain speicific function are stored in applications/xxx
 
 Trigged by:
 Javascript function <result_load_data> in <result.js>
@@ -69,7 +69,7 @@ Sequence for diagram load operation:
 Sequence for map load operation:
 	* Process xml-document for map-parameters using function using <ResultConfigDeserializer::deserializeMapConfig>. It stores the parameters into a composite array.
 	* Process symbol-xml document (if present) and make array for point symbols (SEAD/DIABAS)
-	* Render the map output for the client, which is different for each application (SEAD/SHIPS/DIABAS etc)
+	* Render the map output for the client, NO LONGER VALID: which is different for each application 
 	* Functions on client-side are also different to handle the different kind of map-output.
 
 	<result_render_map_view.php>

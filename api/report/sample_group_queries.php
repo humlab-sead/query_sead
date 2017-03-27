@@ -117,14 +117,16 @@ class sample_group_query {
         }
         $filter = !empty($sample_group_id) ? " tbl_sample_groups.sample_group_id = $sample_group_id" : "1=1 ";
         
-        $q = "  select site_name from tbl_sample_groups
-        join tbl_sites  on tbl_sample_groups.site_id=tbl_sites.site_id
+        $q = "
+        select site_name
+        from tbl_sample_groups
+        join tbl_sites
+          on tbl_sample_groups.site_id=tbl_sites.site_id
         where
-        $filter
-        $facet_filtered
-        group by
-        site_name
-        order by  site_name             ";
+         $filter
+         $facet_filtered
+        group by site_name
+        order by site_name";
         
         return $q;
     }
@@ -152,7 +154,8 @@ class sample_group_query {
         }
         
         $filter = !empty($sample_group_id) ? " tbl_sample_groups.sample_group_id = $sample_group_id" : "1=1 ";
-        $q = "  select tbl_sample_groups.site_id as site_id,
+        $q = "
+        select tbl_sample_groups.site_id as site_id,
             sample_group_name as \"Sample group name\",
             sample_group_description,
             method_name
@@ -197,7 +200,8 @@ class sample_group_query {
         }
         $filter = !empty($sample_group_id) ? " tbl_physical_samples.sample_group_id = $sample_group_id" : "1=1 ";
         
-        $q = " select tbl_sites.site_name as site_name,
+        $q = "
+        select tbl_sites.site_name as site_name,
             sample_group_name,
             sample_name,
             tbl_physical_samples.physical_sample_id
@@ -249,44 +253,41 @@ class sample_group_query {
         
         $filter = !empty($sample_group_id) ? " tbl_physical_samples.sample_group_id = $sample_group_id" : "1=1 ";
         
-        $q = "     select species,
-        array_to_string(array_agg(physical_sample_id::text||'|'||abundance),';') as species_list_by_physical_sample_id
-        from
-        (
-        select
-        COALESCE(tbl_taxa_tree_genera.genus_name,'')||' '||COALESCE(tbl_taxa_tree_master.species,'')||' '||COALESCE('('||tbl_abundance_elements.element_name||')','')::text||' '||COALESCE(tbl_modification_types.modification_type_name::text,'')    as  species
-        --     tbl_taxa_tree_genera.genus_name||' '||tbl_taxa_tree_master.species   as  species    ,
-        ,tbl_physical_samples.physical_sample_id,
-        tbl_abundances.abundance  as abundance
-        from tbl_datasets
-        left join tbl_analysis_entities
-        on tbl_datasets.dataset_id=tbl_analysis_entities.dataset_id
-        left join  tbl_physical_samples
-        on tbl_analysis_entities.physical_sample_id=tbl_physical_samples.physical_sample_id
-        left join tbl_analysis_entity_prep_methods
-        on tbl_analysis_entity_prep_methods.analysis_entity_id=tbl_analysis_entities.analysis_entity_id
-        left  join tbl_methods
-        on tbl_analysis_entity_prep_methods.method_id=tbl_methods.method_id
-        left join tbl_abundances
-        on tbl_abundances.analysis_entity_id=tbl_analysis_entities.analysis_entity_id
-        left join tbl_abundance_elements
-        on tbl_abundances.abundance_element_id=tbl_abundance_elements.abundance_element_id
-        left join tbl_abundance_modifications
-        on tbl_abundances.abundance_id=tbl_abundance_modifications.abundance_id
-        left join tbl_modification_types
-        on tbl_modification_types.modification_type_id=tbl_abundance_modifications.modification_type_id
-        left  join tbl_taxa_tree_master
-        on tbl_abundances.taxon_id = tbl_taxa_tree_master.taxon_id
-        left  join tbl_taxa_tree_genera
-        on tbl_taxa_tree_master.genus_id = tbl_taxa_tree_genera.genus_id
-        
-        where
-        trim(species)<>'' and
-        tbl_datasets.method_id=$method_id  and
-        $filter
-        $facet_filtered
-        
-        
+        $q = " 
+        select species,
+               array_to_string(array_agg(physical_sample_id::text||'|'||abundance),';') as species_list_by_physical_sample_id
+        from  (
+            select
+                COALESCE(tbl_taxa_tree_genera.genus_name,'')||' '||COALESCE(tbl_taxa_tree_master.species,'')||' '||COALESCE('('||tbl_abundance_elements.element_name||')','')::text||' '||COALESCE(tbl_modification_types.modification_type_name::text,'')    as  species
+                --     tbl_taxa_tree_genera.genus_name||' '||tbl_taxa_tree_master.species   as  species    ,
+                ,tbl_physical_samples.physical_sample_id,
+                tbl_abundances.abundance  as abundance
+            from tbl_datasets
+            left join tbl_analysis_entities
+              on tbl_datasets.dataset_id=tbl_analysis_entities.dataset_id
+            left join  tbl_physical_samples
+              on tbl_analysis_entities.physical_sample_id=tbl_physical_samples.physical_sample_id
+            left join tbl_analysis_entity_prep_methods
+              on tbl_analysis_entity_prep_methods.analysis_entity_id=tbl_analysis_entities.analysis_entity_id
+            left  join tbl_methods
+              on tbl_analysis_entity_prep_methods.method_id=tbl_methods.method_id
+            left join tbl_abundances
+              on tbl_abundances.analysis_entity_id=tbl_analysis_entities.analysis_entity_id
+            left join tbl_abundance_elements
+              on tbl_abundances.abundance_element_id=tbl_abundance_elements.abundance_element_id
+            left join tbl_abundance_modifications
+              on tbl_abundances.abundance_id=tbl_abundance_modifications.abundance_id
+            left join tbl_modification_types
+              on tbl_modification_types.modification_type_id=tbl_abundance_modifications.modification_type_id
+            left  join tbl_taxa_tree_master
+              on tbl_abundances.taxon_id = tbl_taxa_tree_master.taxon_id
+            left  join tbl_taxa_tree_genera
+              on tbl_taxa_tree_master.genus_id = tbl_taxa_tree_genera.genus_id
+            where
+                trim(species)<>'' and
+                tbl_datasets.method_id=$method_id  and
+                $filter
+                $facet_filtered
         ) as t
         group by species  ";
         // echo SqlFormatter::format($q,true);

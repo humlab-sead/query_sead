@@ -6,25 +6,25 @@ require_once(__DIR__ . "/../server/lib/Cache.php");
 require_once(__DIR__ . "/../server/facet_config.php");
 
 if (!empty($_REQUEST["xml"])) {
-    $xml=$_REQUEST["xml"];
+    $xml = $_REQUEST["xml"];
 }
 
 $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($xml);
 $conn = ConnectionHelper::createConnection();
 $facetConfig = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
-$f_code = $facetConfig["requested_facet"];
+$facetCode = $facetConfig["requested_facet"];
 
-$tooltip_text = "";
-$count_of_selections = FacetConfig::computeUserSelectItemCount($facetConfig, $f_code);
-if ($count_of_selections != 0) {
-    $tooltip_text = FacetConfig::generateUserSelectItemHTML($facetConfig, $f_code);
+$tooltip = "";
+$selectCount = FacetConfig::computeUserSelectItemCount($facetConfig, $facetCode);
+if ($selectCount != 0) {
+    $tooltip = FacetConfig::generateUserSelectItemHTML($facetConfig, $facetCode);
 }
 
 $xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
 $xml .= "<data>";
-$xml .= "<f_code>" . $f_code . "</f_code>\n";
-$xml .= "<report_html><![CDATA[" .$tooltip_text . "]]></report_html>\n";
-$xml .= "<count_of_selections>" . $count_of_selections . "</count_of_selections>\n";
+$xml .= "<f_code>" . $facetCode . "</f_code>\n";
+$xml .= "<report_html><![CDATA[" .$tooltip . "]]></report_html>\n";
+$xml .= "<count_of_selections>" . $selectCount . "</count_of_selections>\n";
 $xml .= "</data>";
 
 header("Content-Type: text/xml");

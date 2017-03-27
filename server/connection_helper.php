@@ -23,10 +23,11 @@ class ConnectionHelper
         return $rs;
     }
 
-    public static function query($conn, $q)
+    public static function query($conn, $q, $context="")
     {
         if (($rs = pg_query($conn, $q)) <= 0) {
-            error_log("Error: cannot execute query: " . SqlFormatter::format($q, false) . "  \n");
+            $where = empty($context) ? "" : " in \"$context\"";
+            error_log("Error$where: cannot execute query: " . SqlFormatter::format($q, false) . "\n");
             pg_close($conn);
             exit;
         }

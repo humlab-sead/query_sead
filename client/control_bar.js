@@ -26,7 +26,7 @@ function facet_control_init() {
 }
 /*
 Function: facet_control_populate_registry
-Populate the facet_control registry from the facet list which is rendered in <js_facet_def.php>
+Populate the facet_control registry from the facet list which is rendered in <get_facet_definitions.php>
 */
 function facet_control_populate_registry() {
 	

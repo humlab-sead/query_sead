@@ -1,11 +1,11 @@
 <?php
 /*
-file: js_facet_def.php
+file: get_facet_definitions.php
 This file returns the facet_defintion to the client in javas-script format
 
 Information of the facets are defined in
 
-* <bootstrap_application.php (SHIPS)>
+* <bootstrap_application.php>
 
 id  - id of the facet
 name -  name of the facet which will be use used a the title
@@ -93,10 +93,10 @@ foreach ($facet_definition as $facet_key => $element)
             $out .= "\tfacets[$i][\"min\"] = \"".$facet_range[$facet_key]["min"]."\";\n";
         }
         $out .= "\tfacets[$i][\"default\"] = \"".$element["default"]."\";\n";
-        if (!isset($element["use_text_search"]))
-            $out .= "\tfacets[$i][\"use_text_search\"] = \"1\";\n";
-        else
-            $out .= "\tfacets[$i][\"use_text_search\"] = \"".$element["use_text_search"]."\";\n";
+
+        $use_text_search = $element["use_text_search"] ?? "1";
+
+        $out .= "\tfacets[$i][\"use_text_search\"] = \"$use_text_search\";\n";
         $out .= "\tfacets[$i][\"category\"] = \"".$element["category"]."\";\n";
         $out .= "\tfacets[$i][\"slot\"] = \"".$element["slot"]."\";\n";
         

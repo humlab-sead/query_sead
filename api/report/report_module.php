@@ -30,17 +30,16 @@ function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_tabl
     $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
 
     $tmp_list = FacetConfig::getKeysOfActiveFacets($facet_params);
+    $tmp_list[] = $f_code; //Add  as final facet
 
-    //Add  as final facet
-    $tmp_list[] = $f_code;
     $query_info = QueryBuildService::compileQuery($facet_params, $f_code, $data_table, $tmp_list);
     $query_column = $facet_definition[$f_code]["id_column"];
-    $q = "select  distinct $query_column  from " . $query_info["tables"];
+    $q = "select distinct $query_column  from " . $query_info["tables"];
     if (!empty($query_info["joins"])) {
-        $q.=" " . $query_info["joins"];
+        $q .= " " . $query_info["joins"];
     }
     if (!empty($query_info["where"])) {
-        $q.=" where " . $query_info["where"];
+        $q .= " where " . $query_info["where"];
     }
 
     return $q;
@@ -57,11 +56,23 @@ function get_select_info_as_html($conn, $cache_id) {
     $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
     return FacetConfig::generateUserSelectItemHTML($facet_params);
 }
+
+class base_reporter {
+    /*
+     * function: run_query
+     * runs query to database, exits if fails
+     * return: resultset
+     */
+    protected function run_query($conn, $q) {
+        return ConnectionHelper::query($conn, $q, get_class($this));
+    }
+}
+
 /*
  * Class: sample_group_reporter
  * Report function on sample_group level
  */
-class sample_group_reporter {
+class sample_group_reporter extends base_reporter {
 
     private $reporter;
     private $sample_group_query_object;
@@ -69,18 +80,6 @@ class sample_group_reporter {
     function __construct() {
         $this->sample_group_query_object = new sample_group_query();
         $this->reporter = new report_module();
-    }
-    /*
-     * function: run_query
-     * runs query to database, exits if fails
-     * return: resultset
-     */
-    private function run_query($conn, $q) {
-        if (($rs = pg_query($conn, $q)) <= 0) {
-            echo "Error: cannot sample_group query. " . SqlFormatter::format($q) . " \n";
-            exit;
-        }
-        return $rs;
     }
 
     /*
@@ -183,7 +182,7 @@ class sample_group_reporter {
  * functions for report in site level
  */
 
-class site_reporter {
+class site_reporter extends base_reporter {
 
     private $site_query_obj;
     private $reporter;
@@ -191,20 +190,6 @@ class site_reporter {
     function __construct() {
         $this->site_query_obj = new site_query();
         $this->reporter = new report_module();
-    }
-
-    /*
-     * function: run_query
-     * 
-     */
-
-    private function run_query($conn, $q) {
-        if (($rs = pg_query($conn, $q)) <= 0) {
-            echo "Error: cannot execute site query. " . SqlFormatter::format($q) . " \n";
-            exit;
-        }
-        //    file_put_contents("sql_log.txt",  SqlFormatter::format($q, false).";\n", FILE_APPEND);
-        return $rs;
     }
 
     /*

@@ -27,10 +27,11 @@
 
 date_default_timezone_set('Europe/Stockholm');
 
-require_once (__DIR__ . '/../server/lib/PHPExcel/PHPExcel.php');
-require_once (__DIR__ . '/../server/result_query_compiler.php');
-require_once (__DIR__ . '/../server/connection_helper.php');
-require_once (__DIR__ . '/../server/cache_helper.php');
+require_once (__DIR__ . '/../../server/config/environment.php');
+require_once (__DIR__ . '/../../server/lib/PHPExcel/PHPExcel.php');
+require_once (__DIR__ . '/../../server/result_query_compiler.php');
+require_once (__DIR__ . '/../../server/connection_helper.php');
+require_once (__DIR__ . '/../../server/cache_helper.php');
 
 $conn = ConnectionHelper::createConnection();
 

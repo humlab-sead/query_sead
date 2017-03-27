@@ -8,19 +8,19 @@
   <META NAME="Keywords" CONTENT="sead">
   <META NAME="Description" CONTENT="Details of SEAD ">
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8" />
-  <link rel="stylesheet" href="../../jslib/datatables-1.9.4/media/css/jquery.dataTables.css">
+  <link rel="stylesheet" href="//cdn.datatables.net/1.9.4/css/jquery.dataTables.css">
   <link rel="stylesheet" href="/client/theme/reporting.css">
-  <link rel="stylesheet" href="../../jslib/TableTools-2.1.5/media/css/TableTools.css">
-  <script type="text/javascript" charset="utf-8" language="javascript" src="../../jslib/datatables-1.9.4/media/js/jquery.js"></script>
-  <script type="text/javascript" charset="utf-8" language="javascript" src="../../jslib/datatables-1.9.4/media/js/jquery.dataTables.min.js"></script>
-  <script type="text/javascript" charset="utf-8" language="javascript" src="../../jslib/TableTools-2.1.5/media/js/TableTools.min.js"></script>
+  <link rel="stylesheet" href="//cdn.datatables.net/tabletools/2.1.5/css/TableTools.css">
+  <script type="text/javascript" charset="utf-8" language="javascript" src="//code.jquery.com/jquery-1.8.2.min.js"></script>
+  <script type="text/javascript" charset="utf-8" language="javascript" src="//cdn.datatables.net/1.9.4/js/jquery.dataTables.min.js"></script>
+  <script type="text/javascript" charset="utf-8" language="javascript" src="//cdn.datatables.net/tabletools/2.1.5/js/TableTools.min.js"></script>
   <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
       $("table[id|='d_table']").each(function() {
         $(this).dataTable({
           "bPaginate": false, // Turned pagination off
           "oTableTools": {
-            "sSwfPath": "../../jslib/TableTools-2.1.5/media/swf/copy_csv_xls_pdf.swf",
+            "sSwfPath": "//cdn.datatables.net/tabletools/2.1.5/swf/copy_csv_xls_pdf.swf",
             "aButtons": ["copy", "csv", "pdf", "print"]
           },
           "sDom": "T<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>", // table setup

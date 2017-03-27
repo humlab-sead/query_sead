@@ -13,9 +13,10 @@ Sequence:
 * Make  a zip-file for the documentation and datatable
 */
 
-require_once (__DIR__ . '/../server/connection_helper.php');
-require_once (__DIR__ . '/../server/cache_helper.php');
-require_once (__DIR__ . '/../server/result_query_compiler.php');
+require_once (__DIR__ . '/../../server/config/environment.php');
+require_once (__DIR__ . '/../../server/connection_helper.php');
+require_once (__DIR__ . '/../../server/cache_helper.php');
+require_once (__DIR__ . '/../../server/result_query_compiler.php');
 
 $conn = ConnectionHelper::createConnection();
 
@@ -32,9 +33,9 @@ if (empty($q)) {
     exit;
 }
 
-$text_table_doc=" data hämtat ur databas genom följande operation \n".$q."\n";
+$text_table_doc=" data hämtat ur databas genom följande operation \n" . $q . "\n";
 
-if (($rs = pg_query($conn, $q)) <= 0) { echo "Error: cannot execute query3. $q \n"; exit; }
+$rs = ConnectionHelper::query($conn, $q);
 
 $delimiter="\t";
 
@@ -82,7 +83,7 @@ while (($row = pg_fetch_assoc($rs) ))
 }
 
 global $result_definition,$application_name, $applicationTitle, $applicationTitle;
-//$result_definition
+
 $selection_html="<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">";
 $selection_html.="<HTML>";
 $selection_html.= "<HEAD>";
@@ -91,13 +92,13 @@ $selection_html.= "<meta http-equiv=\"Content-Type\" content=\"text/html; charse
 $selection_html.= "<link rel=\"stylesheet\" type=\"text/css\" href= \"/client/theme/style.css\"  />";
 $selection_html.= "</HEAD>";
 $selection_html.=" <BODY><h1> $applicationTitle - ".t("beskrivning av sökparametrar", $facet_params["client_language"])."</h1><BR>";
-$selection_html.=" <h2>".t("Summeringsnivå : ", $facet_params["client_language"])."</h2><BR>";
-$selection_html.=t($result_definition[$aggregation_code]["text"],$facet_params["client_language"]);
-$selection_html.=" <BR><h2>".t("Valda resultvariabler :", $facet_params["client_language"])." </h2><BR>";
+$selection_html.=" <h2>Aggregation level</h2><BR>";
+$selection_html.=$result_definition[$aggregation_code]["text"];
+$selection_html.=" <BR><h2>Selected result variables :</h2><BR>";
 $selection_html.=$html_doc;
-$selection_html.="<BR><h2>".t("Aktuella filter: ",$facet_params["client_language"])."</h2>";
+$selection_html.="<BR><h2>Current filter:</h2>";
 $selection_html.=FacetConfig::generateUserSelectItemHTML($facet_params);
-$selection_html.="<h2>".t("SQL-fråga: ",$facet_params["client_language"])." </h2>".$q;
+$selection_html.="<h2>SQL-query:</h2>".$q;
 $selection_html.="</BODY>";
 $selection_html.="</HTML>";
 

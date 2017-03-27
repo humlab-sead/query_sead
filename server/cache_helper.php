@@ -96,7 +96,7 @@ class CacheHelper {
     public static function computeResultConfigCacheId($facetConfig, $resultConfig, $resultXml)
     {
         return (string)$resultConfig["view_type"] ."_" . self::generateFacetConfigSelectStateCacheId($facetConfig) . 
-                generateResultXmlSelectStateCacheId($resultXml) . $facetConfig["client_language"] . $resultConfig["aggregation_code"];
+                self::generateResultXmlSelectStateCacheId($resultXml) . $facetConfig["client_language"] . $resultConfig["aggregation_code"];
     }
 
     public static function Get($context_id, $cache_id)

@@ -100,7 +100,7 @@ class ResultQueryCompiler {
     */
     public static function compileQuery($facetConfig, $resultConfig)
     {
-        $return_object = prepare_result_params($facetConfig, $resultConfig);
+        $return_object = self::prepare_result_params($facetConfig, $resultConfig);
 
         if (empty($return_object) || empty($return_object["data_fields"])) {
             return "";
