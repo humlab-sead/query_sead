@@ -173,6 +173,7 @@ class WeightedGraph {
 
     public function getJoinColumns()
     {
+        global $facet_definition;
         // Define the table graph
 
         // Make all joins unidirectional i.e. same join condition no matter direction

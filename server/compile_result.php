@@ -87,23 +87,23 @@ class ResultSerializer {
 class ListDataIterator implements Iterator {
 
     private $dataIter;
-    private $headerData;
+    public $columns;
     private $position;
     private $currentItem;
 
-    function __construct($dataIter, $headerData) {
+    function __construct($dataIter, $columns) {
        $this->dataIter = $dataIter;
-       $this->headerData = $headerData;
+       $this->columns = $columns;
        $this->position = -1;
        $this->currentItem = NULL;
     }
 
     function next()
     {
-        $row = $dataIter->next();
+        $row = $this->dataIter->next();
         if ($row) {
-            $this->currentItem = $this->createItem($row);
             $this->position += 1;
+            $this->currentItem = $this->createItem($row);
         } else {
             $this->currentItem = NULL;
         }
@@ -118,12 +118,13 @@ class ListDataIterator implements Iterator {
     {
         return $this->position;
     }
-    public function rewind ()
+    public function rewind()
     {
-        // not allowed
+        if ($this->position == -1)
+            $this->next();
     }
 
-    public function valid ()
+    public function valid()
     {
         return isset($this->currentItem);
     }
@@ -133,7 +134,7 @@ class ListDataIterator implements Iterator {
         $data["row_id"] = $this->position;
         $columnCounter = 0;
         foreach ($row ?? [] as $row_item) {
-            $header = $this->headerData;
+            $header = $this->columns[$columnCounter];
             $columnType = $header["result_column_type"];
             if ($columnType == "sort_item") {
                 continue;
@@ -187,13 +188,13 @@ class ListResultSerializer extends ResultSerializer {
 
     public function serialize($rsIter, $facetConfig, $resultConfig, $facetStateId, $extra)
     {
-        $headerData = $this->getColumnMetaData($resultConfig);
-        $dataIter = new ListDataIterator($rsIter, $headerData);
+        $columns = $this->getColumnMetaData($resultConfig);
+        $dataIter = new ListDataIterator($rsIter, $columns);
         $serialized_data = $this->serializeData($dataIter, $facetConfig, $resultConfig, $facetStateId);
         return $serialized_data;
     }
 
-    protected function serializeData($dataIter)
+    protected function serializeData($dataIter, $facetConfig, $resultConfig, $facetStateId)
     {
         return "";
     }   
@@ -243,14 +244,13 @@ class HtmlListResultSerializer extends ListResultSerializer {
 
     private function renderRows($dataIter, $cache_id, $maxRows)
     {
-
         foreach ($dataIter as $row) {
-            if ($dataIter->$position > $maxRows) {
+            if ($dataIter->key() > $maxRows) {
                 break;
             }
             $html_table .= "<tr>";
             foreach ($row as $item) {
-                $html_table .= "<td>" . $self->renderItem($item) . "</td>\n";
+                $html_table .= "<td>" . $this->renderItem($item, $cache_id) . "</td>\n";
             }
             $html_table .= "</tr>\n";
         }
@@ -277,12 +277,12 @@ class HtmlListResultSerializer extends ListResultSerializer {
         $recordCount = $dataIter ? $dataIter->count() : 0;
         $columnCount = count($resultConfig["items"]);
         
-        $header = $headerData ? $this->renderHeader($headerData) : "";
+        $header = $dataIter ? $this->renderHeader($dataIter->columns) : "";
         $table_body = $dataIter ? $this->renderRows($dataIter, $facetStateId, $maxRows) : "";
-        $visibility = $recordCount < $maxRows  ? "" : "none";
+        $visibility = $recordCount < $maxRows ? "" : "none";
 
         $html = <<<EOS
-            Your search resulted in $recordCount records <span style=\"display: {$visibility};\">. The first {$maxRows} are</span> displayed below.
+            Your search resulted in $recordCount records<span style="display: '{$visibility}';">. The first {$maxRows} are</span> displayed below.
             <a href='/api/report/get_data_table_text.php?cache_id=$facetStateId' id='download_link'>Save data as text to file.</a>
             <a href='/api/report/get_data_table.php?cache_id=$facetStateId' id='download_link2'>Save data to Excel.</a>
             <table id='result_output_table'>
