@@ -20,10 +20,10 @@ require_once (__DIR__ . '/../../server/result_query_compiler.php');
 
 $conn = ConnectionHelper::createConnection();
 
-$facet_xml = CacheHelper::get_facet_xml_from_id($_REQUEST['cache_id']);
+$facet_xml = CacheHelper::get_facet_xml($_REQUEST['cache_id']);
 $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
 $facet_params=FacetConfig::removeInvalidUserSelections($conn,$facet_params);
-$result_xml = get_result_xml_from_id($_REQUEST['cache_id']);
+$result_xml = CacheHelper::get_result_xml($_REQUEST['cache_id']);
 $resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
 $aggregation_code = $resultConfig["aggregation_code"];
 

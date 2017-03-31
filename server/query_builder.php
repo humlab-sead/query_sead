@@ -9,7 +9,7 @@ Function: get_range_selection_clauses
 loop through selections and builds the sql for range selection, using lower and upper condition for column
 Only design for a single interval  currently
 */
-function get_range_selection_clauses($f_code, $skey, $current_selection_group)
+function get_range_selection_clauses($facetCode, $skey, $current_selection_group)
 {
     global $facet_definition;
     $current_selection_group = (array) $current_selection_group;
@@ -49,12 +49,12 @@ returns:
 query_where parts
 */
 
-function get_discrete_selection_clauses($f_code, $skey, $current_selection_group)
+function get_discrete_selection_clauses($facetCode, $skey, $current_selection_group)
 {
     global $facet_definition;
     $query_where = "";
     $query_column = $facet_definition[$skey]["id_column"];
-    if (isset($current_selection_group) && ($f_code != $skey )) {
+    if (isset($current_selection_group) && ($facetCode != $skey )) {
         foreach ($current_selection_group as $key2 => $sval) {
             // if there is a selection and the filter is not the target facets.
             $has_selection = false;
@@ -127,7 +127,22 @@ class RouteReducer {
 
 class QueryBuilder
 {
-    private function make_sub_selects($routes, $edge_list, $subselect_where)
+
+    public $weightedGraph;
+    public $joinColumns;
+    public $edges;
+    public $tableIds;
+    public $aliasTables;
+
+    function __construct($graph){
+        $this->weightedGraph = $graph;
+        $this->joinColumns = $graph->joinColumns;
+        $this->edges = $graph->edges;
+        $this->tableIds = $graph->tableIds;
+        $this->aliasTables = $graph->aliasTables;
+    }
+
+    private function make_sub_selects($routes, $subselect_where)
     {
         if (isset($routes)) {
             $route_counter = 0;
@@ -146,12 +161,12 @@ class QueryBuilder
                     }
                     $sub_select[$route_counter].="  $join_type  join " . $edge["to_table"] . " \n";
                     $sub_select[$route_counter].=" on ";
-                    foreach ($edge_list[$edge["to_table"]][$edge["from_table"]]["home_columns"] as $key_c1 => $home_column) {
-                        $remote_column = $edge_list[$edge["to_table"]][$edge["from_table"]]["remote_columns"][$key_c1];
+                    foreach ($this->joinColumns[$edge["to_table"]][$edge["from_table"]]["home_columns"] as $key_c1 => $home_column) {
+                        $remote_column = $this->joinColumns[$edge["to_table"]][$edge["from_table"]]["remote_columns"][$key_c1];
                         $sub_select[$route_counter].= $home_column . " = " . $remote_column . "\n";
                     }
-                    if (isset($edge_list[$edge["to_table"]][$edge["from_table"]]["extra_condition"])) {
-                        $filter_clause.=" and " . $edge_list[$edge["to_table"]][$edge["from_table"]]["extra_condition"];
+                    if (isset($this->joinColumns[$edge["to_table"]][$edge["from_table"]]["extra_condition"])) {
+                        $filter_clause.=" and " . $this->joinColumns[$edge["to_table"]][$edge["from_table"]]["extra_condition"];
                     }
                     $sub_select[$route_counter].= $filter_clause;
                 }
@@ -161,41 +176,40 @@ class QueryBuilder
         return $sub_select;
     }
 
-    private function  collectRoutes($lookup_list_tables, $numeric_edge_list, $table_list_outer, $table_list)
+    private function  collectRoutes($table_list_outer, $table_list)
     {
         foreach ($table_list_outer as $start_table => $value1) {
             foreach ($table_list as $key2 => $value2) {
                 if ($start_table != $key2) {
                     $destination_table = $key2;
-                    $routes[] = $this->get_joins_information($lookup_list_tables, $numeric_edge_list, $start_table, $destination_table);
+                    $routes[] = $this->get_joins_information($start_table, $destination_table);
                 }
             }
         }
         return $routes;
     }
 
-    private function compileQueryJoins($routes, $subselect_where, $edge_list)
+    private function compileQueryJoins($routes, $subselect_where)
     {
-        global $list_of_alias_tables;
         foreach ($routes as $key => $route) {
             $joins .= "";
             foreach ($route as $edge_key => $edge) {
                 $source_table = $edge["from_table"];
                 $target_table = $edge["to_table"];
-                $edge_info    = $edge_list[$target_table][$source_table];
 
+                $joinInfo = $this->joinColumns[$target_table][$source_table];
                 $join_type = (isset($subselect_where[$target_table]) || isset($subselect_where[$source_table])) ? " inner " : " left ";
 
-                $target_name = $list_of_alias_tables[$target_table] ?? $target_table;
+                $target_name = $this->aliasTables[$target_table] ?? $target_table;
                 $alias_clause = ($target_name != $target_table) ? " as $target_table " : "";
                 
                 $join_criterias = [];
-                foreach ($edge_info["home_columns"] as $key_c1 => $source_column) {
-                    $target_column = $edge_info["remote_columns"][$key_c1];
+                foreach ($joinInfo["home_columns"] as $key_c1 => $source_column) {
+                    $target_column = $joinInfo["remote_columns"][$key_c1];
                     $join_criterias[] = " $source_column = $target_column ";
                 }
 
-                $extra_condition = $edge_info["extra_condition"];
+                $extra_condition = $joinInfo["extra_condition"];
                 if (isset($extra_condition)) {
                     $join_criterias[] = " $extra_condition ";
                 }
@@ -206,14 +220,15 @@ class QueryBuilder
         return $joins;
     }
 
-    public function get_query_information($edge_list, $numeric_edge_list, $lookup_list_tables, $facet_definition, $facetConfig, $f_code, $extra_tables, $activeFacets)
+    public function get_query_information($facet_definition, $facetConfig, $facetCode, $extra_tables, $activeFacets)
     {
-        global $list_of_alias_tables;
         $query = array();
         $table_list = array();
         $facet_selections = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
-        if (isset($facet_definition[$f_code]["query_cond_table"]) && !empty($facet_definition[$f_code]["query_cond_table"])) {
-            foreach ($facet_definition[$f_code]["query_cond_table"] as $cond_key => $cond_table) {
+        $target_facet = $facet_definition[$facetCode];
+
+        if (isset($target_facet["query_cond_table"]) && !empty($target_facet["query_cond_table"])) {
+            foreach ($target_facet["query_cond_table"] as $cond_key => $cond_table) {
                 $extra_tables[] = $cond_table;
             }
         }
@@ -223,54 +238,56 @@ class QueryBuilder
         if (isset($activeFacets)) {
 
             // list must exist, ie there must be some filters in order build a query
-
             $facet_positions = array_flip($activeFacets);
+            foreach ($activeFacets as $pos => $currentCode) {
 
-            foreach ($activeFacets as $pos => $facetCode) {
-
-                if (!isset($facet_selections[$facetCode])) {
+                if (!isset($facet_selections[$currentCode])) {
                     continue;
                 }
-                
-                while (list($skey1, $selection_group) = each($facet_selections[$facetCode])) {
+                $current_facet = $facet_definition[$currentCode];
+                while (list($skey1, $selection_group) = each($facet_selections[$currentCode])) {
 
-                    $affects_query = ($facet_positions[$f_code] > $facet_positions[$facetCode] ||
-                        ($facet_definition[$f_code]["facet_type"] == "range" && $facet_positions[$f_code] == $facet_positions[$facetCode]) ||
-                        ($facet_definition[$f_code]["facet_type"] == "geo" && $facet_positions[$f_code] == $facet_positions[$facetCode]));
+                    $affects_query = ($facet_positions[$facetCode] > $facet_positions[$currentCode] ||
+                        ($target_facet["facet_type"] == "range" && $facet_positions[$facetCode] == $facet_positions[$currentCode]) ||
+                        ($target_facet["facet_type"] == "geo" && $facet_positions[$facetCode] == $facet_positions[$currentCode]));
 
                     if (!$affects_query) {
                         continue;
                     }
                     
-                    $table_with_selections = isset($facet_definition[$facetCode]["alias_table"]) ? $facet_definition[$facetCode]["alias_table"] : $facet_definition[$facetCode]["table"] ;
+                    $table_with_selections = isset($current_facet["alias_table"]) ? $current_facet["alias_table"] : $current_facet["table"] ;
                     
-                    switch ($facet_definition[$facetCode]["facet_type"]) {
+                    switch ($current_facet["facet_type"]) {
                         case "range":
-                            $query_where.=get_range_selection_clauses($f_code, $facetCode, $selection_group)."      AND ";
-                            if (!empty($facet_definition[$facetCode]["query_cond_table"])) {
-                                foreach ($facet_definition[$facetCode]["query_cond_table"] as $cond_table) {
+
+                            $query_where .= get_range_selection_clauses($facetCode, $currentCode, $selection_group)."      AND ";
+
+                            if (!empty($current_facet["query_cond_table"])) {
+                                foreach ($current_facet["query_cond_table"] as $cond_table) {
                                     $table_list[$cond_table] = true;
-                            }
-                        }
-                        $query_where_list[$table_with_selections][]=get_range_selection_clauses($f_code, $facetCode, $selection_group);
-                        $subselect_where[$table_with_selections]=get_range_selection_clauses($f_code, $facetCode, $selection_group). "   AND ";
-                        break;
-                        case "discrete":
-                            if (!empty($selection_group)) {
-                                $query_where.= get_discrete_selection_clauses($f_code, $facetCode, $selection_group). "     AND ";
-                                if (!empty($facet_definition[$facetCode]["query_cond_table"])) {
-                                    foreach ($facet_definition[$facetCode]["query_cond_table"] as $cond_table) {
-                                        $table_list[$cond_table] = true;
                                 }
                             }
-                            $query_where_list[$table_with_selections][]=get_discrete_selection_clauses($f_code, $facetCode, $selection_group);
-                            $subselect_where[$table_with_selections]=get_discrete_selection_clauses($f_code, $facetCode, $selection_group). "   AND ";
-                        }
-                        break;
-                        case "geo":
-                            $query_where.=get_geo_filter_clauses($f_code, $facetCode, $selection_group). "     AND " ;
-                            $query_where_list[$table_with_selections][]=get_geo_filter_clauses($f_code, $facetCode, $selection_group);
-                            $subselect_where[$table_with_selections]=get_geo_filter_clauses($f_code, $facetCode, $selection_group). "  AND ";
+
+                            $query_where_list[$table_with_selections][] = get_range_selection_clauses($facetCode, $currentCode, $selection_group);
+                            $subselect_where[$table_with_selections] = get_range_selection_clauses($facetCode, $currentCode, $selection_group). "   AND ";
+
+                            break;
+                        case "discrete":
+
+                            if (empty($selection_group))
+                                break;
+
+                            $query_where .= get_discrete_selection_clauses($facetCode, $currentCode, $selection_group) . "     AND ";
+
+                            if (!empty($current_facet["query_cond_table"])) {
+                                foreach ($current_facet["query_cond_table"] as $cond_table) {
+                                    $table_list[$cond_table] = true;
+                                }
+                            }
+
+                            $query_where_list[$table_with_selections][] = get_discrete_selection_clauses($facetCode, $currentCode, $selection_group);
+                            $subselect_where[$table_with_selections] = get_discrete_selection_clauses($facetCode, $currentCode, $selection_group) . "   AND ";
+
                             break;
                     }
                     
@@ -288,22 +305,22 @@ class QueryBuilder
         $query_where = substr($query_where, 0, strlen($query_where) - 5); //remove last AND
         if (isset($query_where_list)) {
             foreach ($query_where_list as $table_with_criteria => $sql_criteria_list) {
-                $new_query_where.="( ".implode(" AND ", $sql_criteria_list). " )   -- Make nice \n   AND ";
+                $new_query_where.="( ".implode(" AND ", $sql_criteria_list). " ) \n   AND ";
             }
         }
         $query_where = substr($new_query_where, 0, -5); //remove last AND
 
         $query["where"] = $query_where . "";
 
-        $query_cond = $facet_definition[$f_code]["query_cond"];
+        $query_cond = $target_facet["query_cond"];
         if (!empty($query_cond)) {
             $query["where"] .= ($query["where"] == "" ? "   " : "  and ") . $query_cond;
         }
 
-        $query["select"] = $facet_definition[$f_code]["id_column"] . "," .$facet_definition[$f_code]["name_column"];
+        $query["select"] = $target_facet["id_column"] . "," .$target_facet["name_column"];
 
-        $current_table = $facet_definition[$f_code]["table"];
-        $alias_table = $facet_definition[$f_code]["alias_table"];
+        $current_table = $target_facet["table"];
+        $alias_table = $target_facet["alias_table"];
         $alias_clause = isset($alias_table) ? " as $alias_table" : "";
 
         $query["tables"] = "$current_table $alias_clause";
@@ -317,13 +334,13 @@ class QueryBuilder
         $table_list_outer[$start_table] = true;
         $table_list[$start_table] = true;
 
-        $routes = $this->collectRoutes($lookup_list_tables, $numeric_edge_list, $table_list_outer, $table_list);
+        $routes = $this->collectRoutes($table_list_outer, $table_list);
 
-        $sub_selects = $this->make_sub_selects($routes, $edge_list, $subselect_where) ;
+        $sub_selects = $this->make_sub_selects($routes, $subselect_where) ;
 
         if (isset($routes)) {
             $reduced_routes = RouteReducer::reduce($routes);
-            $query["joins"] = $this->compileQueryJoins($reduced_routes, $subselect_where, $edge_list);
+            $query["joins"] = $this->compileQueryJoins($reduced_routes, $subselect_where);
         }
 
         $query["none_reduced_routes"] = $routes;
@@ -333,17 +350,17 @@ class QueryBuilder
         return $query;
     }
 
-    public function get_joins_information($f_tables, $numeric_edge_list, $start_table, $destination_table)
+    public function get_joins_information($start_table, $destination_table)
     {
-        if (!(isset($f_tables[$start_table]) && isset($f_tables[$destination_table]))) {
+        if (!(isset($this->tableIds[$start_table]) && isset($this->tableIds[$destination_table]))) {
             echo "Tables $start_table or $destination_table does not exists in the graph check configuration";
             exit;
         }
         
-        $start_node = $f_tables[$start_table];
-        $dijkstra = new Dijkstra($numeric_edge_list, I, $matrixWidth);
+        $start_node = $this->tableIds[$start_table];
+        $dijkstra = new Dijkstra($this->edges, I, $matrixWidth);
         
-        $destination_node = $f_tables[$destination_table];
+        $destination_node = $this->tableIds[$destination_table];
         $dijkstra->findShortestPath($start_node);
         $dijstra_result = $dijkstra->getResultsAsArray($destination_node);
         
@@ -351,16 +368,16 @@ class QueryBuilder
             $keys=array_keys($dijstra_result);
             $first_key = $keys[0];
             $route = $dijstra_result[$first_key]; // first element
-            $router_ordinal=array_values($route);
+            $router_ordinal = array_values($route);
             
             for ($count = 0; $count <= count($route) - 2; $count++) {
-                $edge_list[$count] = array(
-                    "from_table" => array_search($router_ordinal[$count], $f_tables),
-                    "to_table" => array_search($router_ordinal[$count + 1], $f_tables)
+                $result[$count] = array(
+                    "from_table" => array_search($router_ordinal[$count], $this->tableIds),
+                    "to_table" => array_search($router_ordinal[$count + 1], $this->tableIds)
                 );
             }
         }
-        return $edge_list;
+        return $result;
     }
 
 }
@@ -392,9 +409,10 @@ class QueryBuildService {
     */
     public static function compileQuery($facetConfig, $facetCode, $extra_tables, $activeFacets)
     {
-        global $facet_definition, $join_columns, $f_tables, $ourMap;
-        $query_builder = new QueryBuilder();
-        $query_info = $query_builder->get_query_information($join_columns, $ourMap, $f_tables, $facet_definition, $facetConfig, $facetCode, $extra_tables, $activeFacets);
+        global $facet_definition;
+        global $weightedGraph;
+        $query_builder = new QueryBuilder($weightedGraph);
+        $query_info = $query_builder->get_query_information($facet_definition, $facetConfig, $facetCode, $extra_tables, $activeFacets);
         return $query_info;
     }
 }

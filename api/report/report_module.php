@@ -14,26 +14,26 @@ require_once(__DIR__ . '/../../server/query_builder.php');
  * 
  * params: 
  * - $cache_id id of reference to facet_xml file
- * - $f_code facet to be rendered so id can be used in SQL
+ * - $facetCode facet to be rendered so id can be used in SQL
  * - $data_table any extra tables?
  * 
  * return: query string
  */
-function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_table = null) {
+function get_f_code_filter_query($cache_id, $facetCode = "result_facet", $data_table = null) {
     global $facet_definition;
 
     $conn = ConnectionHelper::createConnection();
 
-    $facet_xml = CacheHelper::get_facet_xml_from_id($cache_id);
+    $facet_xml = CacheHelper::get_facet_xml($cache_id);
 
     $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
     $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
 
     $tmp_list = FacetConfig::getKeysOfActiveFacets($facet_params);
-    $tmp_list[] = $f_code; //Add  as final facet
+    $tmp_list[] = $facetCode; //Add  as final facet
 
-    $query_info = QueryBuildService::compileQuery($facet_params, $f_code, $data_table, $tmp_list);
-    $query_column = $facet_definition[$f_code]["id_column"];
+    $query_info = QueryBuildService::compileQuery($facet_params, $facetCode, $data_table, $tmp_list);
+    $query_column = $facet_definition[$facetCode]["id_column"];
     $q = "select distinct $query_column  from " . $query_info["tables"];
     if (!empty($query_info["joins"])) {
         $q .= " " . $query_info["joins"];
@@ -51,7 +51,7 @@ function get_f_code_filter_query($cache_id, $f_code = "result_facet", $data_tabl
  * returns: html text about selection in filters
  */
 function get_select_info_as_html($conn, $cache_id) {
-    $facet_xml = CacheHelper::get_facet_xml_from_id($cache_id);
+    $facet_xml = CacheHelper::get_facet_xml($cache_id);
     $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
     $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
     return FacetConfig::generateUserSelectItemHTML($facet_params);

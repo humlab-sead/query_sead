@@ -2,6 +2,24 @@
 
 require_once __DIR__ . "/lib/SqlFormatter.php";
 
+class RecordSetIterator {
+
+    public $rs;
+    function __construct($rs) {
+        $this->rs = $rs;
+    }
+
+    function next()
+    {
+        return pg_fetch_assoc($this->rs);
+    }
+
+    function count()
+    {
+        return pg_num_rows($this->rs);
+    } 
+}
+
 class ConnectionHelper
 {
     public static function createConnection()
@@ -32,6 +50,11 @@ class ConnectionHelper
             exit;
         }
         return $rs;
+    }
+
+    public static function queryIter($conn, $q, $context="")
+    {
+        return new RecordSetIterator(self::query($conn, $q, $context));
     }
 
     public static function queryRows($conn, $q)

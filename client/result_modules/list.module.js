@@ -172,4 +172,5 @@ function result_list_load_data() {
 	
 }
 
-
+// register
+result_modules.push('list');

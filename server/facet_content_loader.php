@@ -6,12 +6,12 @@ require_once(__DIR__ . '/query_builder.php');
 
 class FacetContentLoader {
 
-    protected function compileIntervalQuery($conn, $params, $f_code)
+    protected function compileIntervalQuery($conn, $facetConfig, $facetCode)
     {
         return [ NULL, NULL ];
     }
 
-    protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
+    protected function getFacetCategoryCount($conn, $facetCode, $facetConfig, $interval_query)
     {
         return NULL;
     }
@@ -47,46 +47,46 @@ class FacetContentLoader {
     Post functions:
     <serializeFacetContent>
     */  
-    public function get_facet_content($conn, $params)
+    public function get_facet_content($conn, $facetConfig)
     {
         global $direct_count_table, $direct_count_column, $indirect_count_table, $indirect_count_column,
         $facet_definition;
         $facet_content = $search_string = $query_column_name = "";
-        $f_code = $params["requested_facet"];
-        $query_column = $facet_definition[$f_code]["id_column"];
+        $facetCode = $facetConfig["requested_facet"];
+        $query_column = $facet_definition[$facetCode]["id_column"];
         $sort_column = $query_column;
 
         // compute the intervall for a number of histogram items if it is defined as range facet
-        list($interval, $interval_query) = $this->compileIntervalQuery($conn, $params, $f_code);
+        list($interval, $interval_query) = $this->compileIntervalQuery($conn, $facetConfig, $facetCode);
 
         $rs2 = Connectionhelper::query($conn, $interval_query);
 
-        $facet_contents[$f_code]['f_code'] = $f_code;
-        $facet_contents[$f_code]['range_interval'] = $interval;
-        $facet_contents[$f_code]['f_action'] = $params['f_action'][1];
-        $facet_contents[$f_code]['start_row'] = $params[$f_code]['facet_start_row'];
-        $facet_contents[$f_code]['rows_num'] = $params[$f_code]['facet_number_of_rows'];
-        $facet_contents[$f_code]['total_number_of_rows'] = pg_numrows($rs2);
+        $facet_contents[$facetCode]['f_code'] = $facetCode;
+        $facet_contents[$facetCode]['range_interval'] = $interval;
+        $facet_contents[$facetCode]['f_action'] = $facetConfig['f_action'][1];
+        $facet_contents[$facetCode]['start_row'] = $facetConfig[$facetCode]['facet_start_row'];
+        $facet_contents[$facetCode]['rows_num'] = $facetConfig[$facetCode]['facet_number_of_rows'];
+        $facet_contents[$facetCode]['total_number_of_rows'] = pg_numrows($rs2);
 
         pg_result_seek($rs2, 0);
 
         if (isset($direct_count_column) && !empty($direct_count_column)) {
-            $direct_counts = $this->getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column);
+            $direct_counts = $this->getFacetCategoryCount($conn, $facetCode, $facetConfig, $interval_query);
         }
 
         // FIXME! THIS CAN NOT WORK! SEE USE BELOW!
         // add extra information to a facet
-        // if (isset($facet_definition[$f_code]["extra_row_info_facet"])) {
-        //     $extra_row_info = $this->getExtraRowInfo($facet_definition[$f_code]["extra_row_info_facet"], $conn, $params);
+        // if (isset($facet_definition[$facetCode]["extra_row_info_facet"])) {
+        //     $extra_row_info = $this->getExtraRowInfo($facet_definition[$facetCode]["extra_row_info_facet"], $conn, $facetConfig);
         // }
 
-        $count_of_selections = FacetConfig::computeUserSelectItemCount($params, $f_code);
-        $tooltip_text = ($count_of_selections != 0) ? FacetConfig::generateUserSelectItemHTML($params, $f_code) : "";
+        $count_of_selections = FacetConfig::computeUserSelectItemCount($facetConfig, $facetCode);
+        $tooltip_text = ($count_of_selections != 0) ? FacetConfig::generateUserSelectItemHTML($facetConfig, $facetCode) : "";
 
-        $facet_contents[$f_code]['report'] = " Current filter   <BR>  ". $tooltip_text."  ".SqlFormatter::format($interval_query, false)."  ; \n  " . ($direct_counts["sql"] ?? "") . " ;\n";
-        $facet_contents[$f_code]['report_html'] = $tooltip_text;
-        $facet_contents[$f_code]['count_of_selections'] = $count_of_selections;
-        $facet_contents[$f_code]['report_xml'] = "";
+        $facet_contents[$facetCode]['report'] = " Current filter   <BR>  ". $tooltip_text."  ".SqlFormatter::format($interval_query, false)."  ; \n  " . ($direct_counts["sql"] ?? "") . " ;\n";
+        $facet_contents[$facetCode]['report_html'] = $tooltip_text;
+        $facet_contents[$facetCode]['count_of_selections'] = $count_of_selections;
+        $facet_contents[$facetCode]['report_xml'] = "";
 
         pg_result_seek($rs2, 0);
 
@@ -94,10 +94,10 @@ class FacetContentLoader {
         $row_counter = 0;
         while ($row = pg_fetch_assoc($rs2)) {
             $au_id = $row["id"];
-            $facet_contents[$f_code]['report'] .= $this->getCategoryItemReport($row);
-            $facet_contents[$f_code]['rows'][$row_counter]['values'] = $this->getCategoryItemValue($row);
-            $facet_contents[$f_code]['rows'][$row_counter]['name'] = $this->getCategoryItemName($row /*, $extra_row_info */);
-            $facet_contents[$f_code]['rows'][$row_counter]['direct_counts'] = $direct_counts["list"]["$au_id"] ?? "0";
+            $facet_contents[$facetCode]['report'] .= $this->getCategoryItemReport($row);
+            $facet_contents[$facetCode]['rows'][$row_counter]['values'] = $this->getCategoryItemValue($row);
+            $facet_contents[$facetCode]['rows'][$row_counter]['name'] = $this->getCategoryItemName($row /*, $extra_row_info */);
+            $facet_contents[$facetCode]['rows'][$row_counter]['direct_counts'] = $direct_counts["list"]["$au_id"] ?? "0";
             $row_counter++;
         }
         return $facet_contents;
@@ -119,14 +119,14 @@ class FacetContentLoader {
     }
 
 // FIXME SEE ABOVE
-//     private function getExtraRowInfo($f_code, $conn, $params)
+//     private function getExtraRowInfo($facetCode, $conn, $facetConfig)
 //     {
 //         global $facet_definition;
-//         $query_column = $facet_definition[$f_code]["id_column"];
-//         $f_list = FacetConfig::getKeysOfActiveFacets($params);
-//         $query = QueryBuildService::compileQuery($params, $f_code, $data_tables, $f_list);
-//         $query_column_name = $facet_definition[$f_code]["name_column"];
-//         $sort_column = $facet_definition[$f_code]["sort_column"];
+//         $query_column = $facet_definition[$facetCode]["id_column"];
+//         $facetCodes = FacetConfig::getKeysOfActiveFacets($facetConfig);
+//         $query = QueryBuildService::compileQuery($facetConfig, $facetCode, $data_tables, $facetCodes);
+//         $query_column_name = $facet_definition[$facetCode]["name_column"];
+//         $sort_column = $facet_definition[$facetCode]["sort_column"];
 //         $tables = $query["tables"];
 //         $query_joins = (trim($query["joins"]) != '') ? " And " .  $query["joins"] : "";
 //         $where_clause = (trim($query["where"]) != '')  ? " And " . $query["where"] : "";
@@ -178,9 +178,9 @@ class RangeFacetContentLoader extends FacetContentLoader {
     Uses the clients setting if exists, otherwise get it from the database.
     */
     // TODO: $facet is actually a $facet_key, change to real facet object instead (removed global dependencies above)
-    private function getLowerUpperLimit($conn, $params, $facet)
+    private function getLowerUpperLimit($conn, $facetConfig, $facet)
     {
-        $f_selected = FacetConfig::getItemGroupsSelectedByUser($params);
+        $f_selected = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
 
         if (!isset($f_selected[$facet])) {
             foreach ($f_selected[$facet] as $skey => $selection_group) { // dig into the groups of selections of the facets
@@ -218,11 +218,11 @@ class RangeFacetContentLoader extends FacetContentLoader {
         return $q1;
     }
 
-    protected function compileIntervalQuery($conn, $params, $f_code) {
+    protected function compileIntervalQuery($conn, $facetConfig, $facetCode) {
         // get the limits from the client if existing otherwize get the min and max from the database
         // this is need to match the client handling of the intervals in facet.range.js
         // use the limits to define the size of the interval
-        $limits = $this->getLowerUpperLimit($conn, $params, $f_code);
+        $limits = $this->getLowerUpperLimit($conn, $facetConfig, $facetCode);
         $min_value = $limits["lower"];
         $max_value = $limits["upper"];
         $interval_count = 120; // should it be lower maybe??? when there is no data
@@ -235,9 +235,9 @@ class RangeFacetContentLoader extends FacetContentLoader {
         return [ $interval, $q1 ];
     }
 
-    protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
+    protected function getFacetCategoryCount($conn, $facetCode, $facetConfig, $interval_query)
     {
-        return RangeFacetCounter::get_range_counts($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column);
+        return RangeFacetCounter::get_range_counts($conn, $facetCode, $facetConfig, $interval_query);
     }
 
     protected function getCategoryItemValue($row)
@@ -259,31 +259,31 @@ class RangeFacetContentLoader extends FacetContentLoader {
 
 class DiscreteFacetContentLoader extends FacetContentLoader {
 
-    function getTextFilterClause($facet_params, $query_column_name)
+    function getTextFilterClause($facetConfig, $query_column_name)
     {
         global $filter_by_text;
-        $find_str = trim($facet_params["facet_collection"][$facet_params["requested_facet"]]["facet_text_search"]);
+        $find_str = trim($facetConfig["facet_collection"][$facetConfig["requested_facet"]]["facet_text_search"]);
         if ($find_str == "undefined") {
             $find_str = "%";
         }
         return (!empty($find_str) && $filter_by_text == true) ? " and " . $query_column_name . " ILIKE '" . $find_str . "' " : "";
     }
 
-    protected function compileIntervalQuery($conn, $facet_params, $f_code)
+    protected function compileIntervalQuery($conn, $facetConfig, $facetCode)
     {
-        global $direct_count_table, $direct_count_column, $facet_definition;
+        global $facet_definition;
 
-        $f_code = $facet_params["requested_facet"];
+        $facetCode  = $facetConfig["requested_facet"];
+        $facetCodes = FacetConfig::getKeysOfActiveFacets($facetConfig);
+        
+        $query = QueryBuildService::compileQuery($facetConfig, $facetCode, $data_tables, $facetCodes);
 
-        $f_list = FacetConfig::getKeysOfActiveFacets($facet_params);
-        $query = QueryBuildService::compileQuery($facet_params, $f_code, $data_tables, $f_list);
-
-        $query_column_name = $facet_definition[$f_code]["name_column"];
-        $query_column = $facet_definition[$f_code]["id_column"];
+        $query_column_name = $facet_definition[$facetCode]["name_column"];
+        $query_column = $facet_definition[$facetCode]["id_column"];
         $query_joins = $query["joins"];
-        $sort_column = $facet_definition[$f_code]["sort_column"];
-        $sort_order = $facet_definition[$f_code]["sort_order"];
-        $find_cond = $this->getTextFilterClause($facet_params, $query_column_name);
+        $sort_column = $facet_definition[$facetCode]["sort_column"];
+        $sort_order = $facet_definition[$facetCode]["sort_order"];
+        $find_cond = $this->getTextFilterClause($facetConfig, $query_column_name);
         $tables = $query["tables"];
         $where_clause = (trim($query["where"]) != '')  ?  " and " . $query["where"] : "";
         $group_by_columns = (!empty($sort_column) ? "$sort_column, " : "") . "$query_column, $query_column_name ";
@@ -302,9 +302,9 @@ EOT;
         return [ 1, $q1 ];
     }
 
-    protected function getFacetCategoryCount($conn, $f_code, $params, $interval_query, $direct_count_table, $direct_count_column)
+    protected function getFacetCategoryCount($conn, $facetCode, $facetConfig, $interval_query)
     {
-        return DiscreteFacetCounter::get_discrete_counts($conn, $f_code, $params, NULL, $direct_count_table, $direct_count_column);
+        return DiscreteFacetCounter::get_discrete_counts($conn, $facetCode, $facetConfig, NULL);
     }
 
     protected function getCategoryItemValue($row)
@@ -329,14 +329,14 @@ class FacetContentService {
 
     public static function load($conn, $facetConfig)
     {
-        global $applicationName, $facet_content_loaders, $facet_definition;
+        global $facet_content_loaders, $facet_definition;
         $facetCode  = $facetConfig["requested_facet"];
         $facetType = $facet_definition[$facetCode]["facet_type"];
-        $cacheId = CacheHelper::computeFacetConfigCacheId($facetConfig);
-        $contextId = "_" . $facetConfig["client_language"] . $applicationName;
-        if (!($facetContent = CacheHelper::Get($contextId, $cacheId))) {
+
+        $cacheId = CacheIdGenerator::computeFacetContentCacheId($facetConfig);
+        if (!($facetContent = CacheHelper::get_facet_content($cacheId))) {
             $facetContent = $facet_content_loaders[$facetType]->get_facet_content($conn, $facetConfig);
-            CacheHelper::Put($contextId, $cacheId, 1500, $facetContent);
+            CacheHelper::put_facet_content($cacheId, $facetContent);
         }
         return $facetContent;
     }

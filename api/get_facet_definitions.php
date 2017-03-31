@@ -27,22 +27,22 @@ function compute_max_min($conn)
     global $facet_definition;
     $q = "";
     $u = "";
-    foreach ($facet_definition as $f_code => $element)
+    foreach ($facet_definition as $facetCode => $element)
     {
         if ($element["facet_type"] == "range")
         {
             $query_column=$element["id_column"];
-            $query_table = $facet_definition[$f_code]["table"];
-            $query_cond = $facet_definition[$f_code]["query_cond"];
+            $query_table = $facet_definition[$facetCode]["table"];
+            $query_cond = $facet_definition[$facetCode]["query_cond"];
             $data_tables[] = $query_table;
-            $f_list[] = $f_code;
+            $facetCodes[] = $facetCode;
 
-            $query = QueryBuildService::compileQuery($params, $f_code, $data_tables, $f_list);
+            $query = QueryBuildService::compileQuery(NULL, $facetCode, $data_tables, $facetCodes);
             
             $extra_join = $query["joins"] ?? "";
             $where_clause = $query_cond != "" ? " where " . $query_cond . "  " : "";
 
-            $q .= " $u select '$f_code' as f_code,max($query_column::real) as max, min($query_column::real) as min from $query_table $extra_join $where_clause ";
+            $q .= " $u select '$facetCode' as f_code,max($query_column::real) as max, min($query_column::real) as min from $query_table $extra_join $where_clause ";
             $u  = "union";
         }
     }

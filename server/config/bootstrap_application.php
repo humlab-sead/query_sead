@@ -63,12 +63,61 @@ $result_definition["site_level"]["aggregation_type"]="site_level";
 $result_definition["site_level"]["input_type"]="checkboxes";
 $result_definition["site_level"]['aggregation_selector'] = true;
 $result_definition["site_level"]["result_item"]["single_item"][]=$result_definition_item["sitename"] ;
-
 $result_definition["site_level"]["result_item"]["sort_item"][]=$result_definition_item["sitename"] ;
 $result_definition["site_level"]["result_item"]["text_agg_item"][]=$result_definition_item["record_type"];
 $result_definition["site_level"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
 $result_definition["site_level"]["result_item"]["link_item"][]=$result_definition_item["site_link"];
 $result_definition["site_level"]["result_item"]["link_item_filtered"][]=$result_definition_item["site_link_filtered"];
+
+// $result_definition["site_level"] = [
+//     "text"                   => "Site level",
+//     "applicable"             => "0",
+//     'activated'              => "true",
+//     "result_type"            => "single_item",
+//     "aggregation_type"       => "site_level",
+//     "input_type"             => "checkboxes",
+//     'aggregation_selector'   => true,
+//     "result_item" => [
+//         "single_item"        => [ $result_definition_item["sitename"] ],
+//         "sort_item"          => [ $result_definition_item["sitename"] ],
+//         "text_agg_item"      => [ $result_definition_item["record_type"] ],
+//         "count_item"         => [ $result_definition_item["analysis_entities"] ],
+//         "link_item"          => [ $result_definition_item["site_link"] ],
+//         "link_item_filtered" => [ $result_definition_item["site_link_filtered"] ]
+//     ]
+// ];
+
+// $result_definition["sample_group_level"] = [
+//     "text"                   => "Sample group level",
+//     "applicable"             => "0",
+//     'activated'              => "true",
+//     "result_type"            => "single_item",
+//     "aggregation_type"       => "sample_group_level",
+//     "input_type"             => "checkboxes",
+//     'aggregation_selector'   => true,
+//     "result_item" => [
+//         "single_item"        => [ $result_definition_item["sitename"], $result_definition_item["sample_group"] , $result_definition_item["record_type"]],
+//         "sort_item"          => [ $result_definition_item["sitename"], $result_definition_item["sample_group"] ],
+//         "count_item"         => [ $result_definition_item["analysis_entities"] ],
+//         "link_item"          => [ $result_definition_item["sample_group_link"] ],
+//         "link_item_filtered" => [ $result_definition_item["sample_group_link_filtered"] ]
+//     ]
+// ];
+
+// $result_definition["aggregate_all"] =[
+//     "text"                      => "Aggregate all",
+//     "applicable"                => "0",
+//     'activated'                 => "true",
+//     "result_type"               => "single_item",
+//     "aggregation_type"          => "aggregate_all",
+//     "input_type"                => "checkboxes",
+//     'aggregation_selector'      => true,
+//     "result_item"               => [
+//         "link_item_filtered"    => [ $result_definition_item["aggregate_all_filtered"] ],
+//         "count_item"            => [ $result_definition_item["analysis_entities"] ]
+//     ]
+// ];
+
 
 $result_definition["sample_group_level"]["text"]="Sample group level";
 $result_definition["sample_group_level"]["applicable"]="0";
@@ -103,105 +152,133 @@ $direct_count_column="tbl_analysis_entities.analysis_entity_id";
 $indirect_count_table="tbl_dating_periods";
 $indirect_count_column="tbl_dating_periods.dating_period_id";
 
-// by defining the related the columns of to tables, the tables becomes linked.
-// If you now how to related they become related.
-// Defintion of the database model
+class WeightedGraph {
 
-$conn = ConnectionHelper::createConnection();
+    // Defines the relations between table columns i.e. the DB model
 
-$q2 = "select * from metainformation.tbl_foreign_relations";
+    public $joinColumns;
+    public $tableIds;
+    public $edges;
+    public $aliasTables;
 
-$rs2 = ConnectionHelper::query($conn, $q2);
-
-while ($row = pg_fetch_assoc($rs2))
-{
-    $sourceTable = $row["source_table"];
-    $sourceColumn = $row["source_column"];
-    $targetTable = $row["target_table"];
-    $targetColumn = $row["target_column"];
-    $join_columns[$sourceTable][$targetTable] = array (
-        "home_columns" => array ( "$sourceTable.\"$sourceColumn\""),
-        "remote_columns" => array ( "$targetTable.\"$targetColumn\""),
-        "join_condition" => " inner join $targetTable on ($sourceTable.\"$sourceColumn\"=$targetTable.\"$targetColumn\")\n",
-        "weight" => $row["weight"]);
-}
-pg_close($conn);
-
-//Defining the graph of tables
-// Make all joins unidirectional, so it will be the same join condition whatever direction you go.
-// Add the keys unique array of tables, where the keys are the table names
-// Representing the graph as a matrix
-// also creation of help variables for looking up tables names against number and vice versa
-
-/*
-* This will construct an associtative matrix called join_columns.
-* where the keys are the original table name (from_table) and the target table name
-* (to_table). The value stored in each position is an array describing the relation to travers these
-* two tables: key home_column = the column name in the source table identified as the
-* left hand side in the sql join; key remote_column = the column name in the target table
-* identified as the right hand side in the sql join. For example, table a has a relationship
-* with table b via a column called b_id. This column points via a foreign key to the identifier id
-* of table b. Thus the array saved at position ['a']['b'] in join_columns will look like the following
-* array(
-*      home_column = 'b_id',
-*      remote_column = 'id')
-*
-* This will later on be concatenated into the join clause (usually theta joins):
-*      a.b_id = b.id
-*/
-
-// make bidirectional
-foreach ($join_columns as $key => $pair)
-{
-    foreach ($pair as $key2 => $element)
+    private function createJoinElement($sourceTable, $sourceColumn, $targetTable, $targetColumn, $weight)
     {
-        $join_columns[$key2][$key]=$element;
+        return [
+            "home_columns"      => [ "$sourceTable.\"$sourceColumn\"" ],
+            "remote_columns"    => [ "$targetTable.\"$targetColumn\"" ],
+            "join_condition"    => " inner join $targetTable on ($sourceTable.\"$sourceColumn\"=$targetTable.\"$targetColumn\")\n",
+            "weight"            => $weight
+        ];
     }
-}
 
-foreach ($facet_definition as $facet_key =>$facet_definition_temp    )
-{
-    if (isset($facet_definition_temp["alias_table"]))
+    public function getJoinColumns()
     {
-        $temp_joins_conditions=$join_columns[$facet_definition_temp["table"]];
-        $list_of_alias_tables[$facet_definition_temp["alias_table"]]=$facet_definition_temp["table"];
-        foreach ($temp_joins_conditions as $remote_table =>$join_info_array)
+        // Define the table graph
+
+        // Make all joins unidirectional i.e. same join condition no matter direction
+        // Add the keys unique array of tables, where the keys are the table names
+        // Representing the graph as a matrix
+        // also creation of help variables for looking up tables names against number and vice versa
+
+        /*
+        * This will construct an associtative matrix called join_columns.
+        * where the keys are the original table name (from_table) and the target table name
+        * (to_table). The value stored in each position is an array describing the relation to travers these
+        * two tables: key home_column = the column name in the source table identified as the
+        * left hand side in the sql join; key remote_column = the column name in the target table
+        * identified as the right hand side in the sql join. For example, table a has a relationship
+        * with table b via a column called b_id. This column points via a foreign key to the identifier id
+        * of table b. Thus the array saved at position ['a']['b'] in join_columns will look like the following
+        * array(
+        *      home_column = 'b_id',
+        *      remote_column = 'id')
+        *
+        * This will later on be concatenated into the join clause (usually theta joins):
+        *      a.b_id = b.id
+        */
+
+        $conn = ConnectionHelper::createConnection();
+
+        $rs2 = ConnectionHelper::query($conn, "select * from metainformation.tbl_foreign_relations");
+
+        while ($row = pg_fetch_assoc($rs2))
         {
-            $join_info_array["home_columns"]=  str_replace($facet_definition_temp["table"], $facet_definition_temp["alias_table"], $join_info_array["home_columns"]);
-            $join_info_array["remote_columns"]=  str_replace($facet_definition_temp["table"], $facet_definition_temp["alias_table"], $join_info_array["remote_columns"]);
-            $join_info_array["join_condition"]=  str_replace($facet_definition_temp["table"], $facet_definition_temp["alias_table"], $join_info_array["join_condition"]);
-            $join_columns[$facet_definition_temp["alias_table"]][$remote_table]=$join_info_array; // copy the elements
-            $join_columns[$remote_table][$facet_definition_temp["alias_table"]]=$join_info_array; // copy the elements
+            $sourceTable = $row["source_table"];
+            $targetTable = $row["target_table"];
+            $sourceColumn = $row["source_column"];
+            $targetColumn = $row["target_column"];
+            $weight = $row["weight"];
+            $join_columns[$sourceTable][$targetTable] = $this->createJoinElement($sourceTable, $sourceColumn, $targetTable, $targetColumn, $weight);
+            $join_columns[$targetTable][$sourceTable] = $this->createJoinElement($targetTable, $targetColumn, $sourceTable, $sourceColumn, $weight);
         }
-    }
-}
 
-$f_tables = array();
-$temp_graph=$join_columns;
-$counter=0;
-foreach ($join_columns as $key => $pair)
-{
-    foreach ($pair as $key2 => $element)
+        pg_close($conn);
+
+        foreach ($facet_definition as $facet_key => $facet_definition_temp)
+        {
+            $alias_table = $facet_definition_temp["alias_table"];
+            $source_table = $facet_definition_temp["table"];
+            if (isset($alias_table))
+            {
+                $temp_joins_conditions = $join_columns[$source_table];
+                foreach ($temp_joins_conditions as $remote_table => $join_info_array)
+                {
+                    $join_info_array["home_columns"]   = str_replace($source_table, $alias_table, $join_info_array["home_columns"]);
+                    $join_info_array["remote_columns"] = str_replace($source_table, $alias_table, $join_info_array["remote_columns"]);
+                    $join_info_array["join_condition"] = str_replace($source_table, $alias_table, $join_info_array["join_condition"]);
+
+                    $join_columns[$alias_table][$remote_table] = $join_info_array;
+                    $join_columns[$remote_table][$alias_table] = $join_info_array;
+                }
+            }
+        }
+        return $join_columns;
+    }
+
+    public function getAliasTables() {
+        global $facet_definition;
+        $tables = [];
+        foreach ($facet_definition as $facet_key => $item)
+        {
+            if (isset($item["alias_table"]))
+                $tables[$item["alias_table"]] = $item["table"];
+        }
+        return $tables;
+    }
+
+    public function generateTableIds($join_columns) {
+        return array_flip(array_unique(array_keys($join_columns)));
+    }
+
+    public function createGraph($join_columns, $tableIds)
     {
-        if(!array_key_exists($key,$f_tables)){
-            $f_tables[$key] = $counter++;
+        // Create the graph ie the edges betwween the nodes into the matrix
+        foreach ($join_columns as $key => $pair)
+        {
+            foreach ($pair as $key2 => $element)
+            {
+                $weight = $join_columns[$key][$key2]["weight"];
+                $edges[$tableIds[$key]][$tableIds[$key2]] = intval($weight);
+            }
         }
-        if(!array_key_exists($key2,$f_tables)){
-            $f_tables[$key2] = $counter++;
-        }
+        return $edges;
+    }
+
+    public function setup()
+    {
+        $this->joinColumns = $this->getJoinColumns();
+        $this->tableIds = $this->generateTableIds($this->joinColumns);
+        $this->edges = $this->createGraph($this->joinColumns, $this->tableIds);
+        $this->aliasTables = $this->getAliasTables();
     }
 }
 
-// Create the graph ie the edges betwween the nodes into the matrix
+$weightedGraph = new WeightedGraph();
+$weightedGraph->setup();
+
+$join_columns = $weightedGraph->joinColumns;
+$ourMap = $weightedGraph->edges;
+
 define('I',1000);
-$points = Array();
 
-foreach ($join_columns as $key => $pair)
-{
-    foreach ($pair as $key2 => $element)
-    {
-        $weight = $join_columns[$key][$key2]["weight"];
-        $ourMap[$f_tables[$key]][$f_tables[$key2]] = $weight;
-    }
-}
 ?>

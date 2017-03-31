@@ -139,3 +139,20 @@ Result map oriented user activities (SHIPS):
 The client is mainly sending request to server using
 * <facet_load_data> in <facet.js> for facet content (discrete values, intervals and geo-information)
 * <result_load_data> in <result.js> for content into the result area (map, diagram and "list-like" information"
+
+
+#Install dependencies
+
+1. Install or update composer (a PHP packade manager) https://getcomposer.org/ (e.g. C:/ProgramData/Composer/bin/composer.phar self-update)
+2. Install phing (a PHP build system) https://www.phing.info/, or donwnload phar file
+3. Clone PHPExcel at https://github.com/PHPOffice/PHPExcel
+4. Enable PHAR in php.ini:
+```
+[Phar]
+; http://php.net/phar.readonly
+phar.readonly = Off
+```
+5. Build PHPExcel.phar:
+```
+php phing-latest.phar -f build.xml release-phar
+```

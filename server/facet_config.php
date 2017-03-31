@@ -20,20 +20,21 @@ class ResultConfigDeserializer
     $symbolConfig -  An array .
     */
 
-    public static function deserializeMapSymbolConfig($symbol_xml)
-    {
-        $xml_object = new SimpleXMLElement($symbol_xml);
-        $counter=0;
-        foreach ($xml_object->symbol_collection as $symbol_item_key => $symbol_item) {
-            foreach ($symbol_item as $tkey => $element) {
-                $element= (array) $element;
-                $symbolConfig[$counter]["symbol_key"] = (string)$element["symbol_key"];
-                $symbolConfig[$counter]["symbol_icon"] = (string)$element["symbol_icon"];
-                $counter++;
-            }
-        }
-        return $symbolConfig;
-    }
+    // ROGER: REMOVED NOT USED
+    // public static function deserializeMapSymbolConfig($symbol_xml)
+    // {
+    //     $xml_object = new SimpleXMLElement($symbol_xml);
+    //     $counter=0;
+    //     foreach ($xml_object->symbol_collection as $symbol_item_key => $symbol_item) {
+    //         foreach ($symbol_item as $tkey => $element) {
+    //             $element= (array) $element;
+    //             $symbolConfig[$counter]["symbol_key"] = (string)$element["symbol_key"];
+    //             $symbolConfig[$counter]["symbol_icon"] = (string)$element["symbol_icon"];
+    //             $counter++;
+    //         }
+    //     }
+    //     return $symbolConfig;
+    // }
 
     //***************************************************************************************************************************************************
     /*
@@ -79,7 +80,6 @@ class ResultConfigDeserializer
 
     public static function deserializeMapConfig($map_xml)
     {
-        global $result_definition;
         $xml_object = new SimpleXMLElement($map_xml);
         $map_params["map_year"]=(string) $xml_object->map_year;
         $map_params["map_result_item"]= (string )$xml_object->map_result_item;
@@ -98,7 +98,6 @@ class ResultConfigDeserializer
     */
     public static function deserializeDiagramConfig($diagram_xml)
     {
-        global $result_definition;
         $xml_object = new SimpleXMLElement($diagram_xml);
         
         $diagram_params['request_id']=(string) $xml_object->request_id;
@@ -172,12 +171,12 @@ class FacetConfigDeserializer
         
         foreach ($xml_obj->facet as $key => $element) {
             $facet_pos = (integer)$element->facet_position;
-            $f_code = "" . $element->f_code;
+            $facetCode = "" . $element->f_code;
 
-            $p["facet_collection"][$f_code]["facet_start_row"] = (integer)$element->facet_start_row;
-            $p["facet_collection"][$f_code]["facet_position"] = (integer)$element->facet_position;
-            $p["facet_collection"][$f_code]["facet_number_of_rows"] = (integer)$element->facet_number_of_rows;
-            $p["facet_collection"][$f_code]["facet_text_search"] = (string)$element->facet_text_search;
+            $p["facet_collection"][$facetCode]["facet_start_row"] = (integer)$element->facet_start_row;
+            $p["facet_collection"][$facetCode]["facet_position"] = (integer)$element->facet_position;
+            $p["facet_collection"][$facetCode]["facet_number_of_rows"] = (integer)$element->facet_number_of_rows;
+            $p["facet_collection"][$facetCode]["facet_text_search"] = (string)$element->facet_text_search;
             
             if (!isset($element->selection_group)) {
                 continue;
@@ -185,7 +184,7 @@ class FacetConfigDeserializer
 
             foreach ($element->selection_group as $temp2 => $selection_group) {
                 if (isset($selection_group)) {
-                    $p["facet_collection"][$f_code]["selection_groups"][$temp2][] = $selection_group;
+                    $p["facet_collection"][$facetCode]["selection_groups"][$temp2][] = $selection_group;
                 }
             }
         }
@@ -277,8 +276,8 @@ EOS;
         $usedFacets = array_filter($facetConfig["facet_collection"], function ($facet) {
             return isset($facet["facet_position"]);
         });
-        foreach ($usedFacets as $f_code => $facet) {
-            $used_facet_index[$facet["facet_position"]] = $f_code;
+        foreach ($usedFacets as $facetCode => $facet) {
+            $used_facet_index[$facet["facet_position"]] = $facetCode;
         }
         ksort($used_facet_index);
         return $used_facet_index;
@@ -351,9 +350,9 @@ EOS;
         if (empty($facetConfig["facet_collection"])) {
             return $facetConfig;
         }
-        foreach ($facetConfig["facet_collection"] as $f_code => $facet) {
+        foreach ($facetConfig["facet_collection"] as $facetCode => $facet) {
             if (!empty($facet["selection_groups"])) {
-                $facetConfig["facet_collection"][$f_code]["selection_groups"] = "";
+                $facetConfig["facet_collection"][$facetCode]["selection_groups"] = "";
             }
         }
         return $facetConfig;

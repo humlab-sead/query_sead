@@ -37,4 +37,12 @@ function generateSessionKey(){
     return sha1($ip . "_" . $timeStamp);
 }
 
+$client_result_module_path = "client/result_modules";
+
+function getClientResultModules()
+{
+    global $client_result_module_path;
+    return glob("$client_result_module_path/*.js");
+}
+
 ?>

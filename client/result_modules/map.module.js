@@ -526,6 +526,7 @@ function result_map_post_switch_view()
       
 }
 
-
+// register
+result_modules.push('map');
 
 

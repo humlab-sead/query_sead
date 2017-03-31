@@ -920,7 +920,7 @@ function facet_expand_facet(facet_obj) {
 	layout_move_facets_to_layout();
 	
 	//enable text search in this facet
-	facet_dom_obj.find(".facet_text_search_box").attr("disabled", false);
+	facet_dom_obj.find(".facet_text_search_box").prop("disabled", false);
 	
 	//if this is a range facet we need to re-create the value bar object for it to function properly
 	
@@ -1004,7 +1004,7 @@ function facet_collapse_facet(facet_obj) {
 	layout_move_facets_to_layout();
 	
 	//disable text search in this facet
-	facet_dom_obj.find(".facet_text_search_box").attr("disabled", true);
+	facet_dom_obj.find(".facet_text_search_box").prop("disabled", true);
 	
 	
 	facet_obj.collapsed = true;

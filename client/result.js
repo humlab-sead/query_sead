@@ -395,7 +395,7 @@ function result_get_result_variable_selection_as_array()
 {
 var selected_items = Array();
 	$("#result_control").find("input[type=checkbox]").each(function() {
-		if($(this).attr("checked") == true && $(this).parent().hasClass("result_variable_parent") == false) {
+		if($(this).prop("checked") == true && $(this).parent().hasClass("result_variable_parent") == false) {
 			
 			if($.inArray($(this).attr("name"), selected_items) == -1) {
 				selected_items.push($(this).attr("name"));
@@ -427,7 +427,7 @@ function result_get_result_variable_selections_as_xml() {
 	var xml = "";
 	var agg_mode;
 	$("#result_control").find("input[name=\"result_variable_aggregation_type\"]").each(function() {
-		if($(this).attr("checked") == true) {
+		if($(this).prop("checked") == true) {
 			agg_mode=$(this).attr("value");
 
 			xml += "<aggregation_code>"+$(this).attr("value")+"</aggregation_code>"; // make the aggregation code one expclitiy xml-tag and the aggregation item olds holds some variables 
@@ -628,7 +628,7 @@ function result_render_result_variable_item(item, has_children, level) {
 	});
 	
 	if(item.checked) {
-		$(html_obj).find("[type=\"checkbox\"]").attr("checked", "checked");
+		$(html_obj).find("[type=\"checkbox\"]").prop("checked", true);
 	}
 	
 	
@@ -748,7 +748,7 @@ function result_variable_toggle(event_obj, value) {
 		if(event_obj.item.checked) {
 			result_variable_set_status("unchecked", event_obj.item.id);
 		}
-		else if($("."+event_obj.item.dom_id+"_checkbox").attr("disabled") == false) {
+		else if($("."+event_obj.item.dom_id+"_checkbox").prop("disabled") == false) {
 			result_variable_set_status("checked", event_obj.item.id);
 		}
 	}
@@ -802,17 +802,17 @@ function result_aggregation_type_set_status(status_change, id) {
 	status_change = status_change.toLowerCase();
 	
 	if(status_change == "disable" || status_change == "disabled") {
-		$("#result_aggregation_type_"+item.id).attr("disabled", "disabled");
+		$("#result_aggregation_type_"+item.id).prop("disabled", true);
 		item.enabled = false;
 		result_module_invoke_all("result_aggregation_type_disabled", id);
 	}
 	else if(status_change == "enable" || status_change == "enabled") {
-		$("#result_aggregation_type_"+item.id).attr("disabled", "");
+		$("#result_aggregation_type_"+item.id).prop("disabled", false);
 		item.enabled = true;
 		result_module_invoke_all("result_aggregation_type_enabled", id);
 	}
 	else if(status_change == "select" || status_change == "selected") {
-		$("#result_aggregation_type_"+item.id).attr("checked", true);
+		$("#result_aggregation_type_"+item.id).prop("checked", true);
 		
 		
 		for(var key in result_object.result_variable_aggregation_types) {
@@ -1132,22 +1132,22 @@ function result_variable_set_status(status_change, id) {
 	status_change = status_change.toLowerCase();
 	
 	if(status_change == "disable" || status_change == "disabled") {
-		$("."+item.dom_id+"_checkbox").attr("disabled", "disabled");
+		$("."+item.dom_id+"_checkbox").prop("disabled", true);
 		item.disabled = true;
 		result_module_invoke_all("result_variable_disabled", id);
 	}
 	else if(status_change == "enable" || status_change == "enabled") {
-		$("."+item.dom_id+"_checkbox").attr("disabled", "");
+		$("."+item.dom_id+"_checkbox").prop("disabled", false);
 		item.disabled = false;
 		result_module_invoke_all("result_variable_enabled", id);
 	}
 	else if(status_change == "check" || status_change == "checked") {
-		$("."+item.dom_id+"_checkbox").attr("checked", "checked");
+		$("."+item.dom_id+"_checkbox").prop("checked", true);
 		item.checked = true;
 		result_module_invoke_all("result_variable_checked", id);
 	}
 	else if(status_change == "uncheck" || status_change == "unchecked") {
-		$("."+item.dom_id+"_checkbox").attr("checked", "");
+		$("."+item.dom_id+"_checkbox").prop("checked", false);
 		item.checked = false;
 		result_module_invoke_all("result_variable_unchecked", id);
 	}
@@ -1383,7 +1383,7 @@ function result_get_selected_list_items() {
 	var counter=0;
 	var selected_items = Array();
 	$("#result_control").find("input[type=checkbox]").each(function() {
-		if($(this).attr("checked") == true && $(this).parent().hasClass("result_variable_parent") == false) {
+		if($(this).prop("checked") == true && $(this).parent().hasClass("result_variable_parent") == false) {
 			
 			if($.inArray($(this).attr("name"), selected_items) == -1) {
 				//selected_items.push($(this).attr("name"));
@@ -1531,7 +1531,7 @@ function result_minimize() {
 
    Description:
    This function calls a type of function in all modules containing that specific function. The function to be called is determined by the hook/prefix 
-   combined with the postfix. The incoming parammeter contains the postfix and the prefix is picked from the array of result modules available. I.e. 
+   combined with the postfix. The incoming parammeter contains the postfix and the prefix is picked from the array of result modules available. i.e. 
    if the parameter contains "init" the functions "geo_init, map_init", "list_init" are called.
 
    Parameters: 

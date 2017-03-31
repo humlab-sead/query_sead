@@ -83,72 +83,129 @@ require_once __DIR__ . '/../server/compile_result.php';
 
 global $result_definition_item, $application_name, $cache_seq; 
 
-$conn = ConnectionHelper::createConnection();
+class LoadResultHelper {
 
-$facetStateId = $_REQUEST['facet_state_id'];
+    // TODO: check if "mapxml" exists
+    private static $compilers = [
+        "map" => "MapResultCompiler",
+        "mapxml" => "MapResultCompiler",
+        "listxml" => "XmlListResultCompiler",
+        "listhtml" => "HtmlListResultCompiler",
+        "list" => "HtmlListResultCompiler"
+    ];
+    private static $serializers = [
+        "map" => "MapResultSerializer",
+        "mapxml" => "MapResultSerializer",
+        "listxml" => "XmlListResultSerializer",
+        "listhtml" => "HtmlListResultSerializer",
+        "list" => "HtmlListResultSerializer"
+    ];
+    private static $cacheables = [ "map" => false, "mapxml" => false, "listxml" => false, "listhtml" => true, "list" => true ];
+    public static $isxml = [ "map" => true, "mapxml" => true, "listxml" => true, "listhtml" => false, "list" => false];
 
-$facetXml    = !empty($facetStateId) ? CacheHelper::get_facet_xml_from_id($facetStateId) : $_REQUEST['facet_xml'];
+    public static function getCompiler($conn, $requestType)
+    {
+        $compiler_class = self::$compilers[$requestType];
+        return new $compiler_class($conn);
+    }
 
-$facetConfig = FacetConfigDeserializer::deserializeFacetConfig($facetXml); 
-$facetConfig = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
+    public static function getSerializer($requestType)
+    {
+        $serializer_class = self::$serializers[$requestType];
+        return new $serializer_class();
+    }
 
-$result_xml  = $_REQUEST['result_xml'];
-$map_xml     = $_REQUEST['map_xml'];
-$symbol_xml  = $_REQUEST['symbol_xml'];
+    public static function isCacheableResultData($requestType)
+    {
+        return self::$cacheables[$requestType];
+    }
 
-$resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
+    public static function getFacetXml()
+    {
+        $facetCacheId = $_REQUEST['facet_state_id'];
+        return !empty($facetCacheId) ? CacheHelper::get_facet_xml($facetCacheId) : $_REQUEST['facet_xml'];
+    }
 
-switch($resultConfig["view_type"]) {
+    public static function getResultXml()
+    {
+        $facetCacheId = $_REQUEST['facet_state_id'];
+        return !empty($facetCacheId) ? CacheHelper::get_result_xml($facetCacheId) : $_REQUEST['result_xml'];
+    }
 
-    case "map":
-        $map_params = ResultConfigDeserializer::deserializeMapConfig($map_xml);
-        if (!empty($symbol_xml)) {
-            $symbol_params = ResultConfigDeserializer::deserializeMapSymbolConfig($symbol_xml);
+    function cacheInputData($conn, $resultConfig)
+    {
+        $cache_id  = $_REQUEST['facet_state_id'];
+        if (empty($cache_id)) {
+            $cache_id = CacheIdGenerator::generateFacetStateId($conn);
+            CacheHelper::put_facet_xml($cache_id, self::getFacetXml());
         }
-        $aggregation_code=$resultConfig["aggregation_code"];
-        $out = result_render_map_view($conn,$facetConfig,$resultConfig,$map_params,$facetXml,$result_xml,$map_xml,$aggregation_code);
-        $out = "<aggregation_code>".$resultConfig["aggregation_code"]."</aggregation_code>\n<result_html>$result_list</result_html>" . $out ;
-        break;
-    case "list":
-        $f_str = CacheHelper::computeResultConfigCacheId($facetConfig, $resultConfig, $result_xml);
-        if (!isset($facetStateId))
-        {
-            $cache_seq_id = $cache_seq ?? 'file_name_data_download_seq';
-            $row = ConnectionHelper::queryRow($conn, "select nextval('$cache_seq_id') as cache_id;");
-            $facetStateId = $application_name . $row["cache_id"];
-            file_put_contents(__DIR__."/cache/".$facetStateId."_facet_xml.xml",$facetXml);
-        }
-        file_put_contents(__DIR__."/cache/".$facetStateId."_result_xml.xml", $result_xml);
+        CacheHelper::put_result_xml($cache_id, self::getResultXml());
+        return $cache_id;
+    }
 
-        $data_link="/api/report/get_data_table.php?cache_id=".$facetStateId."&application_name=$applicationName";
-        $data_link_text="/api/report/get_data_table_text.php?cache_id=".$facetStateId."&application_name=$applicationName";
+    function putCachedResultData($type, $cache_id, $data)
+    {
+        CacheHelper::put_result_data($type, $cache_id, $data); 
+    }
 
-        // new data link with a file_name that is unique point to facet_xml_file in the cache_catalogue
-        switch ($resultConfig["client_render"])
-        {
-            case "xml":
-                $out=RenderResultListXML::render_xml($conn,$facetConfig,$resultConfig,$data_link,$facetStateId,$data_link_text);
-                break;
-            default: 
-                if (!$out = DataCache::Get("result_list".$applicationName, $f_str)) { 
-                    $out = RenderResultListHTML::render_html($conn,$facetConfig,$resultConfig,$data_link,$facetStateId,$data_link_text);
-                    DataCache::Put("result_list".$applicationName, $f_str, 1500,$out);    
-                }
-                $out = "<![CDATA[".$out."]]>";   
-                break;
-        }
-        break;
+    function getCachedResultData($type, $cache_id)
+    {
+        return CacheHelper::get_result_data($type, $cache_id); 
+    }
 }
 
+$conn          = ConnectionHelper::createConnection();
+$facetXml      = LoadResultHelper::getFacetXml();
+$resultXml     = LoadResultHelper::getResultXml();
+$facetConfig   = FacetConfigDeserializer::deserializeFacetConfig($facetXml); 
+$facetConfig   = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
+$resultConfig  = ResultConfigDeserializer::deserializeResultConfig($resultXml);
+$facetCacheId  = LoadResultHelper::cacheInputData($conn, $resultConfig);
+$requestType   = $resultConfig["view_type"] . $resultConfig["client_render"];
+$resultCacheId = CacheIdGenerator::computeResultConfigCacheId($facetConfig, $resultConfig, $resultXml);
+$isCacheable   = LoadResultHelper::isCacheableResultData($requestType);
+$isCached      = false;
+
+if ($isCacheable) {
+    $serialized_data = CacheHelper::get_result_data($requestType, $resultCacheId);
+    $isCached = !empty($serialized_data);
+}
+
+if (!$serialized_data) {
+    $compiler = LoadResultHelper::getCompiler($conn, $requestType);
+    $serializer = LoadResultHelper::getSerializer($requestType);
+    $data = $compiler->compile($facetConfig, $resultConfig, $facetCacheId);
+    $serialized_data = $serializer->serialize($data['iterator'], $facetConfig, $resultConfig, $facetCacheId, $data['payload']);
+}
+
+if ($isCacheable && !$isCached) {
+    LoadResultHelper::putCachedResultData($requestType, $resultCacheId, $serialized_data);
+}
+
+$meta_data = FacetConfig::generateUserSelectItemHTML($facetConfig);
+
+$current_request_id = $resultConfig["request_id"];
+
+if (!LoadResultHelper::$isxml[$requestType]) {
+    // wrap non-xml return in CDATA tag
+    $serialized_data = "<![CDATA[$serialized_data]]>";
+}
+
+// FIXME: Convert to JSON instead om XML
 header("Content-Type: text/xml");
 header("Character-Encoding: UTF-8");
-$meta_data_str=FacetConfig::generateUserSelectItemHTML($facetConfig);
-$current_request_id=$resultConfig["request_id"];
+echo "<xml>";
+echo   "<response>";
+echo       $serialized_data;
+echo   "</response>";
+echo   "<current_selections>";
+echo       "<![CDATA[", $meta_data, "]]>";
+echo   "</current_selections>";
+echo   "<request_id>";
+echo       $current_request_id;
+echo   "</request_id>";
+echo "</xml>";
 
-$meta_xml = "<current_selections><![CDATA[".$meta_data_str."]]></current_selections>";;
-$xml = "<xml><response>".$out."</response>".$meta_xml."<request_id>" . $current_request_id . "</request_id></xml>";
-
-echo $xml;
 pg_close($conn);
 
 ?>

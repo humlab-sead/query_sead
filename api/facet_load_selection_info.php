@@ -20,7 +20,7 @@ if ($selectCount != 0) {
     $tooltip = FacetConfig::generateUserSelectItemHTML($facetConfig, $facetCode);
 }
 
-$xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
+$xml  = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
 $xml .= "<data>";
 $xml .= "<f_code>" . $facetCode . "</f_code>\n";
 $xml .= "<report_html><![CDATA[" .$tooltip . "]]></report_html>\n";

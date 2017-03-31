@@ -9,27 +9,29 @@ require_once __DIR__ . "/lib/SqlFormatter.php";
 
 class RangeFacetCounter {
 
-    public static function get_range_counts($conn, $f_code, $facetConfig, $q_interval, $direct_count_table, $direct_count_column)
+    public static function get_range_counts($conn, $facetCode, $facetConfig, $q_interval)
     {
-        global $facet_definition;
-        
+        global $facet_definition, $direct_count_table, $direct_count_column;
+        if (empty($direct_count_column)) {
+            return NULL;
+        }        
         $direct_counts = array();
         $combined_list = array();
-        $query_table = $facet_definition[$f_code]["table"];
+        $query_table = $facet_definition[$facetCode]["table"];
         $data_tables[] = $query_table;
         $data_tables[] = $direct_count_table;
         
         $f_list = FacetConfig::getKeysOfActiveFacets($facetConfig);
         
         //check if f_code exist in list, if not add it. since counting can be done also in result area and then using "abstract facet" that are not normally part of the list
-        if (!in_array($f_code, $f_list)) {
-            $f_list[] = $f_code;
+        if (!in_array($facetCode, $f_list)) {
+            $f_list[] = $facetCode;
         }
         
         // use the id's to compute direct resource counts
         // filter is not being used be needed as parameter
-        $query = QueryBuildService::compileQuery($params, $f_code, $data_tables, $f_list);
-        $query_column = $facet_definition[$f_code]["id_column"] . "::integer";
+        $query = QueryBuildService::compileQuery($facetConfig, $facetCode, $data_tables, $f_list);
+        $query_column = $facet_definition[$facetCode]["id_column"] . "::integer";
         $query_tables = $query["tables"];
         $where_clause = $query["where"] != '' ? " and  " . $query["where"] . " " : "";
         $extra_join = $query["joins"] != "" ?  "  " . $query["joins"] . "  " : "";
@@ -147,25 +149,28 @@ EOT;
     associative array with counts, the keys are the facet_term i.e the unique id of the row
     */
 
-    public static function get_discrete_counts($conn, $f_code, $facetConfig, $payload, $direct_count_table, $direct_count_column)
+    public static function get_discrete_counts($conn, $facetCode, $facetConfig, $payload)
     {
-        global $facet_definition;
+        global $facet_definition, $direct_count_table, $direct_count_column;
+        if (empty($direct_count_column)) {
+            return NULL;
+        }
         $direct_counts = array();
         $combined_list = array();
         $data_tables[] = $direct_count_table;
-        $query_table = isset($facet_definition["alias_table"]) ? $facet_definition["alias_table"] : $facet_definition[$f_code]["table"];
+        $query_table = isset($facet_definition["alias_table"]) ? $facet_definition["alias_table"] : $facet_definition[$facetCode]["table"];
         $data_tables[] = $query_table;
         $f_list = FacetConfig::getKeysOfActiveFacets($facetConfig);
         //check if f_code exist in list, if not add it. since counting can be done also in result area and then using "abstract facet" that are not normally part of the list
         if (isset($f_list)) {
-            if (!in_array($f_code, $f_list)) {
-                $f_list[] = $f_code;
+            if (!in_array($facetCode, $f_list)) {
+                $f_list[] = $facetCode;
             }
         }
         // use the id's to compute direct resource counts
         // filter is not being used be needed as parameter
-        $count_facet = $facet_definition[$f_code]["count_facet"] ?? "result_facet";
-        $summarize_type = $facet_definition[$f_code]["summarize_type"] ?? "count";
+        $count_facet = $facet_definition[$facetCode]["count_facet"] ?? "result_facet";
+        $summarize_type = $facet_definition[$facetCode]["summarize_type"] ?? "count";
         $q = self::get_discrete_count_query2($count_facet, $facetConfig, $summarize_type);
         $max_count = 0;
         $min_count = 99999999999999999;

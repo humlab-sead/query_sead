@@ -54,7 +54,13 @@
     <script type="text/javascript">
         <?php require_once("api/get_facet_definitions.php"); ?>
         <?php require_once("api/get_result_definitions.php"); ?>
+        var result_modules = Array();
     </script>
+    <?php
+        foreach (getClientResultModules() as $module_file) {
+            echo "<script type=\"text/javascript\" src=\"$module_file\"></script>";
+        }
+    ?>
 <?php
     require_once("server/language/language.php");
     // if(isset($_GET['f']) && $_GET['f'] == "language_update")
