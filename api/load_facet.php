@@ -65,10 +65,10 @@ if ($facetType == "range") {
     $query_offset = 0;
     $query_limit = 250;
 }
+pg_close($conn);
 
 $response = FacetContentSerializer::serializeFacetContent($facetContent[$facetCode], $action_type, $query_offset, $query_limit, $filter_state_id);
 
 header("Content-Type: text/xml");
+header("Character-Encoding: UTF-8");
 echo $response;
-
-pg_close($conn);

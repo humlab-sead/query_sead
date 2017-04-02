@@ -22,6 +22,37 @@ class RecordSetIterator {
 
 class ConnectionHelper
 {
+    private const trace_flag = true;
+
+    private static function trace($sql, $context="")
+    {
+        $stack = debug_backtrace(); 
+        $filename = '../sql.log';
+        $stack_text = ""; 
+        $header = str_pad("#", 120, "#");
+        $divider = ""; //'  ' . str_pad("-", 88, "-");
+        $datetime = new DateTime('NOW');
+        $now = $datetime->format('Y-m-d H:i:s');
+        $sql = SqlFormatter::format($sql, false);
+        $columns = "    # " . str_pad("filename", 35) . ' line function\n';
+        while (list($i, $x) = each($stack)) {
+            //$source_file = str_pad(basename($x['file'], '.php'), 35);
+            $source_file = str_pad(basename($x['file']), 35);
+            $source_line = str_pad($x['line'], 4);
+            //$class_name  = str_pad($x['class'], 40, " ", STR_PAD_RIGHT);
+            $class_name  = $x['class'];
+            $function    = (empty($class_name) ? "" :  "$class_name::") . $x['function'];
+            $stack_text .=  ($x['class'] == __CLASS__) ? "" :  "   $i $source_file $source_line $function\n";
+        }
+        file_put_contents($filename,
+            "\n$header\nTimestamp: $now\n\n" .
+            "   # filename                            line function\n" .
+            "   ---------------------------------------------------\n" .
+            "$stack_text" .
+            "$divider\n" .
+            "$sql\n", FILE_APPEND | LOCK_EX);
+    }
+
     public static function createConnection()
     {
         if (!($conn = pg_connect(CONNECTION_STRING))) {
@@ -31,8 +62,9 @@ class ConnectionHelper
         return $conn;
     }
 
-    public static function execute($conn, $q)
+    public static function execute($conn, $q, $context="")
     {
+        self::trace($q, $context);
         if (($rs = pg_exec($conn, $q)) <= 0) {
             error_log("Error: cannot execute:  " . SqlFormatter::format($q, false) . "  \n");
             pg_close($conn);
@@ -43,6 +75,7 @@ class ConnectionHelper
 
     public static function query($conn, $q, $context="")
     {
+        self::trace($q, $context);
         if (($rs = pg_query($conn, $q)) <= 0) {
             $where = empty($context) ? "" : " in \"$context\"";
             error_log("Error$where: cannot execute query: " . SqlFormatter::format($q, false) . "\n");

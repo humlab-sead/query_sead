@@ -323,16 +323,18 @@ EOT;
 
 }
 
-$facet_content_loaders = array("discrete" => new DiscreteFacetContentLoader(), "range" => new RangeFacetContentLoader());
+$facet_content_loaders = array(
+    "discrete" => new DiscreteFacetContentLoader(),
+    "range" => new RangeFacetContentLoader()
+);
 
 class FacetContentService {
 
     public static function load($conn, $facetConfig)
     {
         global $facet_content_loaders, $facet_definition;
-        $facetCode  = $facetConfig["requested_facet"];
+        $facetCode = $facetConfig["requested_facet"];
         $facetType = $facet_definition[$facetCode]["facet_type"];
-
         $cacheId = CacheIdGenerator::computeFacetContentCacheId($facetConfig);
         if (!($facetContent = CacheHelper::get_facet_content($cacheId))) {
             $facetContent = $facet_content_loaders[$facetType]->get_facet_content($conn, $facetConfig);

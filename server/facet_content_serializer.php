@@ -13,11 +13,10 @@ class FacetContentSerializer {
     */
     public static function serializeFacetContent($facet_c, $action_type, $start_row, $num_row, $filter_state_id = null)
     {
-        $xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
-        $xml .= "<data>";
+        $xml  = "<data>\n";
         $xml .= self::serializeFacetData($facet_c, $action_type, $start_row, $num_row);
-        $xml.="   <duration><![CDATA[0]]></duration>";
-        $xml .= "</data>";
+        $xml .= "   <duration><![CDATA[0]]></duration>\n";
+        $xml .= "</data>\n";
         return $xml;
     }
 
@@ -88,7 +87,7 @@ class FacetContentSerializer {
             $xml .= "<rows_num>" . $row_counter . "</rows_num>";
             $xml .= "</facet_c>\n";
         }
-        $xml .= "</facets>";
+        $xml .= "</facets>\n";
         return $xml;
     }
 

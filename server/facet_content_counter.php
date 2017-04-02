@@ -122,18 +122,16 @@ class DiscreteFacetCounter {
         $extra_where = ($query["where"] != '')  ? " and  " . $query["where"] . " " : "";
 
         $q = <<<EOT
-
-        select facet_term, $summarize_type(summarize_term) as direct_count
-        from (
-            select $requested_facet_column  as facet_term , $count_column as summarize_term
-            from $query_tables
-                $extra_join
-            where 1 = 1
-                $extra_where
-            group by $count_column, $requested_facet_column
-        ) as tmp_query
-        group by facet_term;
-
+select facet_term, $summarize_type(summarize_term) as direct_count
+from (
+    select $requested_facet_column as facet_term, $count_column as summarize_term
+    from $query_tables
+    $extra_join
+    where 1 = 1
+     $extra_where
+    group by $count_column, $requested_facet_column
+) as x
+group by facet_term;
 EOT;
         return $q;
     }

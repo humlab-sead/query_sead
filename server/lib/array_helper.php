@@ -81,6 +81,15 @@ class ArrayHelper {
         }
         return $position;
     }
+
+
 }
 
+function array_add_unique(&$array, $mixed)
+{
+    $values = (empty($mixed) ? [] : (is_array($mixed) ? $mixed : [ $mixed ]));
+    foreach ($values as $value) {
+        $array[$value] = $value;
+    }
+}
 ?>

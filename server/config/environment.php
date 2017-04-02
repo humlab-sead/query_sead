@@ -45,4 +45,14 @@ function getClientResultModules()
     return glob("$client_result_module_path/*.js");
 }
 
+// FIXME: Wrap all global variables within a registry
+class ConfigurationRegistry 
+{
+    public static function getFacetDefinitions()
+    {
+        global $facet_definition;
+        return $facet_definition;
+    }
+}
+
 ?>

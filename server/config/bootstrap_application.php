@@ -199,9 +199,7 @@ class WeightedGraph {
         */
 
         $conn = ConnectionHelper::createConnection();
-
         $rs2 = ConnectionHelper::query($conn, "select * from metainformation.tbl_foreign_relations");
-
         while ($row = pg_fetch_assoc($rs2))
         {
             $sourceTable = $row["source_table"];
@@ -212,7 +210,6 @@ class WeightedGraph {
             $join_columns[$sourceTable][$targetTable] = $this->createJoinElement($sourceTable, $sourceColumn, $targetTable, $targetColumn, $weight);
             $join_columns[$targetTable][$sourceTable] = $this->createJoinElement($targetTable, $targetColumn, $sourceTable, $sourceColumn, $weight);
         }
-
         pg_close($conn);
 
         foreach ($facet_definition as $facet_key => $facet_definition_temp)
@@ -278,7 +275,6 @@ $weightedGraph = new WeightedGraph();
 $weightedGraph->setup();
 
 $join_columns = $weightedGraph->joinColumns;
-$ourMap = $weightedGraph->edges;
 
 define('I',1000);
 
