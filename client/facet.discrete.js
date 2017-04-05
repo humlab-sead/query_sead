@@ -51,8 +51,6 @@ function facet_discrete_render_data(facet_obj, xml) {
 		return;
 	}
 	
-        //$("#status_area").find(".content_container").html($(xml).find("report").text());
-	
 	var request_id = $(xml).find("request_id").text();
 	
 	//don't bother rendering this request if it's older than another already rendered request - but always render requests with an id of -1 since they're exempted from this ordering

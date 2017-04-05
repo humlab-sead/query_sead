@@ -9,8 +9,6 @@ $application_name = "sead";
 
 $applicationTitle = $applicationTitle ?? "SEAD - The Strategic Environmental Archaeology Database";
 
-$max_result_display_rows = 10000;
-
 function getServerName() {
 	return $_SERVER['SERVER_NAME'];
 }
@@ -25,6 +23,32 @@ function getApplication(){
     global $applicationName;
     return $applicationName;
 }
+
+class ConfigRegistry
+{
+    public const max_result_display_rows = 10000;
+    public const application_name = "sead";
+    public const cache_seq = "metainformation.file_name_data_download_seq";
+    public const filter_by_text = true;
+
+    public static function getMaxResultDefaultRows()
+    {
+        return self::max_result_display_rows;
+    }
+
+    public static function getApplicationName(){
+        return self::application_name;
+    }
+
+    public static function getCacheSeq(){
+        return self::cache_seq;
+    }
+
+    public static function getFilterByText(){
+        return self::filter_by_text;
+    }
+}
+
 
 /**
  * Creates a session specific key. This is a  workaround for the session_handling in php which limits the number
@@ -46,12 +70,17 @@ function getClientResultModules()
 }
 
 // FIXME: Wrap all global variables within a registry
-class ConfigurationRegistry 
+class FacetRegistry 
 {
-    public static function getFacetDefinitions()
+    public static function getDefinitions()
     {
         global $facet_definition;
         return $facet_definition;
+    }
+
+    public static function getDefinition($facetCode)
+    {
+        return self::getDefinitions()[$facetCode];
     }
 }
 

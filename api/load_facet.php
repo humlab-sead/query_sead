@@ -32,9 +32,10 @@ Shared sequence:
 */
 
 require_once __DIR__ . '/../server/connection_helper.php';
+require_once(__DIR__ . "/../server/lib/utility.php");
 require_once(__DIR__ . "/../server/facet_content_loader.php");
-require_once(__DIR__ . "/../server/facet_content_serializer.php");
-require_once(__DIR__ . "/../server/lib/array_helper.php");
+require_once(__DIR__ . "/serializers/facet_config_deserializer.php");
+require_once(__DIR__ . "/serializers/facet_content_serializer.php");
 
 $xml = (!empty($_REQUEST["xml"])) ? $_REQUEST["xml"] : NULL;
 
@@ -42,17 +43,16 @@ $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($xml);
 
 $conn = ConnectionHelper::createConnection();
 
-$f_action      = $facetConfig["f_action"][1];
 $facetCode     = $facetConfig["requested_facet"];
-$facetType     = $facet_definition[$facetCode]["facet_type"];
 $facet_options = $facetConfig["facet_collection"][$facetCode];
+$action_type   = $facetConfig["f_action"][1];
+$facet         = FacetRegistry::getDefinition($facetCode);
+$facetType     = $facet["facet_type"];
 $query_offset  = $facet_options["facet_start_row"];
 $query_limit   = $facet_options["facet_number_of_rows"];
 
 $facetConfig   = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
 $facetContent  = FacetContentService::load($conn, $facetConfig);
-
-$action_type   = $facetConfig["f_action"][1];
 
 if ($action_type=="populate_text_search") {
     $textFilter = $facet_options["facet_text_search"];

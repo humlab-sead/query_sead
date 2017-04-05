@@ -1,7 +1,8 @@
 <?php
 
+require_once __DIR__ . '/config/environment.php';
 require_once __DIR__ . '/lib/dijkstra.php';
-require_once __DIR__ . '/lib/array_helper.php';
+require_once __DIR__ . '/lib/utility.php';
 require_once __DIR__ . '/facet_config.php';
 
 class FacetSelectionCompiler {
@@ -45,9 +46,9 @@ class RangeFacetSelectionCompiler extends FacetSelectionCompiler {
 
     public function compile($targetCode, $currentCode, $groups)
     {
-        global $facet_definition;
-        $query_column = $facet_definition[$currentCode]["id_column"];
-        $query_cond = $facet_definition[$currentCode]["query_cond"];
+        $facet = FacetRegistry::getDefinition($currentCode);
+        $query_column =$facet["id_column"];
+        $query_cond = $facet["query_cond"];
         foreach ($groups as $group) {
             if (!isset($group)) {
                 continue;
@@ -89,11 +90,11 @@ class DiscreteFacetSelectionCompiler extends FacetSelectionCompiler {
 
     public function compile($targetCode, $currentCode, $group)
     {
-        global $facet_definition;
         if (empty($group) || ($targetCode == $currentCode)) {
             return NULL;
         }
-        $query_column = $facet_definition[$currentCode]["id_column"];
+        $facet = FacetRegistry::getDefinition($currentCode);
+        $query_column = $facet['id_column'];
         $criteria = "";
         // there is a selection and the filter is not the target facets.
         foreach ($group as $items) {
@@ -206,12 +207,12 @@ class QueryBuilder
         return $joins;
     }
 
-    public function get_query_information($facet_definition, $facetConfig, $facetCode, $extra_tables, $activeFacets)
+    public function get_query_information($facetConfig, $facetCode, $extra_tables, $activeFacets)
     {
         $unique_tables = array();   // Unique list of tables involved in join
 
         $facet_selections = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
-        $target_facet = $facet_definition[$facetCode];
+        $target_facet = FacetRegistry::getDefinition($facetCode);
 
         array_add_unique($unique_tables, $extra_tables);
         array_add_unique($unique_tables, $target_facet["query_cond_table"]);
@@ -225,7 +226,7 @@ class QueryBuilder
             if (!isset($facet_selections[$currentCode])) {
                 continue;
             }
-            $current_facet = $facet_definition[$currentCode];
+            $current_facet = FacetRegistry::getDefinition($currentCode);
             $current_table = $current_facet["alias_table"] ?? $current_facet["table"];
 
             $compiler = FacetSelectionCompiler::getCompiler($current_facet["facet_type"]);
@@ -334,10 +335,9 @@ class QueryBuildService {
     */
     public static function compileQuery($facetConfig, $facetCode, $extra_tables, $activeFacets)
     {
-        global $facet_definition;
         global $weightedGraph;
         $query_builder = new QueryBuilder($weightedGraph);
-        $query = $query_builder->get_query_information($facet_definition, $facetConfig, $facetCode, $extra_tables, $activeFacets);
+        $query = $query_builder->get_query_information($facetConfig, $facetCode, $extra_tables, $activeFacets);
         return $query;
     }
 }

@@ -4,13 +4,12 @@ require_once(__DIR__ . '/../../server/cache_helper.php');
 require_once(__DIR__ . '/../../server/connection_helper.php');
 require_once(__DIR__ . '/../../server/facet_config.php');
 require_once(__DIR__ . '/../../server/query_builder.php');
+require_once(__DIR__ . "/../serializers/facet_config_deserializer.php");
+require_once(__DIR__ . "/../serializers/facet_picks_serializer.php");
 
 /**
  * function: get_f_code_filter_query
  * get the unique id to be used to filter the report based on user selection in QSEAD
- * 
- * globals:
- * -  $facet_definition
  * 
  * params: 
  * - $cache_id id of reference to facet_xml file
@@ -20,29 +19,28 @@ require_once(__DIR__ . '/../../server/query_builder.php');
  * return: query string
  */
 function get_f_code_filter_query($cache_id, $facetCode = "result_facet", $data_table = null) {
-    global $facet_definition;
 
     $conn = ConnectionHelper::createConnection();
-
+    $facet = FacetRegistry::getDefinition($facetCode);
     $facet_xml = CacheHelper::get_facet_xml($cache_id);
 
     $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
     $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
 
-    $tmp_list = FacetConfig::getKeysOfActiveFacets($facet_params);
+    $tmp_list = FacetConfig::getCodesOfActiveFacets($facet_params);
     $tmp_list[] = $facetCode; //Add  as final facet
 
     $query_info = QueryBuildService::compileQuery($facet_params, $facetCode, $data_table, $tmp_list);
-    $query_column = $facet_definition[$facetCode]["id_column"];
-    $q = "select distinct $query_column  from " . $query_info["tables"];
+    $query_column = $facet["id_column"];
+    $sql = "select distinct $query_column  from " . $query_info["tables"];
     if (!empty($query_info["joins"])) {
-        $q .= " " . $query_info["joins"];
+        $sql .= " " . $query_info["joins"];
     }
     if (!empty($query_info["where"])) {
-        $q .= " where " . $query_info["where"];
+        $sql .= " where " . $query_info["where"];
     }
 
-    return $q;
+    return $sql;
 }
 /*
  * function: get_select_info_as_html
@@ -54,7 +52,9 @@ function get_select_info_as_html($conn, $cache_id) {
     $facet_xml = CacheHelper::get_facet_xml($cache_id);
     $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
     $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
-    return FacetConfig::generateUserSelectItemHTML($facet_params);
+    $matrix = FacetConfig::collectUserPicks($facet_params);
+    $current_selections = FacetPicksSerializer::toHTML($matrix);
+    return $current_selections;
 }
 
 class base_reporter {
@@ -241,9 +241,7 @@ class site_reporter extends base_reporter {
         } else {
             $html.= "<B> No filters </B>";
         }
-        // http://localhost/qviz_refactor/api/report/show_site_details.php?site_id=3&cache_id=sead680&application_name=sead
         $html.= $this->reporter->format_rs($rs, 'site_id', 'show_site_details.php?', $cache_id);
-
         return $html;
     }
 
@@ -272,7 +270,7 @@ class site_reporter extends base_reporter {
         $q = $this->site_query_obj->get_sample_group_info_query($site_id, $cache_id);
         $rs = $this->run_query($conn, $q);
         $html.= "<B> Sample groups</B>";
-        $html.= $this->reporter->format_rs($rs, "sample_group_id", "show_sample_group_details.php?application_name=$applicationName&", $cache_id);
+        $html.= $this->reporter->format_rs($rs, "sample_group_id", "show_sample_group_details.php?application_name=sead&", $cache_id);
         return $html;
     }
 
@@ -343,7 +341,7 @@ class report_module {
         $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
         $facet_params = FacetConfig::removeInvalidUserSelections($conn, $facet_params);
 
-        $selection_matrix = FacetConfig::generateUserSelectItemMatrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
+        $selection_matrix = FacetConfig::collectUserPicks($facet_params); // get the selection as matrix to be able to populate the filter sheet.
         print_r($selection_matrix);
         if (isset($selection_matrix)) {
             $html = "Criterias :";

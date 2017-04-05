@@ -34,8 +34,6 @@ require_once __DIR__ . "/../connection_helper.php";
 
 $current_view_state_id = 7;
 
-$cache_seq="metainformation.file_name_data_download_seq"; // which seq to use for find id for filenames to download
-
 define('CONNECTION_STRING',
     "host=" . $db_information['db_host'] . " " .
     "user=" . $db_information['db_user'] . " " .
@@ -51,99 +49,98 @@ $view_state_table="metainformation.tbl_view_states";
 // Global variable for keeping track of requests. Is used in the client. Is sent from the client with the post and is just echoed back.
 $request_id = "";  // ROGER Not used??
 
-$filter_by_text=true;
-
 include_once("result_definitions.php"); // this file holds all result_defintion items
 
-$result_definition["site_level"]["text"]="Site level";
-$result_definition["site_level"]["applicable"]="0";
-$result_definition["site_level"]['activated'] = "true";
-$result_definition["site_level"]["result_type"]="single_item";
-$result_definition["site_level"]["aggregation_type"]="site_level";
-$result_definition["site_level"]["input_type"]="checkboxes";
-$result_definition["site_level"]['aggregation_selector'] = true;
-$result_definition["site_level"]["result_item"]["single_item"][]=$result_definition_item["sitename"] ;
-$result_definition["site_level"]["result_item"]["sort_item"][]=$result_definition_item["sitename"] ;
-$result_definition["site_level"]["result_item"]["text_agg_item"][]=$result_definition_item["record_type"];
-$result_definition["site_level"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
-$result_definition["site_level"]["result_item"]["link_item"][]=$result_definition_item["site_link"];
-$result_definition["site_level"]["result_item"]["link_item_filtered"][]=$result_definition_item["site_link_filtered"];
+// $result_definition["site_level"]["text"]="Site level";
+// $result_definition["site_level"]["applicable"]="0";
+// $result_definition["site_level"]['activated'] = "true";
+// $result_definition["site_level"]["result_type"]="single_item";
+// $result_definition["site_level"]["aggregation_type"]="site_level";
+// $result_definition["site_level"]["input_type"]="checkboxes";
+// $result_definition["site_level"]['aggregation_selector'] = true;
+// $result_definition["site_level"]["result_item"]["single_item"][]=$result_definition_item["sitename"] ;
+// $result_definition["site_level"]["result_item"]["sort_item"][]=$result_definition_item["sitename"] ;
+// $result_definition["site_level"]["result_item"]["text_agg_item"][]=$result_definition_item["record_type"];
+// $result_definition["site_level"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
+// $result_definition["site_level"]["result_item"]["link_item"][]=$result_definition_item["site_link"];
+// $result_definition["site_level"]["result_item"]["link_item_filtered"][]=$result_definition_item["site_link_filtered"];
 
-// $result_definition["site_level"] = [
-//     "text"                   => "Site level",
-//     "applicable"             => "0",
-//     'activated'              => "true",
-//     "result_type"            => "single_item",
-//     "aggregation_type"       => "site_level",
-//     "input_type"             => "checkboxes",
-//     'aggregation_selector'   => true,
-//     "result_item" => [
-//         "single_item"        => [ $result_definition_item["sitename"] ],
-//         "sort_item"          => [ $result_definition_item["sitename"] ],
-//         "text_agg_item"      => [ $result_definition_item["record_type"] ],
-//         "count_item"         => [ $result_definition_item["analysis_entities"] ],
-//         "link_item"          => [ $result_definition_item["site_link"] ],
-//         "link_item_filtered" => [ $result_definition_item["site_link_filtered"] ]
-//     ]
-// ];
+// $result_definition["sample_group_level"]["text"]="Sample group level";
+// $result_definition["sample_group_level"]["applicable"]="0";
+// $result_definition["sample_group_level"]['activated'] = "true";
+// $result_definition["sample_group_level"]["result_type"]="single_item";
+// $result_definition["sample_group_level"]["aggregation_type"]="sample_group_level";
+// $result_definition["sample_group_level"]["input_type"]="checkboxes";
+// $result_definition["sample_group_level"]['aggregation_selector'] = true;
+// $result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["sitename"] ;
+// $result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["sample_group"] ;
+// $result_definition["sample_group_level"]["result_item"]["sort_item"][]=$result_definition_item["sitename"] ;
+// $result_definition["sample_group_level"]["result_item"]["sort_item"][]=$result_definition_item["sample_group"] ;
+// $result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["record_type"];
+// $result_definition["sample_group_level"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
+// $result_definition["sample_group_level"]["result_item"]["link_item"][]=$result_definition_item["sample_group_link"] ;
+// $result_definition["sample_group_level"]["result_item"]["link_item_filtered"][]=$result_definition_item["sample_group_link_filtered"] ;
 
-// $result_definition["sample_group_level"] = [
-//     "text"                   => "Sample group level",
-//     "applicable"             => "0",
-//     'activated'              => "true",
-//     "result_type"            => "single_item",
-//     "aggregation_type"       => "sample_group_level",
-//     "input_type"             => "checkboxes",
-//     'aggregation_selector'   => true,
-//     "result_item" => [
-//         "single_item"        => [ $result_definition_item["sitename"], $result_definition_item["sample_group"] , $result_definition_item["record_type"]],
-//         "sort_item"          => [ $result_definition_item["sitename"], $result_definition_item["sample_group"] ],
-//         "count_item"         => [ $result_definition_item["analysis_entities"] ],
-//         "link_item"          => [ $result_definition_item["sample_group_link"] ],
-//         "link_item_filtered" => [ $result_definition_item["sample_group_link_filtered"] ]
-//     ]
-// ];
+// $result_definition["aggregate_all"]["text"]="Aggregate all";
+// $result_definition["aggregate_all"]["applicable"]="0";
+// $result_definition["aggregate_all"]['activated'] = "true";
+// $result_definition["aggregate_all"]["result_type"]="single_item";
+// $result_definition["aggregate_all"]["aggregation_type"]="aggregate_all";
+// $result_definition["aggregate_all"]["input_type"]="checkboxes";
+// $result_definition["aggregate_all"]['aggregation_selector'] = true;
+// $result_definition["aggregate_all"]["result_item"]["link_item_filtered"][]=$result_definition_item["aggregate_all_filtered"] ;
+// $result_definition["aggregate_all"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
 
-// $result_definition["aggregate_all"] =[
-//     "text"                      => "Aggregate all",
-//     "applicable"                => "0",
-//     'activated'                 => "true",
-//     "result_type"               => "single_item",
-//     "aggregation_type"          => "aggregate_all",
-//     "input_type"                => "checkboxes",
-//     'aggregation_selector'      => true,
-//     "result_item"               => [
-//         "link_item_filtered"    => [ $result_definition_item["aggregate_all_filtered"] ],
-//         "count_item"            => [ $result_definition_item["analysis_entities"] ]
-//     ]
-// ];
+$result_definition["site_level"] = [
+    "text"                   => "Site level",
+    "applicable"             => "0",
+    'activated'              => "true",
+    "result_type"            => "single_item",
+    "aggregation_type"       => "site_level",
+    "input_type"             => "checkboxes",
+    'aggregation_selector'   => true,
+    "result_item" => [
+        "single_item"        => [ $result_definition_item["sitename"] ],
+        "sort_item"          => [ $result_definition_item["sitename"] ],
+        "text_agg_item"      => [ $result_definition_item["record_type"] ],
+        "count_item"         => [ $result_definition_item["analysis_entities"] ],
+        "link_item"          => [ $result_definition_item["site_link"] ],
+        "link_item_filtered" => [ $result_definition_item["site_link_filtered"] ]
+    ]
+];
+
+$result_definition["sample_group_level"] = [
+    "text"                   => "Sample group level",
+    "applicable"             => "0",
+    'activated'              => "true",
+    "result_type"            => "single_item",
+    "aggregation_type"       => "sample_group_level",
+    "input_type"             => "checkboxes",
+    'aggregation_selector'   => true,
+    "result_item" => [
+        "single_item"        => [ $result_definition_item["sitename"], $result_definition_item["sample_group"] , $result_definition_item["record_type"]],
+        "sort_item"          => [ $result_definition_item["sitename"], $result_definition_item["sample_group"] ],
+        "count_item"         => [ $result_definition_item["analysis_entities"] ],
+        "link_item"          => [ $result_definition_item["sample_group_link"] ],
+        "link_item_filtered" => [ $result_definition_item["sample_group_link_filtered"] ]
+    ]
+];
+
+$result_definition["aggregate_all"] =[
+    "text"                      => "Aggregate all",
+    "applicable"                => "0",
+    'activated'                 => "true",
+    "result_type"               => "single_item",
+    "aggregation_type"          => "aggregate_all",
+    "input_type"                => "checkboxes",
+    'aggregation_selector'      => true,
+    "result_item"               => [
+        "link_item_filtered"    => [ $result_definition_item["aggregate_all_filtered"] ],
+        "count_item"            => [ $result_definition_item["analysis_entities"] ]
+    ]
+];
 
 
-$result_definition["sample_group_level"]["text"]="Sample group level";
-$result_definition["sample_group_level"]["applicable"]="0";
-$result_definition["sample_group_level"]['activated'] = "true";
-$result_definition["sample_group_level"]["result_type"]="single_item";
-$result_definition["sample_group_level"]["aggregation_type"]="sample_group_level";
-$result_definition["sample_group_level"]["input_type"]="checkboxes";
-$result_definition["sample_group_level"]['aggregation_selector'] = true;
-$result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["sitename"] ;
-$result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["sample_group"] ;
-$result_definition["sample_group_level"]["result_item"]["sort_item"][]=$result_definition_item["sitename"] ;
-$result_definition["sample_group_level"]["result_item"]["sort_item"][]=$result_definition_item["sample_group"] ;
-$result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["record_type"];
-$result_definition["sample_group_level"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
-$result_definition["sample_group_level"]["result_item"]["link_item"][]=$result_definition_item["sample_group_link"] ;
-$result_definition["sample_group_level"]["result_item"]["link_item_filtered"][]=$result_definition_item["sample_group_link_filtered"] ;
-
-$result_definition["aggregate_all"]["text"]="Aggregate all";
-$result_definition["aggregate_all"]["applicable"]="0";
-$result_definition["aggregate_all"]['activated'] = "true";
-$result_definition["aggregate_all"]["result_type"]="single_item";
-$result_definition["aggregate_all"]["aggregation_type"]="aggregate_all";
-$result_definition["aggregate_all"]["input_type"]="checkboxes";
-$result_definition["aggregate_all"]['aggregation_selector'] = true;
-$result_definition["aggregate_all"]["result_item"]["link_item_filtered"][]=$result_definition_item["aggregate_all_filtered"] ;
-$result_definition["aggregate_all"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
 
 include_once(__DIR__ . "/facet_definitions.php");
 

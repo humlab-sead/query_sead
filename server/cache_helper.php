@@ -3,6 +3,7 @@
 error_reporting(E_ERROR | E_WARNING | E_PARSE); // | E_NOTICE);
 
 require_once __DIR__ . '/connection_helper.php';
+require_once __DIR__ . '/config/environment.php';
 require_once __DIR__ . '/config/bootstrap_application.php';
 require_once __DIR__ . "/lib/Cache.php";
 
@@ -66,6 +67,19 @@ class CacheHelper {
         return self::Put($type . '_' . self::$result_data_context, $cacheId, $data);
     }
 
+    // Facet category MIN/MAX
+    private static $facet_min_max_context = 'facet_min_max_';
+    private static $facet_min_max_cache_id = 'facet_range_data';
+    public static function get_facet_min_max()
+    {
+        return self::Get(self::$facet_min_max_context, self::$facet_min_max_cache_id);
+    }
+
+    public static function put_facet_min_max($data)
+    {
+        return self::Put(self::$facet_min_max_context, self::$facet_min_max_cache_id, $data);
+    }
+
     // Generic Get / Put
     public static function Get($contextId, $cacheId)
     {
@@ -83,17 +97,15 @@ class CacheIdGenerator
 {
     public static function generateFacetStateId($conn)
     {
-        global $cache_seq, $application_name; 
-        $cache_seq_id = $cache_seq ?? 'file_name_data_download_seq';
+        $cache_seq_id = ConfigRegistry::getCacheSeq() ?? 'file_name_data_download_seq';
         $row = ConnectionHelper::queryRow($conn, "select nextval('$cache_seq_id') as cache_id;");
-        $facetStateId = $application_name . $row["cache_id"];
+        $facetStateId = ConfigRegistry::getApplicationName() . $row["cache_id"];
         return $facetStateId;
     }
 
     public static function generateFacetConfigSelectStateCacheId($facetConfig)
     {
-        global $facet_definition;
-        $activeKeys = FacetConfig::getKeysOfActiveFacets($facetConfig);
+        $activeKeys = FacetConfig::getCodesOfActiveFacets($facetConfig);
         $itemsSelectedByUser = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
         if (empty($activeKeys)) {
             return "";
@@ -103,7 +115,8 @@ class CacheIdGenerator
             if (!isset($itemsSelectedByUser[$facetKey])) {
                 continue;
             }
-            $facetType = $facet_definition[$facetKey]["facet_type"];
+            $facet = FacetRegistry::getDefinition($facetKey);
+            $facetType = $facet["facet_type"];
             foreach ($itemsSelectedByUser[$facetKey] as $skey => $selection_group) {
                 foreach ($selection_group as $y => $selection) {
                     $selection_list_discrete = array();
@@ -128,9 +141,9 @@ class CacheIdGenerator
 
     public static function computeFacetContentCacheId($facetConfig)
     {
-        global $filter_by_text;
+        $filter_by_text = ConfigRegistry::getFilterByText();
         $facetCode = $facetConfig["requested_facet"];
-        $flist_str = implode("", FacetConfig::getKeysOfActiveFacets($facetConfig));
+        $flist_str = implode("", FacetConfig::getCodesOfActiveFacets($facetConfig));
         $filter = $filter_by_text ? $facetConfig["facet_collection"][$facetCode]["facet_text_search"] : "no_text_filter";
         return $facetCode . $flist_str . CacheIdGenerator::generateFacetConfigSelectStateCacheId($facetConfig) . $facetConfig["client_language"] . $filter;
     }

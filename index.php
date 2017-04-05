@@ -44,8 +44,8 @@
     <script type="text/javascript">
         var application_address = "<?php echo getServerName() ?>";
         var application_prefix_path = "<?php echo getServerPrefixPath() ?>";
-        var application_name = "<?php echo getApplication() ?>";
-        var filter_by_text = "<?php echo $filter_by_text ?>";
+        var application_name = "sead";
+        var filter_by_text = true;
         var currentUser = new User();
         var use_web_socket = false; 
         currentUser.sessionKey = "<?php echo generateSessionKey() ?>";
@@ -140,7 +140,6 @@
                             <tbody>
                                 <tr>
                                     <td>
-                                        
                                     </td>
                                 </tr>
                             </tbody>
@@ -158,28 +157,23 @@
     <table style="border-collapse:collapse;">
         <tr>
             <td id="vertical_control_middle_container">
-                
-                            <div id="facet_controller_outer">
-                            <table class="generic_table">
-                                <tbody>
-                                    <tr>
-                                        <td class="generic_table_top_left"></td>
-                                        <td class="generic_table_top_middle"></td>
-                                        <td class="generic_table_top_right"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="generic_table_middle_left"></td>
-                                        <td class="generic_table_middle_middle content_container"><?=$facet_control?></td>
-                                        <td class="generic_table_middle_right"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="generic_table_bottom_left"></td>
-                                        <td class="generic_table_bottom_middle"></td>
-                                        <td class="generic_table_bottom_right"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                <div id="facet_controller_outer">
+                <table class="generic_table">
+                    <tbody>
+                        <tr>
+                            <td class="generic_table_middle_left"></td>
+                            <td class="generic_table_middle_middle content_container">
+                            <div id="facet_control"></div>
+                            </td>
+                            <td class="generic_table_middle_right">
+                            
+                            <div id="result_control"></div>
+                            
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             </td>
         </tr>
     </table>
@@ -191,102 +185,28 @@
             <div id="facet_workspace"></div>
         </td>
         <td style="vertical-align:top;">
-            <div id="info_area"><?=interface_render_info_area2();?></div>
+            <div id="info_area"></div>
             <div id="status_area_outer">
                 <table class="generic_table">
                     <tbody>
-                        <tr>
-                            <td class="generic_table_top_left"></td>
-                            <td class="generic_table_top_middle"></td>
-                            <td class="generic_table_top_right"></td>
-                        </tr>
                         <tr>
                             <td class="generic_table_middle_left"></td>
                             <td class="generic_table_middle_middle content_container">
                                 <?=$status_area?></td><td class="generic_table_middle_right">
                             </td>
                         </tr>
-                        <tr>
-                            <td class="generic_table_bottom_left"></td>
-                            <td class="generic_table_bottom_middle"></td>
-                            <td class="generic_table_bottom_right"></td>
-                        </tr>
                     </tbody>
                 </table>
             </div>
             <div id="result_workspace"><?=$result_workspace?></div>
         </td>
-            <td style="vertical-align:top;">
-            
-            <div id="result_controller_outer" >
-                <table class="generic_table">
-                    <tbody>
-                        <tr>
-                            <td class="generic_table_top_left"></td>
-                            <td class="generic_table_top_middle"></td>
-                            <td class="generic_table_top_right"></td>
-                        </tr>
-                        <tr>
-                            <td class="generic_table_middle_left"></td>
-                            <td class="generic_table_middle_middle content_container"><?=$result_control?></td>
-                            <td class="generic_table_middle_right"></td>
-                        </tr>
-                        <tr>
-                            <td class="generic_table_bottom_left"></td>
-                            <td class="generic_table_bottom_middle"></td>
-                            <td class="generic_table_bottom_right"></td>
-                        </tr>
-<tr>
-                            <td class="generic_table_top_left"></td>
-                            <td class="generic_table_top_middle"></td>
-                            <td class="generic_table_top_right"></td>
-                        </tr>
-                        <tr>
-                            <td class="generic_table_middle_left"></td>
-                        <td class="generic_table_middle_middle content_container">
-                        <SPAN ID="LOGO_AREA">
-                        <IMG SRC="client/theme/images/SeadLogo.jpg" ALT="LOGO_sead">
-                        <BR>
-                        An international standard database for environmental archaeology data is under development at the Environmental Archaeology Lab (MAL), in collaboration with HUMlab, at Umeå University, Sweden.
-<BR><BR>
-SEAD is financed by The Swedish Research Council and Umeå University Faculty of Humanities and Department of Historical, Philosophical and Religious Studies.
-<BR><BR>
-<BR>
-<BR>
-<a href src="http://www.idesam.umu.se/english/mal/?languageId=1"><img src="client/theme/images/logo_mal_x116_notext.jpg"></a >
-<BR>
-<BR>
-<BR>
-<a href src="http://www.humlab.umu.se"><img src="client/theme/images/logo_humlab_x116.gif"></a >
-<BR>
-<BR>
-<BR>
-<a href src="http://www.umu.se"><img src="client/theme/images/logo_umu_x116.gif"></a >
-<BR>
-<BR>
-<BR>
-<a href src="http://www.lunduniversity.lu.se/"><img src="client/theme/images/450.gif" width="116"></a >
-<BR>
-<BR>
-                        </span>
-                        <td class="generic_table_middle_right"></td>
-                        <tr>
-                            <td class="generic_table_bottom_left"></td>
-                            <td class="generic_table_bottom_middle"></td>
-                            <td class="generic_table_bottom_right"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </td>
-    </tr>
+     </tr>
 </table>
 
 <div id="msg" style="background-color:#eee;color:#000;position:absolute;left:1230px;top:0px;">
 </div>
 <div id="msg2" style="float:left;background-color:#ffe;color:#000;font-size:10px;"></div>
 <div id="msg3" style="float:left;background-color:#ffe;color:#000;font-size:10px;"></div>
-
 
 </body>
 </html>

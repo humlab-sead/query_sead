@@ -5,10 +5,8 @@ This file is definining some headiing and titles of element in the html-interfac
 This files is inlclude when running the index.php
 
 Ordinary sequence:
-1 - <interface_render_facet_control_content> sets the title of the filter control panel
 2 - <interface_render_status_area_content> set the title of the status area
 3 - <interface_render_result_workspace_content>
-4 - <interface_render_info_area>
 
 See also:
 REMOVED: <layout.php (SEAD)>
@@ -16,19 +14,8 @@ REMOVED: <layout.php (SEAD)>
 require_once "server/language/t.php";
 require_once "server/config/environment.php";
 
-$facet_control = "<div id=\"facet_control\"></div>";
 $status_area = interface_render_status_area_content();
 $result_workspace = interface_render_result_workspace_content();
-$info_area = interface_render_info_area();
-$result_control = "<div id=\"result_control\"></div>";
-/*
-function: interface_render_facet_control_content
-Outputs the heading for the searchfilter panel
-*/
-function interface_render_facet_control_content() {
-    $out = "";
-    return $out;
-}
 
 /*
 function: interface_render_status_area_content
@@ -69,35 +56,6 @@ function interface_render_result_workspace_content() {
 	 </tbody></table>
 EOS;
 	return $out;
-}
-/*
-function: interface_render_info_area
-Returns the html with divs and table for the info area
-*/
-function interface_render_info_area() {
-	$out = <<<EOT
-    <div id="login_area" style="text-align:center;">
-	<table class="generic_table"><tbody>
-	<tr>
-	<td class="generic_table_top_left"></td><td class="generic_table_top_middle"></td><td class="generic_table_top_right"></td>
-	</tr>
-	<tr><td class="generic_table_middle_left"></td><td class="generic_table_middle_middle content_container">
-	<div id="user_area"></div>
-	</td><td class="generic_table_middle_right"></td>
-	</tr>
-	<tr>
-	<td class="generic_table_bottom_left"></td><td class="generic_table_bottom_middle"></td><td class="generic_table_bottom_right"></td>
-	</tr></tbody></table>
-	</div>
-EOT;
-	return $out;
-}
-/*
-function: interface_render_info_area2
-returns the html for the help/faq area
-*/
-function interface_render_info_area2() {
-	return "";
 }
 
 function interface_render_title_button($text, $terminating_button = false) {

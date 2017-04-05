@@ -6,7 +6,7 @@ this file defines the style of html-element but also some positioning and sizes
 body {
 /* 	background-color: #ee9999; */
 /* 	background-image:url('images/tulips.jpg'); */
-	background-image:url('images/ships-bg.png');
+	/*background-image:url('images/ships-bg.png');*/
 /* 	background-repeat:repeat-x; */
 	font-size: 12px;
 	font-family:helvetica;
@@ -366,7 +366,7 @@ h4 {
 
 #facet_control {
 /* 	background-color:red; */
-	width:1220px;
+	/*width:1220px;*/
 }
 
 #result_controller_outer {
@@ -616,20 +616,20 @@ h4 {
 }
 
 .generic_table_top_left {
-	background-image:url('images/gen_border_top_left.png');
+	/*background-image:url('images/gen_border_top_left.png');*/
 	width:20px;
 	height:20px;
 	padding:0px;
 	background-repeat:no-repeat;
 }
 .generic_table_top_middle {
-	background-image:url('images/gen_border_top.png');
+	/*background-image:url('images/gen_border_top.png');*/
 	height:20px;
 	padding:0px;
 	background-repeat: repeat-x;
 }
 .generic_table_top_right {
-	background-image:url('images/gen_border_top_right.png');
+	/*background-image:url('images/gen_border_top_right.png');*/
 	width:20px;
 	height:20px;
 	padding:0px;
@@ -638,7 +638,7 @@ h4 {
 }
 
 .generic_table_middle_left {
-	background-image:url('images/gen_border_left.png');
+	/*background-image:url('images/gen_border_left.png');*/
 	width:20px;
 	padding:0px;
 	background-repeat:repeat-y;
@@ -651,7 +651,7 @@ h4 {
 /* 	overflow:scroll; */
 }
 .generic_table_middle_right {
-	background-image:url('images/gen_border_right.png');
+	/*background-image:url('images/gen_border_right.png');*/
 	width:20px;
 	padding:0px;
 	background-repeat:repeat-y;
@@ -659,7 +659,7 @@ h4 {
 }
 
 .generic_table_bottom_left {
-	background-image:url('images/gen_border_bottom_left.png');
+	/*background-image:url('images/gen_border_bottom_left.png');*/
 	width:20px;
 	height:20px;
 	padding:0px;
@@ -667,13 +667,13 @@ h4 {
 	background-position:bottom left;
 }
 .generic_table_bottom_middle {
-	background-image:url('images/gen_border_bottom.png');
+	/*background-image:url('images/gen_border_bottom.png');*/
 	height:20px;
 	padding:0px;
 	background-position:bottom;
 }
 .generic_table_bottom_right {
-	background-image:url('images/gen_border_bottom_right.png');
+	/*background-image:url('images/gen_border_bottom_right.png');*/
 	width:20px;
 	height:20px;
 	padding:0px;
@@ -865,6 +865,7 @@ h4 { margin: 0 }
 
 .facet_control_item {
 	cursor:pointer;
+    white-space: pre;
 }
 
 .result_loading_indicator {

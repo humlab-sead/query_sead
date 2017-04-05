@@ -495,10 +495,6 @@ function result_render_view_OBSOLETE() {
 	
 	var request_id = $(result_object.result_xml).find("request_id").text();
 
-	// update status area 2
-	
-	//$("#status_area").find(".content_container").html($(result_object.result_xml).find("current_selections").text());
-	
 	$("#status_area_content_container").html($(result_object.result_xml).find("current_selections").text());
 	
 	if(parseInt(request_id, 10) != -1 && parseInt(global_result_request_id, 10) > parseInt(request_id, 10)) {
@@ -1310,7 +1306,7 @@ function result_render_control() {
 		$("#result_control").prepend(html_obj);
 	}
 	
-	$("#result_control").prepend("<div id=\"aggregation_header\"><h2>"+t("Sammanfatta")+"</h2></div>");
+	$("#result_control").prepend("<div id=\"aggregation_header\">"+t("Sammanfatta")+"</div>");
 	
 	/*
 	var unique_items_selected = Array();

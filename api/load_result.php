@@ -79,13 +79,14 @@ require_once __DIR__ . '/../server/connection_helper.php';
 require_once __DIR__ . '/../server/lib/Cache.php';
 require_once __DIR__ . '/../server/facet_config.php';
 require_once __DIR__ . '/../server/cache_helper.php';
-require_once __DIR__ . '/../server/compile_result.php';
-
-global $result_definition_item, $application_name, $cache_seq; 
+require_once __DIR__ . '/../server/result_compiler.php';
+require_once(__DIR__ . "/serializers/facet_config_deserializer.php");
+require_once(__DIR__ . "/serializers/result_config_deserializer.php");
+require_once __DIR__ . '/serializers/result_serializer.php';
+require_once(__DIR__ . "/serializers/facet_picks_serializer.php");
 
 class LoadResultHelper {
 
-    // TODO: check if "mapxml" exists
     private static $compilers = [
         "map" => "MapResultCompiler",
         "mapxml" => "MapResultCompiler",
@@ -182,7 +183,8 @@ if ($isCacheable && !$isCached) {
     LoadResultHelper::putCachedResultData($requestType, $resultCacheId, $serialized_data);
 }
 
-$meta_data = FacetConfig::generateUserSelectItemHTML($facetConfig);
+$matrix = FacetConfig::collectUserPicks($facetConfig);
+$current_selections = FacetPicksSerializer::toHTML($matrix);
 
 $current_request_id = $resultConfig["request_id"];
 
@@ -199,7 +201,7 @@ echo   "<response>";
 echo       $serialized_data;
 echo   "</response>";
 echo   "<current_selections>";
-echo       "<![CDATA[", $meta_data, "]]>";
+echo       "<![CDATA[", $current_selections, "]]>";
 echo   "</current_selections>";
 echo   "<request_id>";
 echo       $current_request_id;

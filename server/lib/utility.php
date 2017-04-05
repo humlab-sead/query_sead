@@ -81,7 +81,24 @@ class ArrayHelper {
         }
         return $position;
     }
-
+    //***************************************************************************************************************************************************
+    /*
+    * insert an item in an array before a specific value
+    */
+    public static function array_insert_before_existing($array, $search_item, $insert_item)
+    {
+        if (!isset($array)) {
+            return [ $insert_item ];
+        }
+        $result = [ ];
+        foreach ($array as $item) {
+            if ($search_item == $item) {
+                $result[] = $insert_item;
+            }
+            $result[] = $item;
+        }
+        return $result;
+    }
 
 }
 
@@ -92,4 +109,30 @@ function array_add_unique(&$array, $mixed)
         $array[$value] = $value;
     }
 }
+
+ /**
+  * Adds a prefix to a string if it's not empty - otherwise returns empty string'
+  *
+  * @param string $prefix string to use as prefix.
+  * @param string $string string to be prefixed.
+  *
+  * @return string
+  */
+function str_prefix($prefix, $string)
+{
+    return empty($string) ? "" : ($prefix . $string);
+}
+
+ /**
+  * Returns $value if not empty, else $default
+  *
+  * @param string $value string value to return if not empty.
+  * @param string $default string default value if empty.
+  *
+  * @return string
+  */
+function value_default($value, $default) {
+    return $value ?: $default;
+}
+
 ?>

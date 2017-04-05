@@ -9,7 +9,7 @@ Sequence:
 * Process the result parameter from the client using  <ResultConfigDeserializer::deserializeResultConfig>
 * Get the SQL-query using function  <compileQuery>
 * Run the query and build the output
-* Build the documentation of the facet filter using <FacetConfig::generateUserSelectItemHTML>
+* Build the documentation of the facet filter using <FacetPicksSerializer::toHTML>
 * Make  a zip-file for the documentation and datatable
 */
 
@@ -17,6 +17,9 @@ require_once (__DIR__ . '/../../server/config/environment.php');
 require_once (__DIR__ . '/../../server/connection_helper.php');
 require_once (__DIR__ . '/../../server/cache_helper.php');
 require_once (__DIR__ . '/../../server/result_query_compiler.php');
+require_once(__DIR__ . "/../serializers/facet_config_deserializer.php");
+require_once(__DIR__ . "/../serializers/result_config_deserializer.php");
+require_once(__DIR__ . "/../serializers/facet_picks_serializer.php");
 
 $conn = ConnectionHelper::createConnection();
 
@@ -82,7 +85,10 @@ while (($row = pg_fetch_assoc($rs) ))
     $text_table.="\n";
 }
 
-global $result_definition,$application_name, $applicationTitle, $applicationTitle;
+global $result_definition, $applicationTitle;
+
+$matrix = FacetConfig::collectUserPicks($facet_params);
+$current_selections = FacetPicksSerializer::toHTML($matrix);
 
 $selection_html="<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">";
 $selection_html.="<HTML>";
@@ -92,13 +98,13 @@ $selection_html.= "<meta http-equiv=\"Content-Type\" content=\"text/html; charse
 $selection_html.= "<link rel=\"stylesheet\" type=\"text/css\" href= \"/client/theme/style.css\"  />";
 $selection_html.= "</HEAD>";
 $selection_html.=" <BODY><h1> $applicationTitle - ".t("beskrivning av sökparametrar", $facet_params["client_language"])."</h1><BR>";
-$selection_html.=" <h2>Aggregation level</h2><BR>";
+$selection_html.=" Aggregation level<BR>";
 $selection_html.=$result_definition[$aggregation_code]["text"];
-$selection_html.=" <BR><h2>Selected result variables :</h2><BR>";
+$selection_html.=" <BR>Selected result variables:<BR>";
 $selection_html.=$html_doc;
-$selection_html.="<BR><h2>Current filter:</h2>";
-$selection_html.=FacetConfig::generateUserSelectItemHTML($facet_params);
-$selection_html.="<h2>SQL-query:</h2>".$q;
+$selection_html.="<BR>Current filter:<br>";
+$selection_html.=FacetConfig::current_selections;
+$selection_html.="SQL-query:<br>".$q;
 $selection_html.="</BODY>";
 $selection_html.="</HTML>";
 
@@ -115,7 +121,7 @@ $zip->addFromString("result_data.txt"  , $text_table);
 $zip->addFromString("documentation.html" , $selection_html);
 $zip->close();
 
-if (!isset($_REQUEST['link_only']))
+if (array_key_exists('link_only', $_REQUEST) && !empty($_REQUEST['link_only']) )
 {
     $zip_data=file_get_contents($filename);
     header("Character-Encoding: UTF-8");

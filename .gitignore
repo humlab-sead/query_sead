@@ -1,5 +1,6 @@
 credentials.php
 errors.log
+sql.log
 jslib/
 **/PHPExcel/
 **/cache/

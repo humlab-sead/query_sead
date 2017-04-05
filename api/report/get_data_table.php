@@ -32,6 +32,9 @@ require_once (__DIR__ . '/../../server/lib/PHPExcel/PHPExcel.php');
 require_once (__DIR__ . '/../../server/result_query_compiler.php');
 require_once (__DIR__ . '/../../server/connection_helper.php');
 require_once (__DIR__ . '/../../server/cache_helper.php');
+require_once(__DIR__ . "/../serializers/facet_config_deserializer.php");
+require_once(__DIR__ . "/../serializers/result_config_deserializer.php");
+require_once(__DIR__ . "/../serializers/facet_picks_serializer.php");
 
 $conn = ConnectionHelper::createConnection();
 
@@ -69,7 +72,7 @@ $objWorksheet2->getStyle('B')->getAlignment()->setWrapText(true); /// set wrap t
 $objWorksheet2->setCellValueByColumnAndRow(0, 1, 'SQL:'); // add a heading
 $objWorksheet2->setCellValueByColumnAndRow(1, 1, $q); // add the SQL
 
-$selection_matrix=FacetConfig::generateUserSelectItemMatrix($facet_params); // get the selection as matrix to be able to populate the filter sheet.
+$selection_matrix=FacetConfig::collectUserPicks($facet_params); // get the selection as matrix to be able to populate the filter sheet.
 $objWorksheet1->setCellValueByColumnAndRow(0, 2, 'FILTERS');
 
 $columns_base=array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","X","Y","Z");
@@ -226,7 +229,7 @@ $objPHPExcel->getActiveSheet(0)->setTitle('Data');
 $objPHPExcel->setActiveSheetIndex(0);
 
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-header('Content-Disposition: attachment;filename="result_'.$application_name.'_'.rand(1,100000).'.xlsx"');
+header('Content-Disposition: attachment;filename="result_' . ConfigRegistry::getApplicationName() . '_'.rand(1,100000).'.xlsx"');
 header('Cache-Control: max-age=0');
 
 $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
