@@ -33,7 +33,7 @@ require_once __DIR__ . "/../connection_helper.php";
 @ini_set('error_log', __DIR__ . '/../../errors.log');
 
 $current_view_state_id = 7;
-
+global $db_information, $result_definition_item;
 define('CONNECTION_STRING',
     "host=" . $db_information['db_host'] . " " .
     "user=" . $db_information['db_user'] . " " .
@@ -194,7 +194,7 @@ class WeightedGraph {
         * This will later on be concatenated into the join clause (usually theta joins):
         *      a.b_id = b.id
         */
-
+        $join_columns = [];
         $conn = ConnectionHelper::createConnection();
         $rs2 = ConnectionHelper::query($conn, "select * from metainformation.tbl_foreign_relations");
         while ($row = pg_fetch_assoc($rs2))
@@ -247,7 +247,8 @@ class WeightedGraph {
 
     public function createGraph($join_columns, $tableIds)
     {
-        // Create the graph ie the edges betwween the nodes into the matrix
+        // Create the graph ie the edges between the nodes into the matrix
+        $edges = [];
         foreach ($join_columns as $key => $pair)
         {
             foreach ($pair as $key2 => $element)

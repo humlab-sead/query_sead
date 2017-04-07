@@ -145,7 +145,7 @@ class SqlFormatter
     protected static $cache_misses = 0;
     /**
      * Get stats about the token cache
-     * @return Array An array containing the keys 'hits', 'misses', 'entries', and 'size' in bytes
+     * @return array An array containing the keys 'hits', 'misses', 'entries', and 'size' in bytes
      */
     public static function getCacheStats()
     {
@@ -181,7 +181,7 @@ class SqlFormatter
      * @param String $string   The SQL string
      * @param array  $previous The result of the previous getNextToken() call
      *
-     * @return Array An associative array containing the type and value of the token.
+     * @return array An associative array containing the type and value of the token.
      */
     protected static function getNextToken($string, $previous = null)
     {
@@ -317,7 +317,7 @@ class SqlFormatter
      *
      * @param String $string The SQL string
      *
-     * @return Array An array of tokens.
+     * @return array An array of tokens.
      */
     protected static function tokenize($string)
     {
@@ -645,7 +645,7 @@ class SqlFormatter
      *
      * @param String $string The SQL string
      *
-     * @return Array An array of individual query strings without trailing semicolons
+     * @return array An array of individual query strings without trailing semicolons
      */
     public static function splitQuery($string)
     {
@@ -735,7 +735,7 @@ class SqlFormatter
     /**
      * Highlights a token depending on its type.
      *
-     * @param Array $token An associative array containing type and value.
+     * @param array $token An associative array containing type and value.
      *
      * @return String HTML code of the highlighted token.
      */

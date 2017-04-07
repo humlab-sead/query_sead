@@ -2,7 +2,8 @@
 
 error_reporting(E_ERROR | E_WARNING | E_PARSE); // | E_NOTICE);
 
-class ArrayHelper {
+class ArrayHelper
+{
     /*
     Function: findIndex
     Parameters:
@@ -36,7 +37,7 @@ class ArrayHelper {
     {
         $search_str = mb_strtoupper($search_str, "utf-8");
         if (isset($rows)) {
-            $position = 0; 
+            $position = 0;
             foreach ($rows as $row) {
                 $compare_to_str = substr($row[$key], 0, strlen($search_str));
                 if (strcasecmp($search_str, $compare_to_str) == 0) {
@@ -69,12 +70,10 @@ class ArrayHelper {
                 if (strcasecmp($search_str, $compare_to_str) == 0) {
                     $found = true;
                 } elseif (strcasecmp($search_str, $row[$key]) < 0) {
-                    $start_position = $start_position;
                     $end_position = $position;
                     $position = $start_position + floor(($end_position - $start_position) / 2);
                 } elseif (strcasecmp($search_str, $row[$key]) > 0) {
                     $start_position = $position;
-                    $end_position = $end_position;
                     $position = $start_position + ceil(($end_position - $start_position) / 2);
                 }
             }
@@ -88,9 +87,9 @@ class ArrayHelper {
     public static function array_insert_before_existing($array, $search_item, $insert_item)
     {
         if (!isset($array)) {
-            return [ $insert_item ];
+            return [$insert_item];
         }
-        $result = [ ];
+        $result = [];
         foreach ($array as $item) {
             if ($search_item == $item) {
                 $result[] = $insert_item;
@@ -100,38 +99,45 @@ class ArrayHelper {
         return $result;
     }
 
+    public static function array_join_surround($array, $glue = "", $prefix = "", $suffix = "", $default)
+    {
+        return join($glue, array_map(function ($x) use ($prefix, $suffix, $default) {
+            return $prefix . ($x ?? $default) . $suffix;
+        }, $array));
+    }
 }
 
 function array_add_unique(&$array, $mixed)
 {
-    $values = (empty($mixed) ? [] : (is_array($mixed) ? $mixed : [ $mixed ]));
+    $values = (empty($mixed) ? [] : (is_array($mixed) ? $mixed : [$mixed]));
     foreach ($values as $value) {
         $array[$value] = $value;
     }
 }
 
- /**
-  * Adds a prefix to a string if it's not empty - otherwise returns empty string'
-  *
-  * @param string $prefix string to use as prefix.
-  * @param string $string string to be prefixed.
-  *
-  * @return string
-  */
+/**
+ * Adds a prefix to a string if it's not empty - otherwise returns empty string'
+ *
+ * @param string $prefix string to use as prefix.
+ * @param string $string string to be prefixed.
+ *
+ * @return string
+ */
 function str_prefix($prefix, $string)
 {
     return empty($string) ? "" : ($prefix . $string);
 }
 
- /**
-  * Returns $value if not empty, else $default
-  *
-  * @param string $value string value to return if not empty.
-  * @param string $default string default value if empty.
-  *
-  * @return string
-  */
-function value_default($value, $default) {
+/**
+ * Returns $value if not empty, else $default
+ *
+ * @param string $value string value to return if not empty.
+ * @param string $default string default value if empty.
+ *
+ * @return string
+ */
+function value_default($value, $default)
+{
     return $value ?: $default;
 }
 

@@ -4,7 +4,7 @@ require_once (__DIR__ . '/../../server/lib/utility.php');
 
 class FacetDefinitionSerializer {
 
-    public static function toJSON($facet_definition)
+    public static function toJSON($facet_definition, $facet_range)
     {
         $default_slots_num = 0;
         $items = [];

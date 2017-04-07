@@ -11,7 +11,7 @@ class FacetContentSerializer {
     see also:
     <serializeFacetContent>
     */
-    public static function serializeFacetContent($facet_c, $action_type, $start_row, $num_row, $filter_state_id = null)
+    public static function serializeFacetContent($facet_c, $action_type, $start_row, $num_row)
     {
         $xml  = "<data>\n";
         $xml .= self::serializeFacetData($facet_c, $action_type, $start_row, $num_row);
@@ -30,7 +30,7 @@ class FacetContentSerializer {
     private static function serializeFacetData($data, $action_type, $start_row, $num_row)
     {
         global $request_id;
-        $xml .= "<facets>";
+        $xml = "<facets>";
         if (!empty($data)) {
             $facet = $data;
             $xml .= "<facet_c>\n";

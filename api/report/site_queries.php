@@ -6,7 +6,7 @@
  */
 
 class site_query {
-    
+
       private function run_query($conn, $q) {
         if (($rs = pg_query($conn, $q)) <= 0) {
             echo "Error: cannot execute site query. " . SqlFormatter::format($q,false) . " \n";
@@ -15,7 +15,15 @@ class site_query {
         //   file_put_contents("sql_log.txt",  SqlFormatter::format($q, false).";\n", FILE_APPEND);
         return $rs;
     }
-    
+
+    private function get_facet_filter($f_code, $cache_id)
+    {
+        global $facet_definition;
+        if (empty($cache_id))
+            return "";
+        return " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
+    }
+
     /*
      * Function: get_site_query
      * get basic info on site level
@@ -25,11 +33,8 @@ class site_query {
      */
 
     public function get_site_query($site_id, $cache_id = null) {
-        global $facet_definition;
         $f_code = "sites_helper";
-        if (!empty($cache_id)) {
-            $facet_filtered = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
         $filter = !empty($site_id) ? " tbl_sites.site_id = $site_id" : "1=1 ";
         $q = "select 
                 tbl_sites.site_id as \"site_id\", 
@@ -80,13 +85,8 @@ class site_query {
      */
 
     public function get_reference_query($site_id, $cache_id = null) {
-
-        global $facet_definition;
         $f_code = "tbl_biblio_sites";
-        if (!empty($cache_id)) {
-            $facet_filtered = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
-
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
         $filter = !empty($site_id) ? " site_id = $site_id" : "1=1 ";
 
         $q = "  select distinct
@@ -113,12 +113,8 @@ class site_query {
      */
 
     function get_relative_ages_query($site_id, $cache_id) {
-        global $facet_definition;
         $f_code = "tbl_relative_dates_helper";
-        if (!empty($cache_id)) {
-            $facet_filtered = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
-
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
         $filter = !empty($site_id) ? "s.site_id = $site_id" : "1=1 ";
 
         $q = "Select  ps.sample_name,
@@ -163,13 +159,8 @@ class site_query {
 
      public function render_species_count_query($site_id, $method_id, $cache_id) {
 
-        global $facet_definition;
         $f_code = "species_helper";
-
-        if (!empty($cache_id)) {
-            $facet_filtered = " and " . $facet_definition[$f_code]["id_column"] . " in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
-
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
         $filter = !empty($site_id) ? " tbl_sample_groups.site_id = $site_id" : "1=1 ";
 
         $q = "     select species,
@@ -216,21 +207,21 @@ class site_query {
         return $q;
     }
 
-    
+
     /**
      * Function arrange_species_data
      * Arrange abundance report on sample group level
      * First get all sample id and store those in a list.
      * Then get all abundances arranged by sample_id, using array_agg function in postgres
      * Then use those two list to make a transposed matrix
-     * params: 
+     * params:
      *  $conn - db connections
      *  $sample_group_id  -
      *  $cache_id - reference to filters set by users stored as xml
-     * 
+     *
      * returns:
      *  matrix of data as array
-     * 
+     *
      * see also:
      * <get_f_code_filter_query>
      */
@@ -245,37 +236,19 @@ class site_query {
         }
 
         $q = $this->render_species_count_query($site_id, $method_id,$cache_id); // echo SqlFormatter::format($q,true);
-        $rs = $this->run_query($conn, $q);
-
-        while ($row = pg_fetch_assoc($rs)) {
-            $species_item = explode(";", $row["species_list_by_physical_sample_id"]);
-            foreach ($species_item as $key => $element2) {
-                // SAMPLE GROUP|ABUNDANCE 
-                //      // Fallopia_convolvulus;7176|1;17628|2
-                $parts = explode("|", $element2);
-                $species_list[$row["species"]][$parts[0]] = $parts[1];
-            }
-        }
+        $species_list = $this->get_species_list($conn, $q);
 
         if (isset($physical_samples)) {
             $data_array[0][0] = "Taxon || Physical sample";
-            // $data_array[1][0] = "Taxon || Physical sample2";
             foreach ($physical_samples as $sample_id => $sample_name) {
-                // header
-               
                 $data_array[0][$sample_id] = $sample_name."@".  $sample_groups[$sample_id]."";
-             //   $data_array[1][$sample_id] = $sample_name;
             }
         }
-
         $row_count = 2;
         if (isset($species_list)) {
             foreach ($species_list as $specie => $physical_sample_abundance) {
-                // $column_count = 0;
                 $data_array[$row_count][0] = $specie;
-
                 foreach ($physical_samples as $physical_sample_id => $physical_sample_name) {
-                    // lookup if exist and store empty or a value
                     $data_array[$row_count][$physical_sample_id] = $physical_sample_abundance[$physical_sample_id];
                 }
                 $row_count++;
@@ -284,16 +257,25 @@ class site_query {
         return $data_array;
     }
 
-    
-   public function get_physical_sample_id_query($site_id,$method_id, $cache_id) {
+    public function get_species_list($conn, $q)
+    {
+        $species_list = [];
+        $rs = $this->run_query($conn, $q);
 
-        global $facet_definition;
-        $f_code = "physical_samples";
-        if (!empty($cache_id)) {
-            $facet_filtered = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
+        while ($row = pg_fetch_assoc($rs)) {
+            $species_item = explode(";", $row["species_list_by_physical_sample_id"]);
+            foreach ($species_item as $key => $element2) {
+                $parts = explode("|", $element2);
+                $species_list[$row["species"]][$parts[0]] = $parts[1];
+            }
         }
-        $filter = !empty($site_id) ? " tbl_sample_groups.site_id = $site_id" : "1=1 ";
+        return $species_list;
+    }
 
+   public function get_physical_sample_id_query($site_id,$method_id, $cache_id) {
+        $f_code = "physical_samples";
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
+        $filter = !empty($site_id) ? " tbl_sample_groups.site_id = $site_id" : "1=1 ";
         $q = " select sample_name, tbl_sample_groups.sample_group_id,
                      tbl_physical_samples.physical_sample_id 
                     from tbl_physical_samples
@@ -305,7 +287,6 @@ class site_query {
                     on tbl_analysis_entities.dataset_id=tbl_datasets.dataset_id
                     join tbl_methods 
                 on tbl_datasets.method_id=tbl_methods.method_id
-
                      where 
                      tbl_methods.method_id=$method_id  and 
                       $filter
@@ -314,21 +295,15 @@ class site_query {
                   sample_name,
                   tbl_sample_groups.sample_group_id,
                   tbl_physical_samples.physical_sample_id
-                order by 
-                  sample_name; ";
-
+                order by sample_name; ";
         return $q;
-    } 
-    
+    }
+
   function render_site_methods_query($site_id,$cache_id)
   {
-       global $facet_definition;
         $f_code = "dataset_helper";
-        if (!empty($cache_id)) {
-            $facet_filtered = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
-         $filter = !empty($site_id) ? "  tbl_sample_groups.site_id = $site_id" : "1=1 ";
-
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
+        $filter = !empty($site_id) ? "  tbl_sample_groups.site_id = $site_id" : "1=1 ";
         $q = "select 
                tbl_methods.method_name,
                tbl_methods.method_id
@@ -350,20 +325,14 @@ class site_query {
               group by 
                  tbl_methods.method_name,
                  tbl_methods.method_id ";
-              
         return $q;
   }
-         
+
   public function render_header_measured_values_query($site_id, $cache_id = null) {
 
-        global $facet_definition;
-
         $filter = !empty($site_id) ? "  tbl_sample_groups.site_id = $site_id" : "1=1 ";
-
         $f_code = "sample_groups";
-        if (!empty($cache_id)) {
-            $facet_filtered = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
         $q = "select 
                      tbl_datasets.dataset_id,
                      dm.method_id::text||'_'||COALESCE(aepm.method_id::text,'NULL')::text as column_id,
@@ -409,12 +378,8 @@ class site_query {
      */
 
     function render_query_measured_values_by_sample_id($site_id, $cache_id = null) {
-        global $facet_definition;
         $f_code = "result_facet";
-        if (!empty($cache_id)) {
-            $facet_filtered = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
-
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
         $filter = !empty($site_id) ? "  tbl_sample_groups.site_id = $site_id" : "1=1 ";
         $q = "  SELECT 
                         tbl_physical_samples.physical_sample_id ,
@@ -444,22 +409,17 @@ class site_query {
                          tbl_sample_groups.sample_group_id,
                          
                          tbl_physical_samples.sample_name";
-        ;
-
         return $q;
     }
 
   public function arrange_measured_values($conn, $site_id, $cache_id){
       // get all dataset names as headings and dataset_id as key in array
-        global $facet_definition;
         $q = $this->render_header_measured_values_query($site_id, $cache_id);
-       
         $rs = $this->run_query($conn, $q);
 
         while ($row = pg_fetch_assoc($rs)) {
             $data_set_list[$row["column_id"]] = "" . $row["method_name"] . "  " . $row["prep_method_name"]; //. " [".$row["column_id"]."]"; // add method in heading... prep_method_name
         }
-
         if (isset($data_set_list)) {
             $data_array[0][0] = "Sample name /|/ dataset ";
             foreach ($data_set_list as $dataset_id => $dataset_description) {
@@ -467,7 +427,6 @@ class site_query {
                 $data_array[0][$dataset_id] = $dataset_description;
             }
         }
-
         $q = $this->render_query_measured_values_by_sample_id($site_id, $cache_id);
         $rs = $this->run_query($conn, $q);
 
@@ -497,9 +456,7 @@ class site_query {
         }
         return $data_array;
     }
-      
-  
-  
+
     /*
      * function: get_sample_group_info_query
      * 
@@ -512,14 +469,9 @@ class site_query {
      */
 
     public function get_sample_group_info_query($site_id, $cache_id = null) {
-
-        global $facet_definition;
         $f_code = "sample_groups";
-        if (!empty($cache_id)) {
-            $facet_filtered = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
+        $facet_filtered = $this->get_facet_filter($f_code, $cache_id);
         $filter = !empty($site_id) ? "tbl_sample_groups.site_id = $site_id" : "1=1 ";
-
 
         $q = "select 
                 tbl_sample_groups.site_id as \"site id\",
@@ -546,10 +498,7 @@ class site_query {
                   sampling_context, 
                   method_name
                 order by 
-                  tbl_sample_groups.site_id
-
-                ";
-
+                  tbl_sample_groups.site_id";
         return $q;
     }
 
@@ -564,15 +513,9 @@ class site_query {
      */
 
     public function get_dataset_query($site_id, $cache_id) {
-        global $facet_definition;
-
-        if (!empty($cache_id)) {
-            $f_code = "dataset_helper";
-            $q_analysis_entities_query = " and  " . $facet_definition[$f_code]["id_column"] . "  in (" . get_f_code_filter_query($cache_id, $f_code) . ") ";
-        }
-
+        $f_code = "dataset_helper";
+        $q_analysis_entities_query = $this->get_facet_filter($f_code, $cache_id);
         $filter = !empty($site_id) ? "tbl_sites.site_id = $site_id" : "1=1 ";
-
         $q = " SELECT  
                      tbl_sites.site_id as \"Site id\",
                      tbl_sample_groups.sample_group_id as \"Sample group id\",
@@ -617,6 +560,7 @@ class site_query {
                   tbl_sites.site_id";
         return $q;
     }
+
 
 }
 

@@ -42,13 +42,13 @@ class ResultConfigDeserializer
         global $result_definition;
 
         $xml_object = new SimpleXMLElement($result_xml);
-        $resultConfig["session_id"]=(string) $xml_object->session_id;
-        $resultConfig["request_id"]=(string) $xml_object->request_id;
+        $resultConfig["session_id"]=(string)$xml_object->session_id;
+        $resultConfig["request_id"]=(string)$xml_object->request_id;
         
         $xml_object = $xml_object->result_input;
 
-        $resultConfig["view_type"]=(string) $xml_object->view_type;
-        $resultConfig["client_render"]=(string) $xml_object->client_render;
+        $resultConfig["view_type"]=(string)$xml_object->view_type;
+        $resultConfig["client_render"]=(string)$xml_object->client_render;
 
         $aggregation_code = (string)$xml_object->aggregation_code;
 

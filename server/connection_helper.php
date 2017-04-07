@@ -22,8 +22,6 @@ class RecordSetIterator {
 
 class ConnectionHelper
 {
-    private const trace_flag = true;
-
     private static function trace($sql, $context="")
     {
         $stack = debug_backtrace(); 
@@ -34,7 +32,7 @@ class ConnectionHelper
         $datetime = new DateTime('NOW');
         $now = $datetime->format('Y-m-d H:i:s');
         $sql = SqlFormatter::format($sql, false);
-        $columns = "    # " . str_pad("filename", 35) . ' line function\n';
+        //$columns = "    # " . str_pad("filename", 35) . ' line function\n';
         while (list($i, $x) = each($stack)) {
             //$source_file = str_pad(basename($x['file'], '.php'), 35);
             $source_file = str_pad(basename($x['file']), 35);

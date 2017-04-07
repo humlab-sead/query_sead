@@ -88,6 +88,7 @@ class ListResultSerializer extends ResultSerializer {
     {
         global $result_definition;
         $column_counter = 0;
+        $column_meta_data = [];
         foreach ($resultConfig["items"] ?? [] as $result_params_key) {
             foreach ($result_definition[$result_params_key]["result_item"] as $result_column_type => $result_definition_item) {
                 foreach ($result_definition_item as $item_type => $result_item) {
@@ -126,18 +127,14 @@ class XmlListResultSerializer extends ListResultSerializer {
 
     private function xml_encode($dataIter, $indent = false, $i = 0)
     {
-        if (!$i) {
-            /*   $data = ''.($indent?"\r\n":'').'<root>'.($indent?"\r\n":'');*/
-        } else {
-            $data = '';
-        }
+        $data = "";
         foreach ($dataIter as $tag => $value) {
             if (is_numeric($tag)) {
                 $tag = 'item';
             }
-            $data .= ($indent?str_repeat("\t", $i):'').'<'.$tag.'>';
+            $data .= ($indent ? str_repeat("\t", $i) : '') . '<'.$tag.'>';
             if (is_array($value)) {
-                $data .= ($indent?"\r\n":'').xml_encode($value, $indent, ($i+1)).($indent?str_repeat("\t", $i):'');
+                $data .= ($indent?"\r\n":'').$this->xml_encode($value, $indent, ($i+1)).($indent?str_repeat("\t", $i):'');
             } else {
                 $data .= "<![CDATA[" . $value . "]]>";
             }
@@ -148,7 +145,7 @@ class XmlListResultSerializer extends ListResultSerializer {
 
     protected function serializeData($dataIter, $facetConfig, $resultConfig, $facetStateId)
     {
-        return xml_encode($dataIter);
+        return $this->xml_encode($dataIter);
     }
 
 }
@@ -157,6 +154,7 @@ class HtmlListResultSerializer extends ListResultSerializer {
  
     private function renderHeader($headers)
     {
+        $html = "";
         foreach ($headers as $item) {
             $html .= "<th>{$item['result_column_title']} {$item['result_column_title_extra_info']}</th>";
         }
@@ -166,6 +164,7 @@ class HtmlListResultSerializer extends ListResultSerializer {
 
     private function renderRows($dataIter, $cache_id, $maxRows)
     {
+        $html_table = "";
         foreach ($dataIter as $row) {
             if ($dataIter->key() > $maxRows) {
                 break;
@@ -196,8 +195,7 @@ class HtmlListResultSerializer extends ListResultSerializer {
         $maxRows = ConfigRegistry::getMaxResultDefaultRows() ?? 10000;
 
         $recordCount = $dataIter ? $dataIter->count() : 0;
-        $columnCount = count($resultConfig["items"]);
-        
+
         $header = $dataIter ? $this->renderHeader($dataIter->columns) : "";
         $table_body = $dataIter ? $this->renderRows($dataIter, $facetStateId, $maxRows) : "";
         $visibility = $recordCount < $maxRows ? "" : "none";

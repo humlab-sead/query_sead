@@ -51,13 +51,12 @@ class FacetConfigDeserializer
 
         self::storeGlobalRequestId((string)$xml_obj->request_id);
 
-        $p["f_action"][0]="".$xml_obj->f_action->f_code;        // which facet triggeed the post
-        $p["f_action"][1]="".$xml_obj->f_action->action_type;   // what type of action triggered to post
-        $p["requested_facet"]="".$xml_obj->requested_facet;     // Which facet wants to have new content
-        $p["client_language"]="".$xml_obj->client_language;
+        $p["f_action"][0]     = "" . (string)$xml_obj->f_action->f_code;        // which facet triggeed the post
+        $p["f_action"][1]     = "" . (string)$xml_obj->f_action->action_type;   // what type of action triggered to post
+        $p["requested_facet"] = "" . (string)$xml_obj->requested_facet;     // Which facet wants to have new content
+        $p["client_language"] = "" . (string)$xml_obj->client_language;
         
         foreach ($xml_obj->facet as $key => $element) {
-            $facet_pos = (integer)$element->facet_position;
             $facetCode = "" . $element->f_code;
 
             $p["facet_collection"][$facetCode]["facet_start_row"] = (integer)$element->facet_start_row;

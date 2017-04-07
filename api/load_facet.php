@@ -24,7 +24,7 @@ http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/facet_response.xsd
 
 Shared sequence:
 * Process facetConfig using <FacetConfigDeserializer::deserializeFacetConfig> and build compoosite array of the facet_xml-document being posted from the client
-* Remove invalid selections using <FacetConfig::removeInvalidUserSelections> since selections are keep at the client altough the might be filter out.
+* Remove invalid selections using <FacetConfig::deleteBogusPicks> since selections are keep at the client altough the might be filter out.
 * Derive a compsosite ID for caching of the facet content.
 * Render the data for the facet using function <FacetContentService::load>
 * Computing start_row and limit if the text-search is being used.
@@ -51,7 +51,7 @@ $facetType     = $facet["facet_type"];
 $query_offset  = $facet_options["facet_start_row"];
 $query_limit   = $facet_options["facet_number_of_rows"];
 
-$facetConfig   = FacetConfig::removeInvalidUserSelections($conn, $facetConfig);
+$facetConfig   = FacetConfig::deleteBogusPicks($conn, $facetConfig);
 $facetContent  = FacetContentService::load($conn, $facetConfig);
 
 if ($action_type=="populate_text_search") {
@@ -67,7 +67,7 @@ if ($facetType == "range") {
 }
 pg_close($conn);
 
-$response = FacetContentSerializer::serializeFacetContent($facetContent[$facetCode], $action_type, $query_offset, $query_limit, $filter_state_id);
+$response = FacetContentSerializer::serializeFacetContent($facetContent[$facetCode], $action_type, $query_offset, $query_limit);
 
 header("Content-Type: text/xml");
 header("Character-Encoding: UTF-8");

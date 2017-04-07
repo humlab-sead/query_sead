@@ -20,14 +20,15 @@ class ResultCompiler
     public function compile($facetConfig, $resultConfig, $facetStateId)
     {
         $q = $this->compileQuery($facetConfig, $resultConfig);
-        if (!empty($q)) {
-            $data = ConnectionHelper::queryIter($this->conn, $q);
-            $extra = $this->getExtraPayload($facetConfig, $resultConfig, $facetStateId);
-        }
+        if (empty($q)) {
+            return ['iterator' => NULL, 'payload' => NULL];
+        }          
+        $data = ConnectionHelper::queryIter($this->conn, $q);
+        $extra = $this->getExtraPayload($facetConfig, $resultConfig, $facetStateId);
         return [ 'iterator' => $data, 'payload' => $extra ];
     }
 
-    protected function getExtraPayload($facetConfig, $resultConfig, $facetStateId)
+    protected function getExtraPayload($facetConfig, $resultConfig, $facetCacheId)
     {
         return NULL;
     }
@@ -58,17 +59,17 @@ class MapResultCompiler extends ResultCompiler {
         $this->facetCode = "map_result";
     }
 
-    protected function getExtraPayload($facetConfig, $resultConfig, $facetStateId)
+    protected function getExtraPayload($facetConfig, $resultConfig, $facetCacheId)
     {
         $interval = 1;
         $data = DiscreteFacetCounter::get_discrete_counts($this->conn, $this->facetCode, $facetConfig, $interval);
         $filtered_count = $data ? $data["list"] : NULL;
         if ($filtered_count) {
-            $facetConfigWithoutFilter = FacetConfig::eraseUserSelectItems($facetConfig);
-            $data = DiscreteFacetCounter::get_discrete_counts($this->conn, $this->facetCode, $facetConfigWithoutFilter, $interval);
+            $facetConfigWithoutPicks = FacetConfig::deleteUserPicks($facetConfig);
+            $data = DiscreteFacetCounter::get_discrete_counts($this->conn, $this->facetCode, $facetConfigWithoutPicks, $interval);
             $un_filtered_count = $data ? $data["list"] : NULL;
         }
-        return array("filtered_count" => $filtered_count, "un_filtered_count" => $un_filtered_count);
+        return [ "filtered_count" => $filtered_count, "un_filtered_count" => $un_filtered_count ];
     }
 
     protected function compileQuery($facetConfig, $resultConfig)

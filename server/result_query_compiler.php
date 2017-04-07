@@ -35,7 +35,7 @@ class FieldCompiler
 
     public static function isAggregateType($type)
     {
-        return self::isFieldType($type) && !self::isSingleItem($type);
+        return self::isFieldType($type) && !self::isSingleItemType($type);
     }
 
     public static function isSortType($type)
@@ -95,11 +95,11 @@ class ResultQueryCompiler {
             return NULL;
         }
 
-        $group_by_fields = [];
-        $group_by_inner_fields = [];
-        $data_fields = [];
+        $group_by_fields = $group_by_inner_fields = [];
+        $data_tables = $data_fields = [];
         $sort_fields = [];
         $alias_counter = 1;
+        $data_fields_alias = [];
 
         foreach ($resultConfig["items"] as $aggregate_level) {
             if (empty($aggregate_level)) {
@@ -199,7 +199,7 @@ class MapResultQueryCompiler {
         $facetCodes[] = $facetCode; 
         $facet = FacetRegistry::getDefinition($facetCode);
 
-        $query = QueryBuildService::compileQuery($facetConfig, $facetCode, $undefined, $facetCodes);
+        $query = QueryBuildService::compileQuery($facetConfig, $facetCode, [], $facetCodes);
 
         $filter_clause = str_prefix("AND ", $query["where"]);	
         $sql = <<<EOX

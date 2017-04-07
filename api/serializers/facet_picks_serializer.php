@@ -9,7 +9,6 @@ class FacetPicksSerializer
     {
         $selection_html = "";
         foreach ($selection_rows_matrix as $facetCode => $data) {
-            $facet = FacetRegistry::getDefinition($facetCode);
             $display_title = $data['display_title'];
             $facet_html = "";
             foreach ($data['selections'] ?? [] as $value) {

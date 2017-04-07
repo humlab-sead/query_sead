@@ -21,11 +21,11 @@ class FacetSelectionCompiler {
     public static function getCompiler($type)
     {
         if (self::$compilers == NULL)
-           self::$compilers = array(
+           self::$compilers = [
                 "discrete" => new DiscreteFacetSelectionCompiler(),
                 "range" => new RangeFacetSelectionCompiler(),
                 "null" => new FacetSelectionCompiler()
-            );
+            ];
         return array_key_exists($type, self::$compilers) ? self::$compilers[$type] : self::$compilers["null"];
     }
 }
@@ -49,10 +49,12 @@ class RangeFacetSelectionCompiler extends FacetSelectionCompiler {
         $facet = FacetRegistry::getDefinition($currentCode);
         $query_column =$facet["id_column"];
         $query_cond = $facet["query_cond"];
+        $criteria = "";
         foreach ($groups as $group) {
             if (!isset($group)) {
                 continue;
             }
+            $range = ["lower" => 0, "upper" => 0];
             foreach ($group as $item) {
                 $item = (array) $item;
                 $range[$item["selection_type"]] = $item["selection_value"];
@@ -65,13 +67,13 @@ class RangeFacetSelectionCompiler extends FacetSelectionCompiler {
                 $criteria .= " ($query_column >= $lower and $query_column <= $upper)";
             }
         }
-        $criteria .= add_prefix(" and ", $query_cond);
+        $criteria .= str_prefix(" and ", $query_cond);
         return $criteria;
     }
 
     public function is_affected_position($targetPosition, $currentPosition)
     {
-        return parent::is_affected_position($targetPosition, $currentPosition) || ($targetPosition == currentPosition);
+        return parent::is_affected_position($targetPosition, $currentPosition) || ($targetPosition == $currentPosition);
     }
 }
 
@@ -136,19 +138,18 @@ class RouteReducer {
 
     private static function collectNewEdges($route, $reduced_routes)
     {
-        // $reduce_route = array(); // new array for each loop check if edges exist, if not add them.
+        $reduced_route = [];
         foreach ($route as $edge) {
             if (!self::edgeExistsInRoutes($edge, $reduced_routes)) {
-                $reduce_route[] = $edge;
+                $reduced_route[] = $edge;
             }
         }
-        return $reduce_route;
+        return $reduced_route;
     }
 
     public static function reduce($routes)
     {
-        // FIXME Check that this works!!!
-        $reduced_routes = []; // [0] = reset($routes);
+        $reduced_routes = [];
         foreach ($routes ?? [] as $route) {
             $reduced_route = self::collectNewEdges($route, $reduced_routes);
             if (!empty($reduced_route) && count($reduced_route) > 0) {
@@ -177,8 +178,8 @@ class QueryBuilder
 
     private function compileQueryJoins($routes, $subselect_where)
     {
+        $joins = "";
         foreach ($routes ?? [] as $route) {
-            $joins .= "";
             foreach ($route as $edge) {
                 $source_table = $edge["from_table"];
                 $target_table = $edge["to_table"];
@@ -190,7 +191,7 @@ class QueryBuilder
                 $alias_clause = ($target_name != $target_table) ? " as $target_table " : "";
                 
                 // FIXME Check if reset should for each route, not each edge, as in compileJoins above
-                //$join_criterias = [];
+                $join_criterias = [];
                 foreach ($relation["home_columns"] as $key_c1 => $source_column) {
                     $target_column = $relation["remote_columns"][$key_c1];
                     $join_criterias[] = " $source_column = $target_column ";
@@ -209,9 +210,9 @@ class QueryBuilder
 
     public function get_query_information($facetConfig, $facetCode, $extra_tables, $activeFacets)
     {
-        $unique_tables = array();   // Unique list of tables involved in join
+        $unique_tables = [];   // Unique list of tables involved in join
 
-        $facet_selections = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
+        $facet_selections = FacetConfig::getUserPickGroups($facetConfig);
         $target_facet = FacetRegistry::getDefinition($facetCode);
 
         array_add_unique($unique_tables, $extra_tables);
@@ -220,7 +221,7 @@ class QueryBuilder
         $query_where_list = [];
         $activeFacets = $activeFacets ?? [];
         $facet_positions = array_flip($activeFacets);
-
+        $subselect_where = [];
         foreach ($activeFacets as $currentCode) {
 
             if (!isset($facet_selections[$currentCode])) {
@@ -276,6 +277,7 @@ class QueryBuilder
 
     private function computeShortestJoinPaths($start_table, $destination_tables)
     {
+        $routes = [];
         foreach ($destination_tables as $destination_table) {
             if ($start_table != $destination_table) {
                 $routes[] = $this->computeShortestJoinPath($start_table, $destination_table);
@@ -295,9 +297,10 @@ class QueryBuilder
         $dijkstra->findShortestPath($start_node);
         $dijstra_result = $dijkstra->getResultsAsArray($destination_node) ?? [];
         if (empty($dijstra_result)) {
-            return $undefined;
+            return NULL;
         }
         $route = array_values(reset($dijstra_result));      // Take values from first route in result
+        $result = [];
         for ($i = 0; $i < count($route) - 1; $i++) {
             $from_table = array_search($route[$i], $this->tableIds);
             $to_table = array_search($route[$i + 1], $this->tableIds);

@@ -7,3 +7,5 @@ jslib/
 **/not_used/
 **/saved/
 **/swagger/
+.idea/
+.vs/

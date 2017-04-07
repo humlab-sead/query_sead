@@ -6,7 +6,7 @@ future function for translating phrases
 returns: text
 
 */
-function t($text, $client_language, $variables = array()) {
+function t($text, $client_language, $variables = []) {
     
     global $phrases_schema;
     $schema_str = isset($phrases_schema) ? $phrases_schema."." : "";
@@ -48,7 +48,6 @@ function t($text, $client_language, $variables = array()) {
         return $text;
     }
     
-    return $text;
 }
 
 ?>

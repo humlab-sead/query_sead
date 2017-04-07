@@ -16,7 +16,7 @@ class RangeFacetCounter {
         if (empty($direct_count_column)) {
             return NULL;
         }        
-        $direct_counts = array();
+        $direct_counts = [];
         $query_table = $facet_definition[$facetCode]["table"];
         $data_tables[] = $query_table;
         $data_tables[] = $direct_count_table;
@@ -36,7 +36,7 @@ class RangeFacetCounter {
         $where_clause = $query["where"] != '' ? " and  " . $query["where"] . " " : "";
         $extra_join = $query["joins"] != "" ?  "  " . $query["joins"] . "  " : "";
 
-        $q =<<<EOX
+        $q = "
             SELECT lower, upper, category, count(category) AS direct_count
             FROM (
                 SELECT COALESCE(lower||'=>'||upper, 'data missing') AS category, group_column, lower,upper
@@ -54,8 +54,7 @@ class RangeFacetCounter {
             WHERE lower is not null
             AND upper is not null
             GROUP BY lower, upper, category
-            ORDER BY lower, upper
-EOX;
+            ORDER BY lower, upper";
 
         $rs = ConnectionHelper::execute($conn, $q);
 
@@ -133,7 +132,6 @@ EOT;
     public static function get_discrete_counts($conn, $facetCode, $facetConfig, $payload)
     {
         $facet = FacetRegistry::getDefinition($facetCode);
-        $query_table = $facet["alias_table"] ?? $facet["table"];
         $countCode = $facet["count_facet"] ?? "result_facet";
         $summarize_type = $facet["summarize_type"] ?? "count";
         $q = self::get_discrete_count_query($countCode, $facetConfig, $summarize_type);
@@ -171,12 +169,13 @@ class DiscreteMinMaxFacetCounter {
         }
 
         $sql = implode("UNION\n", $facet_sqls);
-        
-        if (!empty($sql)) {
-            $rs = ConnectionHelper::execute($conn, $sql);
-            while ($row = pg_fetch_assoc($rs)) {
-                $facet_range[$row["f_code"]] = [ "max" => $row["max"], "min" => $row["min"]];
-            }
+        if (empty($sql)) {
+            return [];
+        }
+        $facet_range = [];
+        $rs = ConnectionHelper::execute($conn, $sql);
+        while ($row = pg_fetch_assoc($rs)) {
+            $facet_range[$row["f_code"]] = [ "max" => $row["max"], "min" => $row["min"]];
         }
         return $facet_range;
     }

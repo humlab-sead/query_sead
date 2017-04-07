@@ -22,7 +22,7 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title><?php echo $applicationTitle?></title>
+    <title>Query SEAD</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
     <link rel="stylesheet" type="text/css" href="//code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" />
@@ -54,7 +54,7 @@
     <script type="text/javascript">
         <?php require_once("api/get_facet_definitions.php"); ?>
         <?php require_once("api/get_result_definitions.php"); ?>
-        var result_modules = Array();
+        var result_modules = [];
     </script>
     <?php
         foreach (getClientResultModules() as $module_file) {

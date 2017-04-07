@@ -2,49 +2,52 @@
 <HTML>
 
 <HEAD>
-  <TITLE>Details of SEAD sample group</TITLE>
-  <META NAME="Generator" CONTENT="Netbeans">
-  <META NAME="Author" CONTENT="SEAD">
-  <META NAME="Keywords" CONTENT="sead">
-  <META NAME="Description" CONTENT="Details of SEAD dataset">
-  <meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8" />
+    <TITLE>Details of SEAD sample group</TITLE>
+    <META NAME="Generator" CONTENT="Netbeans">
+    <META NAME="Author" CONTENT="SEAD">
+    <META NAME="Keywords" CONTENT="sead">
+    <META NAME="Description" CONTENT="Details of SEAD dataset">
+    <meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8"/>
 
-  <!-- DataTables -->
-  <link rel="stylesheet" href="//cdn.datatables.net/1.9.4/css/jquery.dataTables.css">
-  <link rel="stylesheet" href="//cdn.datatables.net/tabletools/2.1.5/css/TableTools.css">
-  <link rel="stylesheet" href="/client/theme/reporting.css">
-  <script type="text/javascript" charset="utf-8" language="javascript" src="//code.jquery.com/jquery-1.8.2.min.js"></script>
-  <script type="text/javascript" charset="utf-8" language="javascript" src="//cdn.datatables.net/1.9.4/js/jquery.dataTables.min.js"></script>
-  <script type="text/javascript" charset="utf-8" language="javascript" src="//cdn.datatables.net/tabletools/2.1.5/js/TableTools.min.js"></script>
+    <!-- DataTables -->
+    <link rel="stylesheet" href="//cdn.datatables.net/1.9.4/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="//cdn.datatables.net/tabletools/2.1.5/css/TableTools.css">
+    <link rel="stylesheet" href="/client/theme/reporting.css">
+    <script type="text/javascript" charset="utf-8" language="javascript"
+            src="//code.jquery.com/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" charset="utf-8" language="javascript"
+            src="//cdn.datatables.net/1.9.4/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" charset="utf-8" language="javascript"
+            src="//cdn.datatables.net/tabletools/2.1.5/js/TableTools.min.js"></script>
 
-  <!-- DataTables -->
-  <script type="text/javascript" charset="utf-8">
-    /* Table initialisation */
-    $(document).ready(function() {
-      $("table[id|='d_table']").each(function() {
-        $(this).dataTable({
-          "bPaginate": false, // Turned pagination off
-          "oTableTools": {
-            "sSwfPath": "//cdn.datatables.net/tabletools/2.1.5/swf/copy_csv_xls_pdf.swf",
-            "aButtons": ["copy", "csv", "pdf", "print"]
-          },
-          "sDom": "T<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>", // table setup
+    <!-- DataTables -->
+    <script type="text/javascript" charset="utf-8">
+        /* Table initialisation */
+        $(document).ready(function () {
+            $("table[id|='d_table']").each(function () {
+                $(this).dataTable({
+                    "bPaginate": false, // Turned pagination off
+                    "oTableTools": {
+                        "sSwfPath": "//cdn.datatables.net/tabletools/2.1.5/swf/copy_csv_xls_pdf.swf",
+                        "aButtons": ["copy", "csv", "pdf", "print"]
+                    },
+                    "sDom": "T<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>", // table setup
 
-          "bInfo": false, // Turned info off
-          "oLanguage": {
-            "sLengthMenu": "_MENU_ records per page",
-            "sSearch": "Filter results: _INPUT_" // Renamed Search to Filter
-          },
+                    "bInfo": false, // Turned info off
+                    "oLanguage": {
+                        "sLengthMenu": "_MENU_ records per page",
+                        "sSearch": "Filter results: _INPUT_" // Renamed Search to Filter
+                    },
+                });
+            });
         });
-      });
-    });
-  </script>
+    </script>
 
 </HEAD>
 
 <BODY>
 
-  <?php
+<?php
 
 /*
 * file: show_sample_group_details.php

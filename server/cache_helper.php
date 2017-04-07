@@ -9,19 +9,18 @@ require_once __DIR__ . "/lib/Cache.php";
 
 class CacheHelper {
 
-    private static $cache_dir = __DIR__ . "/../api/cache/";
     public static $disabled = false;
 
     // Facet Config XML
     private static $facet_xml_context = 'facet_xml';
     public static function get_facet_xml($cache_id)
     {
-        return self::Get($facet_xml_context, "{$cacheId}.xml");
+        return self::Get(self::$facet_xml_context, "{$cache_id}.xml");
     }
 
-    public static function put_facet_xml($cacheId, $data)
+    public static function put_facet_xml($cache_id, $data)
     {
-        self::Put(self::$facet_xml_context, "{$cacheId}.xml", $data);
+        self::Put(self::$facet_xml_context, "{$cache_id}.xml", $data);
     }    
 
     // public static function put_facet_xml_generate_cache_id($conn, $data)
@@ -35,24 +34,24 @@ class CacheHelper {
     private static $facet_result_xml_context = 'result_xml_';
     public static function get_result_xml($cache_id)
     {
-        return self::Get($facet_result_xml_context, "{$cache_id}.xml");
+        return self::Get(self::$facet_result_xml_context, "{$cache_id}.xml");
     }
 
     public static function put_result_xml($cache_id, $data)
     {
-        return self::Put(self::$facet_result_xml_context, "{$cacheId}.xml", $data);
+        return self::Put(self::$facet_result_xml_context, "{$cache_id}.xml", $data);
     }
 
     // Facet Content
     private static $facet_content_context = 'facet_content_';
-    public static function get_facet_content($cacheId)
+    public static function get_facet_content($cache_id)
     {
-        return self::Get(self::$facet_content_context, $cacheId);
+        return self::Get(self::$facet_content_context, $cache_id);
     }
 
-    public static function put_facet_content($cacheId, $data)
+    public static function put_facet_content($cache_id, $data)
     {
-        return self::Put(self::$facet_content_context, $cacheId, $data);
+        return self::Put(self::$facet_content_context, $cache_id, $data);
     }
 
     // Result data
@@ -106,7 +105,7 @@ class CacheIdGenerator
     public static function generateFacetConfigSelectStateCacheId($facetConfig)
     {
         $activeKeys = FacetConfig::getCodesOfActiveFacets($facetConfig);
-        $itemsSelectedByUser = FacetConfig::getItemGroupsSelectedByUser($facetConfig);
+        $itemsSelectedByUser = FacetConfig::getUserPickGroups($facetConfig);
         if (empty($activeKeys)) {
             return "";
         }
@@ -119,7 +118,7 @@ class CacheIdGenerator
             $facetType = $facet["facet_type"];
             foreach ($itemsSelectedByUser[$facetKey] as $skey => $selection_group) {
                 foreach ($selection_group as $y => $selection) {
-                    $selection_list_discrete = array();
+                    $selection_list_discrete = [];
                     foreach ($selection as $z => $item) {
                         $item = (array) $item;
                         $value = $facetKey . "_" . $item["selection_type"] . "_" . $item["selection_value"];

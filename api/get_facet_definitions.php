@@ -23,13 +23,15 @@ require_once(__DIR__ . "/serializers/facet_definition_serializer.php");
 
 $conn = ConnectionHelper::createConnection();
 
-$data = CacheHelper::get_facet_min_max();
+global $facet_definition;
+
+$facet_range = CacheHelper::get_facet_min_max();
 if (empty($data)) {
-    $data = DiscreteMinMaxFacetCounter::compute_max_min($conn);
-    CacheHelper::put_facet_min_max($data);
+    $facet_range = DiscreteMinMaxFacetCounter::compute_max_min($conn);
+    CacheHelper::put_facet_min_max($facet_range);
 }
 
-$out = FacetDefinitionSerializer::toJSON($facet_definition);
+$out = FacetDefinitionSerializer::toJSON($facet_definition, $facet_range);
  
 echo $out;
 
