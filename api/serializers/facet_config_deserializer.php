@@ -84,4 +84,19 @@ class FacetConfigDeserializer
         // Save the current request's id. It will be sent back to  client without change
         $request_id = "" . $current_id;
     }
+
 }
+
+/*class FacetConfig2
+{
+    public $facetType = "";
+    public $facetCode = "";
+    public $actionType = "";
+    public $language = "";
+    public $facetConfigs = [];
+
+    function __construct() {
+    }
+}*/
+
+

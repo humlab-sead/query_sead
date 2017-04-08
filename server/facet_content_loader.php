@@ -177,7 +177,7 @@ class RangeFacetContentLoader extends FacetContentLoader {
     {
         $pickGroups = FacetConfig::getUserPickGroups($facetConfig);
         $limits = [];
-        // FIXME: ROGER Criteria negated, must have been a bugg??? Was "if (!isset($pickGroups[$facetCode])) ..."
+        // FIXME: ROGER Criteria negated, must have been a bug??? Was "if (!isset($pickGroups[$facetCode])) ..."
         if (array_key_exists($facetCode, $pickGroups)) {
             // FIXME: ROGER this cannot work...??
             foreach ($pickGroups[$facetCode] as $groups) {
@@ -256,16 +256,6 @@ class RangeFacetContentLoader extends FacetContentLoader {
 
 class DiscreteFacetContentLoader extends FacetContentLoader {
 
-    function getTextFilterClause($facetConfig, $column_name)
-    {
-        if (ConfigRegistry::getFilterByText())
-            return "";
-        $term = trim($facetConfig["facet_collection"][$facetConfig["requested_facet"]]["facet_text_search"]);
-        if ($term == "undefined") {
-            return "";
-        }
-        return empty($term) ? "" : " AND $column_name ILIKE '$term' ";
-    }
 
     /**
      * @param $conn
@@ -281,18 +271,7 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
         
         $query = QueryBuildService::compileQuery($facetConfig, $facetCode, [], $facetCodes);
 
-        $text_criteria = $this->getTextFilterClause($facetConfig, $facet['name_column']);
-        $where_clause = str_prefix("AND ", $query["where"]);
-        $sort_clause = empty($facet['sort_column']) ? "" : ", {$facet['sort_column']} ORDER BY {$facet['sort_column']} {$facet['sort_order']}";
-
-        $q1 = "
-            SELECT {$facet['id_column']} AS id, {$facet['name_column']} AS name
-            FROM {$query['tables']}
-                 {$query['joins']}
-            WHERE 1 = 1
-              $text_criteria
-              $where_clause
-            GROUP BY {$facet['id_column']}, {$facet['name_column']} $sort_clause";
+        $q1 = $this->compileSQL($facetConfig, $facet, $query);
 
         return [ 1, $q1 ];
     }
@@ -316,6 +295,39 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
         // }
     }
 
+    /**
+     * @param $facetConfig
+     * @param $facet
+     * @param $query
+     * @return string
+     */
+    protected function compileSQL($facetConfig, $facet, $query): string
+    {
+        $text_criteria = $this->getTextFilterClause($facetConfig, $facet['name_column']);
+        $where_clause = str_prefix("AND ", $query["where"]);
+        $sort_clause = empty($facet['sort_column']) ? "" : ", {$facet['sort_column']} ORDER BY {$facet['sort_column']} {$facet['sort_order']}";
+
+        $q1 = "
+            SELECT {$facet['id_column']} AS id, {$facet['name_column']} AS name
+            FROM {$query['tables']}
+                 {$query['joins']}
+            WHERE 1 = 1
+              $text_criteria
+              $where_clause
+            GROUP BY {$facet['id_column']}, {$facet['name_column']} $sort_clause";
+        return $q1;
+    }
+
+    function getTextFilterClause($facetConfig, $column_name)
+    {
+        if (!ConfigRegistry::getFilterByText())
+            return "";
+        $filter = trim($facetConfig["facet_collection"][$facetConfig["requested_facet"]]["facet_text_search"]);
+        if (empty($filter) || $filter == "undefined") {
+            return "";
+        }
+        return " AND $column_name ILIKE '$filter' ";
+    }
 }
 
 $facet_content_loaders = array(

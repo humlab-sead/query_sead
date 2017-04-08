@@ -6,7 +6,6 @@ require_once(__DIR__ . "/config/environment.php");
 require_once(__DIR__ . "/config/bootstrap_application.php");
 require_once(__DIR__ . '/connection_helper.php');
 require_once(__DIR__ . '/facet_config.php'); //
-//require_once(__DIR__ . '/query_builder.php');
 require_once(__DIR__ . '/result_query_compiler.php'); //*
 require_once __DIR__ . '/facet_content_counter.php'; //*
 

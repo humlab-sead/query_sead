@@ -343,5 +343,16 @@ class QueryBuildService {
         $query = $query_builder->get_query_information($facetConfig, $facetCode, $extra_tables, $activeFacets);
         return $query;
     }
+
+    public static function compileQuery2($facetConfig, $targetCode, $extraTables = [])
+    {
+        $activeCodes = FacetConfig::getCodesOfActiveFacets($facetConfig);
+        if (!in_array($targetCode, $activeCodes)) {
+            $activeCodes[] = $targetCode;
+        }
+        $query = self::compileQuery($facetConfig, $targetCode, $extraTables, $activeCodes);
+        return $query;
+    }
+
 }
 ?>

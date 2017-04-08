@@ -3,6 +3,7 @@
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
 require_once __DIR__ . '/query_builder.php';
+require_once __DIR__ . '/lib/utility.php';
 
 /*
 file: facet_config.php
@@ -16,58 +17,49 @@ class FacetConfig
     /*
     function:  FacetConfig::deleteBogusPicks
     Removes invalid selections e.g. hidden selections still being sent from the client.
-    The client keep then since they can be visible when the filters changes
+    The client keep them since they can be visible when the filters changes
     This is only applicable for discrete facets (range facet selection are always visible)
 
     class FacetConfig
     */
-
     public static function deleteBogusPicks($conn, $facetConfig)
     {
         $codesWithPicks = self::getCodesOfActiveFacetsWithPicks($facetConfig);
         $pickGroups = self::getUserPickGroups($facetConfig);
-        if (empty($codesWithPicks)) {
-            return $facetConfig;
-        }
-
-        foreach ($codesWithPicks as $key => $facetCode) {
+        foreach ($codesWithPicks ?: [] as $key => $facetCode) {
             $facet = FacetRegistry::getDefinition($facetCode);        
             if ($facet["facet_type"] != "discrete") {
                 continue;
             }
-            $activeCodes = self::getCodesOfActiveFacets($facetConfig);
-            
-            $query = QueryBuildService::compileQuery($facetConfig, $facetCode, NULL, $activeCodes);
-            
-            $query_column = $facet["id_column"];
-            $query_column_name = $facet["name_column"];
-            $current_selection = $pickGroups[$facetCode];
-            $current_selection_values = self::getDiscreteUserPicks($current_selection);
-            $union_clause = implode(" union ", array_map(function ($x) {
-                return  "select '$x'::text as selected_value ";
-            }, $current_selection_values));
-            $tables = $query["tables"];
-            $query_joins = $query["joins"];
-            $criteria_clause = (trim($query["where"]) != '') ? " and \n " . $query["where"] : " ";
+            $query = QueryBuildService::compileQuery2($facetConfig, $facetCode);
 
-            $q1 = "
-            SELECT DISTINCT selected_value, $query_column_name AS name_item
-            FROM (
-                $union_clause
-            ) AS x, $tables $query_joins
-            WHERE x.selected_value = $query_column::text
-                $criteria_clause";
-            // Replace existing data with result of query
-            $group = [];
-            $rows = ConnectionHelper::queryRows($conn, $q1);
+            $picks = self::getDiscreteUserPicks($pickGroups[$facetCode]);
+            $picks_clause = array_join_surround($picks, ",", "('", "'::text)", "");
+            $query_where = str_prefix("AND ", $query["where"]);
+            $sql = "
+
+                SELECT DISTINCT pick_id, {$facet["name_column"]} AS name_item
+                FROM {$query["tables"]}
+                JOIN (
+                    VALUES {$picks_clause}
+                ) AS x(pick_id)
+                    ON x.pick_id = {$facet["id_column"]}::text
+                    {$query["joins"]}
+                WHERE 1 = 1
+                    $query_where
+
+            ";
+
+            $values = [];
+            $rows = ConnectionHelper::queryRows($conn, $sql);
             foreach ($rows as $row) {
-                $group["selection"][] = [
+                $values[] = [
                     "selection_type" => "discrete",
-                    "selection_value" => $row["selected_value"],
+                    "selection_value" => $row["pick_id"],
                     "selection_text" => $row["name_item"]
                 ];
             }
-            $facetConfig["facet_collection"][$facetCode]["selection_groups"]["selection_group"] = $group;
+            $facetConfig["facet_collection"][$facetCode]["selection_groups"]["selection_group"]["selection"] = $values;
         }
         return $facetConfig;
     }
@@ -124,7 +116,6 @@ class FacetConfig
         $items = [];
         foreach ($xmlArray as $x => $xmlGroups) {
             foreach ($xmlGroups as $y => $xmlGroup) {
-                //$items = array_map(function($x) { return ((array)$x)["selection_value"]; }, (array)$xmlGroup);
                 foreach ($xmlGroup as $selections) {
                     $items[] = (string)((array)$selections)["selection_value"];
                 }

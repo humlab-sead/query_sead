@@ -98,13 +98,13 @@ class ArrayHelper
         }
         return $result;
     }
+}
 
-    public static function array_join_surround($array, $glue = "", $prefix = "", $suffix = "", $default)
-    {
-        return join($glue, array_map(function ($x) use ($prefix, $suffix, $default) {
-            return $prefix . ($x ?? $default) . $suffix;
-        }, $array));
-    }
+function array_join_surround($array, $glue = "", $prefix = "", $suffix = "", $default="")
+{
+    return join($glue, array_map(function ($x) use ($prefix, $suffix, $default) {
+        return $prefix . ($x ?? $default) . $suffix;
+    }, $array));
 }
 
 function array_add_unique(&$array, $mixed)

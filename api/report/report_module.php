@@ -26,13 +26,10 @@ function get_f_code_filter_query($cache_id, $facetCode = "result_facet", $data_t
     $facet = FacetRegistry::getDefinition($facetCode);
     $facet_xml = CacheHelper::get_facet_xml($cache_id);
 
-    $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
-    $facet_params = FacetConfig::deleteBogusPicks($conn, $facet_params);
+    $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
+    $facetConfig = FacetConfig::deleteBogusPicks($conn, $facetConfig);
 
-    $tmp_list = FacetConfig::getCodesOfActiveFacets($facet_params);
-    $tmp_list[] = $facetCode; //Add  as final facet
-
-    $query_info = QueryBuildService::compileQuery($facet_params, $facetCode, $data_table, $tmp_list);
+    $query_info = QueryBuildService::compileQuery2($facetConfig, $facetCode, $data_table);
 
     $query_column = $facet["id_column"];
 
@@ -52,9 +49,9 @@ function get_f_code_filter_query($cache_id, $facetCode = "result_facet", $data_t
 function get_select_info_as_html($conn, $cache_id)
 {
     $facet_xml = CacheHelper::get_facet_xml($cache_id);
-    $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
-    $facet_params = FacetConfig::deleteBogusPicks($conn, $facet_params);
-    $matrix = FacetConfig::collectUserPicks($facet_params);
+    $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
+    $facetConfig = FacetConfig::deleteBogusPicks($conn, $facetConfig);
+    $matrix = FacetConfig::collectUserPicks($facetConfig);
     $current_selections = FacetPicksSerializer::toHTML($matrix);
     return $current_selections;
 }
@@ -367,9 +364,9 @@ class report_module
     {
         $html = "No filtering";
         $facet_xml = CacheHelper::get_facet_xml($cache_id);
-        $facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
-        $facet_params = FacetConfig::deleteBogusPicks($conn, $facet_params);
-        $selection_matrix = FacetConfig::collectUserPicks($facet_params) ?? [];
+        $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
+        $facetConfig = FacetConfig::deleteBogusPicks($conn, $facetConfig);
+        $selection_matrix = FacetConfig::collectUserPicks($facetConfig) ?? [];
         if (count($selection_matrix) == 0)
             return $html;
         $html = "Criterias :";
