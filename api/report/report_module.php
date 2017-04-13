@@ -8,6 +8,7 @@ require_once(__DIR__ . '/../../server/lib/array_helper.php');
 require_once(__DIR__ . "/../serializers/facet_config_deserializer.php");
 require_once(__DIR__ . "/../serializers/facet_picks_serializer.php");
 
+
 /**
  * function: get_f_code_filter_query
  * get the unique id to be used to filter the report based on user selection in QSEAD
@@ -19,24 +20,16 @@ require_once(__DIR__ . "/../serializers/facet_picks_serializer.php");
  *
  * return: query string
  */
-function get_f_code_filter_query($cache_id, $facetCode = "result_facet", $data_table = null)
+function get_f_code_filter_query($cache_id, $facetCode = "result_facet", $extraTables = null)
 {
-
-    $conn = ConnectionHelper::createConnection();
     $facet = FacetRegistry::getDefinition($facetCode);
     $facet_xml = CacheHelper::get_facet_xml($cache_id);
-
-    $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
-    $facetConfig = FacetConfig::deleteBogusPicks($conn, $facetConfig);
-
-    $query_info = QueryBuildService::compileQuery2($facetConfig, $facetCode, $data_table);
-
-    $query_column = $facet["id_column"];
-
-    $sql = "select distinct $query_column from " . $query_info["tables"];
-    $sql .= empty($query_info["joins"]) ? "" : (" " . $query_info["joins"]);
-    $sql .= empty($query_info["where"]) ? "" : (" where " . $query_info["where"]);
-
+    $facetsConfig = FacetConfigDeserializer::deserialize($facet_xml)->deleteBogusPicks();
+    $query = QueryBuildService::compileQuery2($facetsConfig, $facetCode, $extraTables);
+    $sql = "SELECT DISTINCT {$facet->id_column} \n" .
+           "FROM {$query->sql_table} \n" .
+           "     {$query->sql_joins} \n" .
+           "WHERE 1 = 1 {$query->sql_where2}";
     return $sql;
 }
 
@@ -46,12 +39,11 @@ function get_f_code_filter_query($cache_id, $facetCode = "result_facet", $data_t
  * params: $cache_id ref to filter by user
  * returns: html text about selection in filters
  */
-function get_select_info_as_html($conn, $cache_id)
+function get_select_info_as_html($cache_id)
 {
     $facet_xml = CacheHelper::get_facet_xml($cache_id);
-    $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
-    $facetConfig = FacetConfig::deleteBogusPicks($conn, $facetConfig);
-    $matrix = FacetConfig::collectUserPicks($facetConfig);
+    $facetsConfig = FacetConfigDeserializer::deserialize($facet_xml)->deleteBogusPicks();
+    $matrix = $facetsConfig->collectUserPicks();
     $current_selections = FacetPicksSerializer::toHTML($matrix);
     return $current_selections;
 }
@@ -63,19 +55,18 @@ class base_reporter
      * runs query to database, exits if fails
      * return: resultset
      */
-    protected function run_query($conn, $q)
+    protected function run_query($q)
     {
-        return ConnectionHelper::query($conn, $q, get_class($this));
+        return ConnectionHelper::query($q);
     }
 
     /**
-     * @param $conn
      * @param $q
      * @return array
      */
-    protected function get_methods($conn, $q): array
+    protected function get_methods($q): array
     {
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         $counter = 0;
         $methods = [];
         while ($row = pg_fetch_assoc($rs)) {
@@ -110,10 +101,10 @@ class sample_group_reporter extends base_reporter
      * Function: dataset_report
      * Makes dataset report for a sample group or multiple sample groups if sample_group id is not set.
      */
-    function dataset_report($conn, $sample_group_id, $cache_id)
+    function dataset_report($sample_group_id, $cache_id)
     {
         $q = $this->sample_group_query_object->render_dataset_query($sample_group_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         $html = "<p><b>List of dataset</b></p>\n";
         $html .= $this->reporter->format_rs($rs);
         return $html;
@@ -124,10 +115,10 @@ class sample_group_reporter extends base_reporter
      * Report that gives list sample group for a given filter given by "cache_id"
      */
 
-    function sample_group_agg_summary($conn, $sample_group_id, $cache_id)
+    function sample_group_agg_summary($sample_group_id, $cache_id)
     {
         $q = $this->sample_group_query_object->get_sample_group_query($sample_group_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         $html = $this->reporter->format_rs($rs);
         return $html;
     }
@@ -136,25 +127,25 @@ class sample_group_reporter extends base_reporter
      * Report that get the site of sample group and the info for the sample gruop itself
      */
 
-    function sample_summary($conn, $sample_group_id, $cache_id)
+    function sample_summary($sample_group_id, $cache_id)
     {
         $q = $this->sample_group_query_object->get_site_query($sample_group_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         $html = "";
         while ($row = pg_fetch_assoc($rs)) {
             $html .= "<p>Site : <b>" . $row["site_name"] . "</b></p>\n";
         }
         $q = $this->sample_group_query_object->get_sample_group_query($sample_group_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         $html .= $this->reporter->format_rs($rs, 'site_id', 'show_site_details.php?', $cache_id);
         return $html;
     }
 
 
-    function get_sample_group_methods($conn, $sample_group_id, $cache_id)
+    function get_sample_group_methods($sample_group_id, $cache_id)
     {
         $q = $this->sample_group_query_object->render_sample_group_methods_query($sample_group_id, $cache_id);
-        return $this->get_methods($conn, $q);
+        return $this->get_methods($q);
     }
 
     /*
@@ -162,12 +153,12 @@ class sample_group_reporter extends base_reporter
      * Makes a transposed report of the abundances of species for each physical sample
      */
 
-    function species_report($conn, $sample_group_id, $cache_id)
+    function species_report($sample_group_id, $cache_id)
     {
-        $method_list = $this->get_sample_group_methods($conn, $sample_group_id, $cache_id);
+        $method_list = $this->get_sample_group_methods($sample_group_id, $cache_id);
         $html = "";
         foreach ($method_list ?? [] as $mkey => $method_obj) {
-            $data_array = $this->sample_group_query_object->arrange_species_data($conn, $sample_group_id,
+            $data_array = $this->sample_group_query_object->arrange_species_data($sample_group_id,
                 $method_obj["method_id"], $cache_id);
             if (count($data_array) > 1) {
                 $html .= "<p><b>Abundances  " . $method_obj["method_name"] . "</b></p>\n";
@@ -182,9 +173,9 @@ class sample_group_reporter extends base_reporter
      * Report of values for each dataset for each physical sample, in matrix format.
      */
 
-    function measured_values_report($conn, $sample_group_id, $cache_id)
+    function measured_values_report($sample_group_id, $cache_id)
     {
-        $data_array = $this->sample_group_query_object->arrange_measured_values($conn, $sample_group_id, $cache_id);
+        $data_array = $this->sample_group_query_object->arrange_measured_values($sample_group_id, $cache_id);
         $html = "";
         if (count($data_array) > 1) {
             $html .= "<p><b>Measured values </b></p>\n";
@@ -212,10 +203,10 @@ class site_reporter extends base_reporter
         $this->reporter = new report_module();
     }
 
-    function execute_report($conn, $generate_query, $serializer, $site_id, $cache_id)
+    function execute_report($generate_query, $serializer, $site_id, $cache_id)
     {
         $sql = $generate_query($site_id, $cache_id);
-        $rs = $this->run_query($conn, $sql);
+        $rs = $this->run_query($sql);
         if (pg_num_rows($rs) <= 1) {
             return "";
         }
@@ -227,10 +218,10 @@ class site_reporter extends base_reporter
      * Chronologies
      */
 
-    // function dating_report($conn, $site_id, $cache_id)
+    // function dating_report($site_id, $cache_id)
     // {
     //     $q = $this->site_query_obj->get_relative_ages_query($site_id, $cache_id);
-    //     $rs = $this->run_query($conn, $q);
+    //     $rs = $this->run_query($q);
     //     if (pg_num_rows($rs) > 1) {
     //         $html = "<B>Dating</B>";
     //         $html .= $this->reporter->format_rs($rs, null, null, $cache_id);
@@ -238,20 +229,20 @@ class site_reporter extends base_reporter
     //     }
     //     return "";
     // }
-    function dating_report($conn, $site_id, $cache_id)
+    function dating_report($site_id, $cache_id)
     {
         return "<B>Dating</B>" .
-            $this->execute_report($conn, $this->site_query_obj->get_relative_ages_query, $this->reporter->format_rs, $site_id, $cache_id);
+            $this->execute_report($this->site_query_obj->get_relative_ages_query, $this->reporter->format_rs, $site_id, $cache_id);
     }
     /*
      * function: dataset_report
      * Report about dataset in site
      */
 
-    function dataset_report($conn, $site_id, $cache_id)
+    function dataset_report($site_id, $cache_id)
     {
         $q = $this->site_query_obj->get_dataset_query($site_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         if (pg_num_rows($rs) > 1) {
             $html = "<B> Datasets </B>";
             $html .= $this->reporter->format_rs($rs, null, null, $cache_id);
@@ -265,12 +256,12 @@ class site_reporter extends base_reporter
      * Report with info about the site(s)
      */
 
-    function site_info_report($conn, $site_id, $cache_id)
+    function site_info_report($site_id, $cache_id)
     {
         $q = $this->site_query_obj->get_site_query($site_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         if (!empty($cache_id)) {
-            $html = get_select_info_as_html($conn, $cache_id) . "<BR>";
+            $html = get_select_info_as_html($cache_id) . "<BR>";
         } else {
             $html = "<B> No filters </B>";
         }
@@ -283,10 +274,10 @@ class site_reporter extends base_reporter
      * Get the title, year and author for references related to site(s)
      */
 
-    function reference_report($conn, $site_id, $cache_id)
+    function reference_report($site_id, $cache_id)
     {
         $q = $this->site_query_obj->get_reference_query($site_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         if (pg_num_rows($rs) > 1) {
             $html = "<B> References </B>";
             $html .= $this->reporter->format_rs($rs, null, null, $cache_id);
@@ -300,28 +291,28 @@ class site_reporter extends base_reporter
      * Info about sample_group(s) for site(s)
      */
 
-    function sample_group_report($conn, $site_id, $applicationName, $cache_id)
+    function sample_group_report($site_id, $applicationName, $cache_id)
     {
         $q = $this->site_query_obj->get_sample_group_info_query($site_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         $html = "<B> Sample groups</B>";
         $html .= $this->reporter->format_rs($rs, "sample_group_id", "show_sample_group_details.php?application_name=sead&", $cache_id);
         return $html;
     }
 
-    function get_site_methods($conn, $site_id, $cache_id)
+    function get_site_methods($site_id, $cache_id)
     {
         $q = $this->site_query_obj->render_site_methods_query($site_id, $cache_id);
-        return $this->get_methods($conn, $q);
+        return $this->get_methods($q);
     }
 
-    function species_report($conn, $site_id, $cache_id)
+    function species_report($site_id, $cache_id)
     {
-        $method_list = $this->get_site_methods($conn, $site_id, $cache_id);
+        $method_list = $this->get_site_methods($site_id, $cache_id);
         $html = "";
         if (isset($method_list)) {
             foreach ($method_list as $mkey => $method_obj) {
-                $data_array = $this->site_query_obj->arrange_species_data($conn, $site_id, $method_obj["method_id"], $cache_id);
+                $data_array = $this->site_query_obj->arrange_species_data($site_id, $method_obj["method_id"], $cache_id);
                 if (count($data_array) > 1) {
                     $html .= "<p><b>Abundances  " . $method_obj["method_name"] . "</b></p>\n";
                     $html .= $this->reporter->array_to_html($data_array);
@@ -331,9 +322,9 @@ class site_reporter extends base_reporter
         return $html;
     }
 
-    function measured_values_report($conn, $site_id, $cache_id)
+    function measured_values_report($site_id, $cache_id)
     {
-        $data_array = $this->site_query_obj->arrange_measured_values($conn, $site_id, $cache_id);
+        $data_array = $this->site_query_obj->arrange_measured_values($site_id, $cache_id);
         $html = "";
         if (count($data_array) > 1) {
             $html .= "<p><b>Measured values </b></p>\n";
@@ -360,13 +351,12 @@ class report_module
      * Renders the filters used from QSEAD.
      * not used.... 
      */
-    public function report_selections($conn, $cache_id)
+    public function report_selections($cache_id)
     {
         $html = "No filtering";
         $facet_xml = CacheHelper::get_facet_xml($cache_id);
-        $facetConfig = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
-        $facetConfig = FacetConfig::deleteBogusPicks($conn, $facetConfig);
-        $selection_matrix = FacetConfig::collectUserPicks($facetConfig) ?? [];
+        $facetsConfig = FacetConfigDeserializer::deserialize($facet_xml)->deleteBogusPicks();
+        $selection_matrix = $facetsConfig->collectUserPicks() ?? [];
         if (count($selection_matrix) == 0)
             return $html;
         $html = "Criterias :";

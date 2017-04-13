@@ -65,32 +65,33 @@
 *- <sample_group_reporter->species_report>
 *- <sample_group_reporter->measured_values_report>
 */
+require_once __DIR__ . '/../../server/connection_helper.php';
 require_once __DIR__ . '/site_queries.php';
 require_once __DIR__ . '/sample_group_queries.php';
 require_once __DIR__ . '/report_module.php';
 
 $cache_id = $_REQUEST["cache_id"];
 
-if (!($conn = pg_connect(CONNECTION_STRING))) {
-    echo "Error: pg_connect failed.\n";
-    exit;
-}
+ConnectionHelper::openConnection();
 
 $reporter = new report_module();
 $site_reporter = new site_reporter();
 $site_id = null;
 
 $sample_group_reporter = new sample_group_reporter();
-echo $site_reporter->site_info_report($conn, $site_id, $cache_id);
-echo $site_reporter->dating_report($conn, $site_id, $cache_id);
-echo $site_reporter->reference_report($conn, $site_id, $cache_id);
-echo $site_reporter->sample_group_report($conn, $site_id, "sead", $cache_id);
-echo $site_reporter->dataset_report($conn, $site_id, $cache_id);
+echo $site_reporter->site_info_report($site_id, $cache_id);
+echo $site_reporter->dating_report($site_id, $cache_id);
+echo $site_reporter->reference_report($site_id, $cache_id);
+echo $site_reporter->sample_group_report($site_id, "sead", $cache_id);
+echo $site_reporter->dataset_report($site_id, $cache_id);
 
 $sample_group_id = null;
-echo $sample_group_reporter->sample_group_agg_summary($conn, $sample_group_id, $cache_id);
-echo $sample_group_reporter->species_report($conn, $sample_group_id, $cache_id);
-echo $sample_group_reporter->measured_values_report($conn, $sample_group_id, $cache_id);
+echo $sample_group_reporter->sample_group_agg_summary($sample_group_id, $cache_id);
+echo $sample_group_reporter->species_report($sample_group_id, $cache_id);
+echo $sample_group_reporter->measured_values_report($sample_group_id, $cache_id);
+
+ConnectionHelper::closeConnection();
+
 ?>
 
 </BODY>

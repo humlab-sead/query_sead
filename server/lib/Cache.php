@@ -54,6 +54,9 @@
         {
             $filename = self::getFilename($group, $id);
             
+            if (file_exists($filename)) {
+                return;
+            }
             if ($fp = @fopen($filename, 'xb')) {
             
                 if (flock($fp, LOCK_EX)) {

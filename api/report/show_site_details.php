@@ -56,32 +56,33 @@
 * - <site_reporter->sample_group_report>
 * - <site_reporter->dataset_report>
 */
+
+require_once __DIR__ . '/../../server/connection_helper.php';
 require_once __DIR__ . '/site_queries.php';
 require_once __DIR__ . '/report_module.php';
 
 $cache_id = $_REQUEST["cache_id"];
+$site_id = $_REQUEST["site_id"];
 
-if (isset($_REQUEST["site_id"]) && !empty($_REQUEST["site_id"]) && is_numeric($_REQUEST["site_id"])) {
-    $site_id = $_REQUEST["site_id"];
-} else {
+if (empty($site_id) || !is_numeric($site_id)) {
     echo "No site_id specified.";
     exit;
 }
-if (!($conn = pg_connect(CONNECTION_STRING))) {
-    echo "Error: pg_connect failed.\n";
-    exit;
-}
+
+ConnectionHelper::openConnection();
 
 $reporter = new report_module();
 $site_reporter = new site_reporter();
 
-echo $site_reporter->site_info_report($conn, $site_id, $cache_id);
-echo $site_reporter->dating_report($conn, $site_id, $cache_id);
-echo $site_reporter->reference_report($conn, $site_id, $cache_id);
-echo $site_reporter->sample_group_report($conn, $site_id, "sead", $cache_id);
-echo $site_reporter->dataset_report($conn, $site_id, $cache_id);
-echo $site_reporter->species_report($conn, $site_id, $cache_id);
-echo $site_reporter->measured_values_report($conn, $site_id, $cache_id);
+echo $site_reporter->site_info_report($site_id, $cache_id);
+echo $site_reporter->dating_report($site_id, $cache_id);
+echo $site_reporter->reference_report($site_id, $cache_id);
+echo $site_reporter->sample_group_report($site_id, "sead", $cache_id);
+echo $site_reporter->dataset_report($site_id, $cache_id);
+echo $site_reporter->species_report($site_id, $cache_id);
+echo $site_reporter->measured_values_report($site_id, $cache_id);
+
+ConnectionHelper::closeConnection();
 ?>
 </BODY>
 </HTML>

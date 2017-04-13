@@ -35,9 +35,9 @@ class ConnectionHelper
         while (list($i, $x) = each($stack)) {
             $source_file = str_pad(basename($x['file']), 35);
             $source_line = str_pad($x['line'], 4);
-            $class_name  = $x['class'];
+            $class_name  = array_key_exists('class', $x) ? $x['class'] : "";
             $function    = (empty($class_name) ? "" :  "$class_name::") . $x['function'];
-            $stack_text .=  ($x['class'] == __CLASS__) ? "" :  "   $i $source_file $source_line $function\n";
+            $stack_text .=  ($class_name == __CLASS__) ? "" :  "   $i $source_file $source_line $function\n";
         }
         file_put_contents($filename,
             "\n$header\nTimestamp: $now\n\n" .
@@ -57,46 +57,70 @@ class ConnectionHelper
         return $conn;
     }
 
-    public static function execute($conn, $q, $context="")
+    private static $connection = NULL;
+    public static function getConnection()
     {
-        self::trace($q, $context);
-        if (($rs = pg_exec($conn, $q)) <= 0) {
-            error_log("Error: cannot execute:  " . SqlFormatter::format($q, false) . "  \n");
+        if (self::$connection == NULL)
+            self::$connection = self::createConnection();
+        return self::$connection;
+    }
+
+    public static function openConnection()
+    {
+        return self::getConnection();
+    }
+
+    public static function closeConnection()
+    {
+        if (self::$connection != NULL) {
+            pg_close(self::$connection);
+            self::$connection = NULL;
+        }
+    }
+
+    public static function execute($sql, $conn=NULL)
+    {
+        self::trace($sql);
+        $conn = $conn ?? self::getConnection();
+        if (($rs = pg_exec($conn, $sql)) <= 0) {
+            error_log("Error: cannot execute:  " . SqlFormatter::format($sql, false) . "  \n");
             pg_close($conn);
             exit;
         }
         return $rs;
     }
 
-    public static function query($conn, $q, $context="")
+    public static function query($sql, $conn=NULL)
     {
-        self::trace($q, $context);
-        if (($rs = pg_query($conn, $q)) <= 0) {
-            $where = empty($context) ? "" : " in \"$context\"";
-            error_log("Error$where: cannot execute query: " . SqlFormatter::format($q, false) . "\n");
+        self::trace($sql);
+        $conn = $conn ?? self::getConnection();
+        if (($rs = pg_query($conn, $sql)) <= 0) {
+            error_log("Error$where: cannot execute query: " . SqlFormatter::format($sql, false) . "\n");
             pg_close($conn);
             exit;
         }
         return $rs;
     }
 
-    public static function queryIter($conn, $q, $context="")
+    public static function queryIter($sql, $conn=NULL)
     {
-        return new RecordSetIterator(self::query($conn, $q, $context));
+        return new RecordSetIterator(self::query($sql, $conn));
     }
 
-    public static function queryRows($conn, $q)
+    public static function queryRows($sql, $conn=NULL)
     {
-        $rs = ConnectionHelper::query($conn, $q);
+        $rs = self::query($sql, $conn);
         $rows = pg_fetch_all($rs);
         return $rows;
     }
 
-    public static function queryRow($conn, $q)
+    public static function queryRow($sql, $conn=NULL)
     {
-        $rs = ConnectionHelper::query($conn, $q);
+        $rs = ConnectionHelper::query($sql, $conn);
         $row = pg_fetch_assoc($rs);
         return $row;
     }
 }
+
+
 ?>

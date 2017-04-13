@@ -4,9 +4,9 @@ file: get_data_table.php
 this file makes download of data and documenation
 A dialogbox is shown to allow the user to save the result file.
 Sequence:
-* Process the facet view state using <FacetConfigDeserializer::deserializeFacetConfig>
-* Remove invalid selection using <FacetConfig::deleteBogusPicks>
-* Process the result parameter from the client using  <ResultConfigDeserializer::deserializeResultConfig>
+* Process the facet view state using <FacetConfigDeserializer::deserialize>
+* Remove invalid selection using <deleteBogusPicks>
+* Process the result parameter from the client using  <ResultConfigDeserializer::deserialize>
 * Get the SQL-query using function  <compileQuery>
 * Run the query and build the output
 * Build the documentation of the facet filter using <FacetPicksSerializer::toHTML>
@@ -21,18 +21,14 @@ require_once(__DIR__ . "/../serializers/facet_config_deserializer.php");
 require_once(__DIR__ . "/../serializers/result_config_deserializer.php");
 require_once(__DIR__ . "/../serializers/facet_picks_serializer.php");
 
-global $result_definition;
+ConnectionHelper::openConnection();
 
-$conn = ConnectionHelper::createConnection();
+$facetXml = CacheHelper::get_facet_xml($_REQUEST['cache_id']);
+$resultXml = CacheHelper::get_result_xml($_REQUEST['cache_id']);
+$facetsConfig = FacetConfigDeserializer::deserialize($facetXml)->deleteBogusPicks();
+$resultConfig = ResultConfigDeserializer::deserialize($resultXml);
 
-$facet_xml = CacheHelper::get_facet_xml($_REQUEST['cache_id']);
-$facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
-$facet_params = FacetConfig::deleteBogusPicks($conn, $facet_params);
-$result_xml = CacheHelper::get_result_xml($_REQUEST['cache_id']);
-$resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
-$aggregation_code = $resultConfig["aggregation_code"];
-
-$q = ResultQueryCompiler::compileQuery($facet_params, $resultConfig);
+$q = ResultQueryCompiler::compileQuery($facetsConfig, $resultConfig);
 
 if (empty($q)) {
     exit;
@@ -40,33 +36,25 @@ if (empty($q)) {
 
 $text_table_doc = " data hämtat ur databas genom följande operation \n" . $q . "\n";
 
-$rs = ConnectionHelper::query($conn, $q);
+$rs = ConnectionHelper::query($q);
 
 $delimiter = "\t";
 
 $item_counter = 1;
 $use_count_item = false;
 $html_doc = "";
-foreach ($resultConfig["items"] as $headline) {
+foreach ($resultConfig->items as $headline) {
     if ($item_counter == 1 && $headline != "parish_level") {
         $use_count_item = true;
     }
     $item_counter++;
-    // First create header for the column.
-    foreach ($result_definition[$headline]["result_item"] as $res_def_key => $definition_item) {
-        foreach ($definition_item as $item_type => $item) {
+    foreach (ResultDefinitionRegistry::getDefinition($headline)->fields as $res_def_key => $definition_item) {
+        foreach ($definition_item as $item) {
             if ($res_def_key != 'sort_item' && !($res_def_key == 'count_item' && !$use_count_item)) {
-                // add (counting phras for counting variables)
-                if ($res_def_key == 'count_item' && $use_count_item) {
-                    $extra_text_info = " " . t("(antal med värde)", $facet_params["client_language"]) . " ";
-                    $html_doc .= " <BR>" . t($item["text"], $facet_params["client_language"]) . $extra_text_info . "<BR>";
-                    $text_table .= t($item["text"], $facet_params["client_language"]) . $extra_text_info;
-                    $text_table .= $delimiter;
-                } else {
-                    $html_doc .= "<BR> " . t($item["text"], $facet_params["client_language"]) . "<BR>";
-                    $text_table .= t($item["text"], $facet_params["client_language"]);
-                    $text_table .= $delimiter;
-                }
+                $extra_text_info = ($res_def_key == 'count_item' && $use_count_item) ?  " Number of items with a value " : "";
+                $html_doc .= " <BR>{$item->text}$extra_text_info<BR>";
+                $text_table .= "{$item->text}$extra_text_info";
+                $text_table .= $delimiter;
             }
         }
     }
@@ -80,21 +68,18 @@ while (($row = pg_fetch_assoc($rs))) {
     $text_table .= "\n";
 }
 
-global $result_definition, $applicationTitle;
-
-$matrix = FacetConfig::collectUserPicks($facet_params);
-$current_selections = FacetPicksSerializer::toHTML($matrix);
+ConnectionHelper::closeConnection();
 
 $selection_html = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">";
 $selection_html .= "<HTML>";
 $selection_html .= "<HEAD>";
-$selection_html .= " <TITLE> $applicationTitle - " . t("beskrivning av sökparametrar", $facet_params["client_language"]) . "</TITLE>";
+$selection_html .= " <TITLE>SEAD - Search variables description</TITLE>";
 $selection_html .= "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">";
 $selection_html .= "<link rel=\"stylesheet\" type=\"text/css\" href= \"/client/theme/style.css\"  />";
 $selection_html .= "</HEAD>";
-$selection_html .= " <BODY><h1> $applicationTitle - " . t("beskrivning av sökparametrar", $facet_params["client_language"]) . "</h1><BR>";
+$selection_html .= " <BODY><h1>SEAD - Search variables description</h1><BR>";
 $selection_html .= " Aggregation level<BR>";
-$selection_html .= $result_definition[$aggregation_code]["text"];
+$selection_html .= ResultDefinitionRegistry::getDefinition($resultConfig->aggregation_code)->text;
 $selection_html .= " <BR>Selected result variables:<BR>";
 $selection_html .= $html_doc;
 $selection_html .= "<BR>Current filter:<br>";

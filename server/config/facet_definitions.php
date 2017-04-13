@@ -232,7 +232,7 @@ $facet_definition = array
             "parents" => array("ROOT") //$facet_category[0]
         ),
 
-// Proxy types (on the site)
+    // Proxy types (on the site)
     "geochronology" =>
         array(
             "id_column" => "tbl_geochronology.age",
@@ -362,7 +362,7 @@ $facet_definition = array
             "default" => 1,
             "parents" => array("space_time") //$facet_category[3]
         ),
-//Site
+    //Site
     "sites" =>
         array(
             "id_column" => "tbl_sites.site_id",
@@ -411,7 +411,7 @@ $facet_definition = array
             "parents" => array("time") //$facet_category[3]
         ),
 
-//Ecocode
+    //Ecocode
     "ecocode" =>
         array(
             "id_column" => "tbl_ecocode_definitions.ecocode_definition_id",
@@ -511,7 +511,7 @@ $facet_definition = array
         ),
 
 
-//TODO:  Rdb code (eco-code?)
+    //TODO:  Rdb code (eco-code?)
     "feature_type" =>
         array(
             "id_column" => "tbl_feature_types.feature_type_id ",
@@ -591,7 +591,7 @@ $facet_definition = array
         ),
 
 
-//Eco code system
+    //Eco code system
 
 
     "activeseason" =>
@@ -697,4 +697,90 @@ $facet_definition = array
         )
 );
 
+// $facet_keys = [];
+// foreach ($facet_definition as $facet) {
+//     foreach (array_keys($facet) as $key)
+//         $facet_keys[$key] = $key;
+// }
+
+// print($facet_keys);
+
+
+class FacetDefinition
+{
+    public $facet_code = "";
+    public $facet_type;
+
+    public $table;
+    public $alias_table;
+    public $id_column;
+    public $name_column;
+    public $query_cond_table = [];
+    public $query_cond;
+    public $sort_column;
+
+    public $display_title = "";
+    public $applicable = "0";
+    public $default = 0;
+    public $count_facet;
+    public $counting_title;
+    public $summarize_type;
+    public $parents = [];
+
+    /* Client properties */
+    public $color;
+    public $icon_id_column;
+
+    /* Computed properties */
+    public $table_or_alias;
+    public $sql_sort_clause;
+
+    function __construct($facet_code, $property_array) {
+        $this->facet_code = $facet_code;
+        foreach ($property_array as $property => $value) {
+            $this->$property = $value;
+        }
+        // derived properties
+        $this->table_or_alias = $this->alias_table ?? $this->table;
+        $this->sql_sort_clause = empty($this->sort_column) ? "" : "ORDER BY {$this->sort_column} {$this->sort_order}";
+    }
+
+    public function isOfType($type)
+    {
+        return $this->facet_type == $type;
+    }
+
+    public function isOfTypeRange()
+    {
+        return $this->facet_type == "range";
+    }
+
+    // function camelize($input, $separator = '_')
+    // {
+    //     return str_replace($separator, '', ucwords($input, $separator));
+    // }
+}
+
+// FIXME: Wrap all global variables within a registry
+class FacetRegistry 
+{
+    public static $facetDefinitions = NULL;
+
+    public static function getDefinitions()
+    {
+        global $facet_definition;
+        if (self::$facetDefinitions == NULL) {
+            self::$facetDefinitions = [];
+            foreach ($facet_definition as $key => $item) {
+                self::$facetDefinitions[$key] = new FacetDefinition($key, $item);
+            }
+        }
+        return self::$facetDefinitions;
+    }
+
+    public static function getDefinition($facetCode)
+    {
+        return self::getDefinitions()[$facetCode];
+    }
+}
 ?>

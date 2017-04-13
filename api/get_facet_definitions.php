@@ -21,17 +21,19 @@ require_once(__DIR__ . "/../server/cache_helper.php");
 require_once(__DIR__ . "/../server/facet_content_counter.php");
 require_once(__DIR__ . "/serializers/facet_definition_serializer.php");
 
-$conn = ConnectionHelper::createConnection();
+ConnectionHelper::openConnection();
 
 global $facet_definition;
 
 $facet_range = CacheHelper::get_facet_min_max();
 if (empty($data)) {
-    $facet_range = DiscreteMinMaxFacetCounter::compute_max_min($conn);
+    $facet_range = DiscreteMinMaxFacetCounter::compute_max_min();
     CacheHelper::put_facet_min_max($facet_range);
 }
 
 $out = FacetDefinitionSerializer::toJSON($facet_definition, $facet_range);
+
+ConnectionHelper::closeConnection();
  
 echo $out;
 

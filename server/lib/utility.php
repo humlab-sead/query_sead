@@ -107,11 +107,13 @@ function array_join_surround($array, $glue = "", $prefix = "", $suffix = "", $de
     }, $array));
 }
 
-function array_add_unique(&$array, $mixed)
+function array_add_unique(&$array,...$params)
 {
-    $values = (empty($mixed) ? [] : (is_array($mixed) ? $mixed : [$mixed]));
-    foreach ($values as $value) {
-        $array[$value] = $value;
+    foreach ($params as $mixed) {
+        $values = (empty($mixed) ? [] : (is_array($mixed) ? $mixed : [$mixed]));
+        foreach ($values as $value) {
+            $array[$value] = $value;
+        }
     }
 }
 
@@ -123,9 +125,9 @@ function array_add_unique(&$array, $mixed)
  *
  * @return string
  */
-function str_prefix($prefix, $string)
+function str_prefix($prefix, $string, $glue="")
 {
-    return empty($string) ? "" : ($prefix . $string);
+    return empty($string) ? "" : "$prefix$glue$string";
 }
 
 /**
@@ -139,6 +141,10 @@ function str_prefix($prefix, $string)
 function value_default($value, $default)
 {
     return $value ?: $default;
+}
+
+function get(&$var, $key, $default=null) {
+    return (array_key_exists($key, $var) && !empty($var[$key])) ? $var[$key] : $default;
 }
 
 ?>

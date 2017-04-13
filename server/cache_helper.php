@@ -13,57 +13,57 @@ class CacheHelper {
 
     // Facet Config XML
     private static $facet_xml_context = 'facet_xml';
-    public static function get_facet_xml($cache_id)
+    public static function get_facet_xml($key)
     {
-        return self::Get(self::$facet_xml_context, "{$cache_id}.xml");
+        return self::Get(self::$facet_xml_context, "{$key}.xml");
     }
 
-    public static function put_facet_xml($cache_id, $data)
+    public static function put_facet_xml($key, $data)
     {
-        self::Put(self::$facet_xml_context, "{$cache_id}.xml", $data);
+        self::Put(self::$facet_xml_context, "{$key}.xml", $data);
     }    
 
-    // public static function put_facet_xml_generate_cache_id($conn, $data)
+    // public static function put_facet_xml_generate_cache_id($data)
     // {
-    //     $cache_id = CacheIdGenerator::generateFacetStateId($conn);
-    //     self::put_facet_xml($cache_id, $data);
-    //     return $cache_id;
+    //     $key = CacheIdGenerator::generateFacetStateId();
+    //     self::put_facet_xml($key, $data);
+    //     return $key;
     // }    
 
     // Result Config XML
     private static $facet_result_xml_context = 'result_xml_';
-    public static function get_result_xml($cache_id)
+    public static function get_result_xml($key)
     {
-        return self::Get(self::$facet_result_xml_context, "{$cache_id}.xml");
+        return self::Get(self::$facet_result_xml_context, "{$key}.xml");
     }
 
-    public static function put_result_xml($cache_id, $data)
+    public static function put_result_xml($key, $data)
     {
-        return self::Put(self::$facet_result_xml_context, "{$cache_id}.xml", $data);
+        return self::Put(self::$facet_result_xml_context, "{$key}.xml", $data);
     }
 
     // Facet Content
     private static $facet_content_context = 'facet_content_';
-    public static function get_facet_content($cache_id)
+    public static function get_facet_content($key)
     {
-        return self::Get(self::$facet_content_context, $cache_id);
+        return self::Get(self::$facet_content_context, $key);
     }
 
-    public static function put_facet_content($cache_id, $data)
+    public static function put_facet_content($key, $data)
     {
-        return self::Put(self::$facet_content_context, $cache_id, $data);
+        return self::Put(self::$facet_content_context, $key, $data);
     }
 
     // Result data
     private static $result_data_context = 'result_data_';
-    public static function get_result_data($type, $cacheId)
+    public static function get_result_data($type, $key)
     {
-        return self::Get($type . '_' . self::$result_data_context, $cacheId);
+        return self::Get($type . '_' . self::$result_data_context, $key);
     }
 
-    public static function put_result_data($type, $cacheId, $data)
+    public static function put_result_data($type, $key, $data)
     {
-        return self::Put($type . '_' . self::$result_data_context, $cacheId, $data);
+        return self::Put($type . '_' . self::$result_data_context, $key, $data);
     }
 
     // Facet category MIN/MAX
@@ -80,94 +80,27 @@ class CacheHelper {
     }
 
     // Generic Get / Put
-    public static function Get($contextId, $cacheId)
+    public static function Get($contextId, $key)
     {
-        return DataCache::Get($contextId, $cacheId);
+        return DataCache::Get($contextId, $key);
     }
 
     private static $ttl = 1500;
-    public static function Put($contextId, $cacheId, $data)
+    public static function Put($contextId, $key, $data)
     {
-        return DataCache::Put($contextId, $cacheId, self::$ttl, $data);
+        return DataCache::Put($contextId, $key, self::$ttl, $data);
     }
 }
 
 class CacheIdGenerator
 {
-    public static function generateFacetStateId($conn)
+    public static function generateFacetStateId()
     {
         $cache_seq_id = ConfigRegistry::getCacheSeq() ?? 'file_name_data_download_seq';
-        $row = ConnectionHelper::queryRow($conn, "select nextval('$cache_seq_id') as cache_id;");
+        $row = ConnectionHelper::queryRow("select nextval('$cache_seq_id') as cache_id;");
         $facetStateId = ConfigRegistry::getApplicationName() . $row["cache_id"];
         return $facetStateId;
     }
-
-    public static function generateFacetConfigSelectStateCacheId($facetConfig)
-    {
-        $activeKeys = FacetConfig::getCodesOfActiveFacets($facetConfig);
-        $itemsSelectedByUser = FacetConfig::getUserPickGroups($facetConfig);
-        if (empty($activeKeys)) {
-            return "";
-        }
-        $cache_id = "";
-        foreach ($activeKeys as $pos => $facetKey) {
-            if (!isset($itemsSelectedByUser[$facetKey])) {
-                continue;
-            }
-            $facet = FacetRegistry::getDefinition($facetKey);
-            $facetType = $facet["facet_type"];
-            foreach ($itemsSelectedByUser[$facetKey] as $skey => $selection_group) {
-                foreach ($selection_group as $y => $selection) {
-                    $selection_list_discrete = [];
-                    foreach ($selection as $z => $item) {
-                        $item = (array) $item;
-                        $value = $facetKey . "_" . $item["selection_type"] . "_" . $item["selection_value"];
-                        if ($facetType == "discrete") {
-                            $selection_list_discrete[] = $value;
-                        } else {
-                            $cache_id .= $value;
-                        }
-                    }
-                    if ($facetType == "discrete") {
-                        sort($selection_list_discrete);
-                        $cache_id .= implode('_', $selection_list_discrete);
-                    }
-                }
-            }
-        }
-        return $cache_id;
-    }
-
-    public static function computeFacetContentCacheId($facetConfig)
-    {
-        $filter_by_text = ConfigRegistry::getFilterByText();
-        $facetCode = $facetConfig["requested_facet"];
-        $flist_str = implode("", FacetConfig::getCodesOfActiveFacets($facetConfig));
-        $filter = $filter_by_text ? $facetConfig["facet_collection"][$facetCode]["facet_text_search"] : "no_text_filter";
-        return $facetCode . $flist_str . CacheIdGenerator::generateFacetConfigSelectStateCacheId($facetConfig) . $facetConfig["client_language"] . $filter;
-    }
-
-    public static function generateResultXmlSelectStateCacheId($resultXml)
-    {
-        global $result_definition;
-        $xml_object = new SimpleXMLElement($resultXml);
-        $result_items_str="";
-        $xml_object = $xml_object->result_input;
-        foreach ($xml_object->selected_item as $checked) {
-            if (!empty($result_definition[(string)$checked])) {
-                $result_items_str .= (string)$checked;
-            }
-        }
-        return (string)$result_items_str;
-    }
-
-    public static function computeResultConfigCacheId($facetConfig, $resultConfig, $resultXml)
-    {
-        return (string)$resultConfig["view_type"] ."_" . CacheIdGenerator::generateFacetConfigSelectStateCacheId($facetConfig) . 
-                self::generateResultXmlSelectStateCacheId($resultXml) . $facetConfig["client_language"] . $resultConfig["aggregation_code"];
-    }
-
-
 }
 
 ?>

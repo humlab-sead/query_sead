@@ -33,7 +33,7 @@ require_once __DIR__ . "/../connection_helper.php";
 @ini_set('error_log', __DIR__ . '/../../errors.log');
 
 $current_view_state_id = 7;
-global $db_information, $result_definition_item;
+global $db_information, $result_fields;
 define('CONNECTION_STRING',
     "host=" . $db_information['db_host'] . " " .
     "user=" . $db_information['db_user'] . " " .
@@ -50,97 +50,6 @@ $view_state_table="metainformation.tbl_view_states";
 $request_id = "";  // ROGER Not used??
 
 include_once("result_definitions.php"); // this file holds all result_defintion items
-
-// $result_definition["site_level"]["text"]="Site level";
-// $result_definition["site_level"]["applicable"]="0";
-// $result_definition["site_level"]['activated'] = "true";
-// $result_definition["site_level"]["result_type"]="single_item";
-// $result_definition["site_level"]["aggregation_type"]="site_level";
-// $result_definition["site_level"]["input_type"]="checkboxes";
-// $result_definition["site_level"]['aggregation_selector'] = true;
-// $result_definition["site_level"]["result_item"]["single_item"][]=$result_definition_item["sitename"] ;
-// $result_definition["site_level"]["result_item"]["sort_item"][]=$result_definition_item["sitename"] ;
-// $result_definition["site_level"]["result_item"]["text_agg_item"][]=$result_definition_item["record_type"];
-// $result_definition["site_level"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
-// $result_definition["site_level"]["result_item"]["link_item"][]=$result_definition_item["site_link"];
-// $result_definition["site_level"]["result_item"]["link_item_filtered"][]=$result_definition_item["site_link_filtered"];
-
-// $result_definition["sample_group_level"]["text"]="Sample group level";
-// $result_definition["sample_group_level"]["applicable"]="0";
-// $result_definition["sample_group_level"]['activated'] = "true";
-// $result_definition["sample_group_level"]["result_type"]="single_item";
-// $result_definition["sample_group_level"]["aggregation_type"]="sample_group_level";
-// $result_definition["sample_group_level"]["input_type"]="checkboxes";
-// $result_definition["sample_group_level"]['aggregation_selector'] = true;
-// $result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["sitename"] ;
-// $result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["sample_group"] ;
-// $result_definition["sample_group_level"]["result_item"]["sort_item"][]=$result_definition_item["sitename"] ;
-// $result_definition["sample_group_level"]["result_item"]["sort_item"][]=$result_definition_item["sample_group"] ;
-// $result_definition["sample_group_level"]["result_item"]["single_item"][]=$result_definition_item["record_type"];
-// $result_definition["sample_group_level"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
-// $result_definition["sample_group_level"]["result_item"]["link_item"][]=$result_definition_item["sample_group_link"] ;
-// $result_definition["sample_group_level"]["result_item"]["link_item_filtered"][]=$result_definition_item["sample_group_link_filtered"] ;
-
-// $result_definition["aggregate_all"]["text"]="Aggregate all";
-// $result_definition["aggregate_all"]["applicable"]="0";
-// $result_definition["aggregate_all"]['activated'] = "true";
-// $result_definition["aggregate_all"]["result_type"]="single_item";
-// $result_definition["aggregate_all"]["aggregation_type"]="aggregate_all";
-// $result_definition["aggregate_all"]["input_type"]="checkboxes";
-// $result_definition["aggregate_all"]['aggregation_selector'] = true;
-// $result_definition["aggregate_all"]["result_item"]["link_item_filtered"][]=$result_definition_item["aggregate_all_filtered"] ;
-// $result_definition["aggregate_all"]["result_item"]["count_item"][]=$result_definition_item["analysis_entities"];
-
-$result_definition["site_level"] = [
-    "text"                   => "Site level",
-    "applicable"             => "0",
-    'activated'              => "true",
-    "result_type"            => "single_item",
-    "aggregation_type"       => "site_level",
-    "input_type"             => "checkboxes",
-    'aggregation_selector'   => true,
-    "result_item" => [
-        "single_item"        => [ $result_definition_item["sitename"] ],
-        "sort_item"          => [ $result_definition_item["sitename"] ],
-        "text_agg_item"      => [ $result_definition_item["record_type"] ],
-        "count_item"         => [ $result_definition_item["analysis_entities"] ],
-        "link_item"          => [ $result_definition_item["site_link"] ],
-        "link_item_filtered" => [ $result_definition_item["site_link_filtered"] ]
-    ]
-];
-
-$result_definition["sample_group_level"] = [
-    "text"                   => "Sample group level",
-    "applicable"             => "0",
-    'activated'              => "true",
-    "result_type"            => "single_item",
-    "aggregation_type"       => "sample_group_level",
-    "input_type"             => "checkboxes",
-    'aggregation_selector'   => true,
-    "result_item" => [
-        "single_item"        => [ $result_definition_item["sitename"], $result_definition_item["sample_group"] , $result_definition_item["record_type"]],
-        "sort_item"          => [ $result_definition_item["sitename"], $result_definition_item["sample_group"] ],
-        "count_item"         => [ $result_definition_item["analysis_entities"] ],
-        "link_item"          => [ $result_definition_item["sample_group_link"] ],
-        "link_item_filtered" => [ $result_definition_item["sample_group_link_filtered"] ]
-    ]
-];
-
-$result_definition["aggregate_all"] =[
-    "text"                      => "Aggregate all",
-    "applicable"                => "0",
-    'activated'                 => "true",
-    "result_type"               => "single_item",
-    "aggregation_type"          => "aggregate_all",
-    "input_type"                => "checkboxes",
-    'aggregation_selector'      => true,
-    "result_item"               => [
-        "link_item_filtered"    => [ $result_definition_item["aggregate_all_filtered"] ],
-        "count_item"            => [ $result_definition_item["analysis_entities"] ]
-    ]
-];
-
-
 
 include_once(__DIR__ . "/facet_definitions.php");
 
@@ -195,8 +104,8 @@ class WeightedGraph {
         *      a.b_id = b.id
         */
         $join_columns = [];
-        $conn = ConnectionHelper::createConnection();
-        $rs2 = ConnectionHelper::query($conn, "select * from metainformation.tbl_foreign_relations");
+        ConnectionHelper::openConnection();
+        $rs2 = ConnectionHelper::query("SELECT * FROM metainformation.tbl_foreign_relations");
         while ($row = pg_fetch_assoc($rs2))
         {
             $sourceTable = $row["source_table"];
@@ -207,24 +116,25 @@ class WeightedGraph {
             $join_columns[$sourceTable][$targetTable] = $this->createJoinElement($sourceTable, $sourceColumn, $targetTable, $targetColumn, $weight);
             $join_columns[$targetTable][$sourceTable] = $this->createJoinElement($targetTable, $targetColumn, $sourceTable, $sourceColumn, $weight);
         }
-        pg_close($conn);
+        ConnectionHelper::closeConnection();
 
         foreach ($facet_definition as $facet_key => $facet_definition_temp)
         {
-            $alias_table = $facet_definition_temp["alias_table"];
+            if (!array_key_exists('alias_table', $facet_definition_temp))
+                continue;
+            $alias_table = $facet_definition_temp['alias_table'];
+            if (empty($facet_definition_temp['alias_table']))
+                continue;
             $source_table = $facet_definition_temp["table"];
-            if (isset($alias_table))
+            $temp_joins_conditions = $join_columns[$source_table];
+            foreach ($temp_joins_conditions as $remote_table => $join_info_array)
             {
-                $temp_joins_conditions = $join_columns[$source_table];
-                foreach ($temp_joins_conditions as $remote_table => $join_info_array)
-                {
-                    $join_info_array["home_columns"]   = str_replace($source_table, $alias_table, $join_info_array["home_columns"]);
-                    $join_info_array["remote_columns"] = str_replace($source_table, $alias_table, $join_info_array["remote_columns"]);
-                    $join_info_array["join_condition"] = str_replace($source_table, $alias_table, $join_info_array["join_condition"]);
+                $join_info_array["home_columns"]   = str_replace($source_table, $alias_table, $join_info_array["home_columns"]);
+                $join_info_array["remote_columns"] = str_replace($source_table, $alias_table, $join_info_array["remote_columns"]);
+                $join_info_array["join_condition"] = str_replace($source_table, $alias_table, $join_info_array["join_condition"]);
 
-                    $join_columns[$alias_table][$remote_table] = $join_info_array;
-                    $join_columns[$remote_table][$alias_table] = $join_info_array;
-                }
+                $join_columns[$alias_table][$remote_table] = $join_info_array;
+                $join_columns[$remote_table][$alias_table] = $join_info_array;
             }
         }
         return $join_columns;

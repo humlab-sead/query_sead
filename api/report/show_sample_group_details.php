@@ -61,37 +61,36 @@
 * - <sample_group_reporter->dataset_report>
 * - <sample_group_reporter->species_report>
 * - <sample_group_reporter->measured_values_report>
-*
-*
 */
+require_once __DIR__ . '/../../server/connection_helper.php';
 require_once __DIR__ . '/sample_group_queries.php';
 require_once __DIR__ . '/report_module.php';
 
-if (isset($_REQUEST["sample_group_id"]) && !empty($_REQUEST["sample_group_id"]) && is_numeric($_REQUEST["sample_group_id"])) {
-    $sample_group_id = $_REQUEST["sample_group_id"];
-} else {
+
+$sample_group_id = $_REQUEST["sample_group_id"];
+$cache_id = $_REQUEST["cache_id"];
+
+if (empty($sample_group_id) || !is_numeric($sample_group_id)) {
     echo "No sample_group_id specified.";
     exit;
 }
 
-$cache_id = $_REQUEST["cache_id"];
+ConnectionHelper::openConnection();
 
-if (!($conn = pg_connect(CONNECTION_STRING))) {
-    echo "Error: pg_connect failed.\n";
-    exit;
+if (!empty($cache_id)) {
+    echo get_select_info_as_html($cache_id);
 }
 
 $sample_group_reporter = new sample_group_reporter();
-if (!empty($cache_id)) {
-    echo get_select_info_as_html($conn, $cache_id);
-}
 
-echo $sample_group_reporter->sample_summary($conn, $sample_group_id, $cache_id);
-echo $sample_group_reporter->dataset_report($conn, $sample_group_id, $cache_id);
-echo $sample_group_reporter->species_report($conn, $sample_group_id, $cache_id);
-echo $sample_group_reporter->measured_values_report($conn, $sample_group_id, $cache_id)
+echo $sample_group_reporter->sample_summary($sample_group_id, $cache_id);
+echo $sample_group_reporter->dataset_report($sample_group_id, $cache_id);
+echo $sample_group_reporter->species_report($sample_group_id, $cache_id);
+echo $sample_group_reporter->measured_values_report($sample_group_id, $cache_id);
+
+ConnectionHelper::closeConnection();
+
 ?>
 
 </BODY>
-
 </HTML>

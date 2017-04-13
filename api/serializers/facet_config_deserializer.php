@@ -2,12 +2,14 @@
 
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
+require_once (__DIR__ . '/../../server/facet_config.php');
+
 class FacetConfigDeserializer
 {
 
     //***************************************************************************************************************************************************
     /*
-    Function: FacetConfigDeserializer::deserializeFacetConfig
+    Function: FacetConfigDeserializer::deserialize
     The xml-data that contains the facet information is processed and and stored in an array for futher use.
 
     Parameters:
@@ -44,39 +46,6 @@ class FacetConfigDeserializer
     Returns:
     Multidimensional associative array that represents the XML
     */
-
-    public static function deserializeFacetConfig($xml)
-    {
-        $xml_obj = simplexml_load_string($xml);
-
-        self::storeGlobalRequestId((string)$xml_obj->request_id);
-
-        $p["f_action"][0]     = "" . (string)$xml_obj->f_action->f_code;        // which facet triggeed the post
-        $p["f_action"][1]     = "" . (string)$xml_obj->f_action->action_type;   // what type of action triggered to post
-        $p["requested_facet"] = "" . (string)$xml_obj->requested_facet;     // Which facet wants to have new content
-        $p["client_language"] = "" . (string)$xml_obj->client_language;
-        
-        foreach ($xml_obj->facet as $key => $element) {
-            $facetCode = "" . $element->f_code;
-
-            $p["facet_collection"][$facetCode]["facet_start_row"] = (integer)$element->facet_start_row;
-            $p["facet_collection"][$facetCode]["facet_position"] = (integer)$element->facet_position;
-            $p["facet_collection"][$facetCode]["facet_number_of_rows"] = (integer)$element->facet_number_of_rows;
-            $p["facet_collection"][$facetCode]["facet_text_search"] = (string)$element->facet_text_search;
-            
-            if (!isset($element->selection_group)) {
-                continue;
-            }
-
-            foreach ($element->selection_group as $temp2 => $selection_group) {
-                if (isset($selection_group)) {
-                    $p["facet_collection"][$facetCode]["selection_groups"][$temp2][] = $selection_group;
-                }
-            }
-        }
-        return  $p;
-    }
-
     public static function storeGlobalRequestId($current_id)
     {
         // FIXME! Side effect!!!!
@@ -85,18 +54,43 @@ class FacetConfigDeserializer
         $request_id = "" . $current_id;
     }
 
-}
-
-/*class FacetConfig2
-{
-    public $facetType = "";
-    public $facetCode = "";
-    public $actionType = "";
-    public $language = "";
-    public $facetConfigs = [];
-
-    function __construct() {
+    public static function deserialize($xml)
+    {
+        $text_filter_enabled = ConfigRegistry::getFilterByText();
+        $xml_obj = simplexml_load_string($xml);
+        //self::storeGlobalRequestId((string)$xml_obj->request_id);
+        $facetConfigs = [];
+        $inactiveConfigs = [];  // TODO: Investigate is these are used and need to be saved
+        foreach ($xml_obj->facet as $element) {
+            $position = (integer)$element->facet_position;
+            if (!isset($position))
+                continue;
+            $picks = [];
+            foreach ($element->selection_group ?? [] as $group) {
+                // FIXME: Ensure that RANGE-values are extracted in correct order!!!
+                foreach ($group->selection ?? [] as $item) {
+                    $value = (array)$item;
+                    $picks[] = new FacetConfigPick($value["selection_type"], $value["selection_value"], $value["selection_text"] ?? "");
+                }
+            }
+            $facetCode =(string)$element->f_code;
+            $startRow = (integer)$element->facet_start_row;
+            $rowCount = (integer)$element->facet_number_of_rows;
+            $filter = $text_filter_enabled ? (string)$element->facet_text_search : "";
+            $config = new FacetConfig2($facetCode, $position, $startRow, $rowCount, $filter, $picks);
+            if (isset($position)) {
+                $facetConfigs[$facetCode] = $config;
+            } else {
+                $inactiveConfigs[$facetCode] = $config;
+            }
+        }
+        $requestId = (string)($xml_obj->request_id ?: ""); 
+        $requestType = (string)($xml_obj->f_action->action_type ?: ""); 
+        $targetCode = (string)($xml_obj->requested_facet ?: "");
+        $triggerCode = (string)($xml_obj->f_action->f_code ?: "");
+        $language = (string)$xml_obj->client_language ?? ""; 
+        $facetsConfig = new FacetsConfig2($requestId, $language, $facetConfigs, $requestType, $targetCode, $triggerCode);
+        $facetsConfig->inactiveConfigs = $inactiveConfigs;
+        return $facetsConfig;
     }
-}*/
-
-
+}

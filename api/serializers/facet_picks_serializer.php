@@ -3,7 +3,7 @@ class FacetPicksSerializer
 {
         /*
     Function: FacetPicksSerializer::toHTML
-    Serializes result from FacetConfig::collectFacetPicks to HTML.
+    Serializes result from FacetConfig->collectFacetPicks to HTML.
     */
     public static function toHTML($selection_rows_matrix)
     {

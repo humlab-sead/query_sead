@@ -86,21 +86,20 @@ class ListResultSerializer extends ResultSerializer {
 
     protected function getColumnMetaData($resultConfig)
     {
-        global $result_definition;
         $column_counter = 0;
         $column_meta_data = [];
-        foreach ($resultConfig["items"] ?? [] as $result_params_key) {
-            foreach ($result_definition[$result_params_key]["result_item"] as $result_column_type => $result_definition_item) {
-                foreach ($result_definition_item as $item_type => $result_item) {
-                    if ($result_column_type == "sort_item") {
+        foreach ($resultConfig->items ?? [] as $result_params_key) {
+            foreach (ResultDefinitionRegistry::getDefinition($result_params_key)->fields as $field_type => $fields) {
+                foreach ($fields as $field) {
+                    if ($field_type == "sort_item") {
                         continue;
                     }
                     $column_meta_data[$column_counter] = [
-                        "result_column_type" => $result_column_type,
-                        "link_url" => $result_item["link_url"],
-                        "link_label" => $result_item["link_label"],
-                        "result_column_title" => $result_item["text"],
-                        "result_column_title_extra_info" => ($result_column_type == 'count_item') ? "#items with value" : ""
+                        "result_column_type" => $field_type,
+                        "link_url" => $field->link_url,
+                        "link_label" => $field->link_label,
+                        "result_column_title" => $field->text,
+                        "result_column_title_extra_info" => ($field_type == 'count_item') ? "#items with value" : ""
                     ];
                     $column_counter++;
                 }
@@ -109,15 +108,15 @@ class ListResultSerializer extends ResultSerializer {
         return $column_meta_data;
     }
 
-    public function serialize($rsIter, $facetConfig, $resultConfig, $facetStateId, $extra)
+    public function serialize($rsIter, $facetsConfig, $resultConfig, $facetStateId, $extra)
     {
         $columns = $this->getColumnMetaData($resultConfig);
         $dataIter = new ListDataIterator($rsIter, $columns);
-        $serialized_data = $this->serializeData($dataIter, $facetConfig, $resultConfig, $facetStateId);
+        $serialized_data = $this->serializeData($dataIter, $facetsConfig, $resultConfig, $facetStateId);
         return $serialized_data;
     }
 
-    protected function serializeData($dataIter, $facetConfig, $resultConfig, $facetStateId)
+    protected function serializeData($dataIter, $facetsConfig, $resultConfig, $facetStateId)
     {
         return "";
     }   
@@ -143,7 +142,7 @@ class XmlListResultSerializer extends ListResultSerializer {
         return $data;
     }
 
-    protected function serializeData($dataIter, $facetConfig, $resultConfig, $facetStateId)
+    protected function serializeData($dataIter, $facetsConfig, $resultConfig, $facetStateId)
     {
         return $this->xml_encode($dataIter);
     }
@@ -190,7 +189,7 @@ class HtmlListResultSerializer extends ListResultSerializer {
         return $text;
     }
 
-    protected function serializeData($dataIter, $facetConfig, $resultConfig, $facetStateId)
+    protected function serializeData($dataIter, $facetsConfig, $resultConfig, $facetStateId)
     {
         $maxRows = ConfigRegistry::getMaxResultDefaultRows() ?? 10000;
 
@@ -221,9 +220,9 @@ EOS;
 
 class MapResultSerializer extends ResultSerializer 
 {
-    public function serialize($data, $facetConfig, $resultConfig, $facetStateId, $extra)
+    public function serialize($data, $facetsConfig, $resultConfig, $facetStateId, $extra)
     {
-        $out  = "<aggregation_code>{$resultConfig['aggregation_code']}</aggregation_code>\n<result_html></result_html>";
+        $out  = "<aggregation_code>{$resultConfig->aggregation_code}</aggregation_code>\n<result_html></result_html>";
         //$out .= "<sql_info><![CDATA[$q]]></sql_info>";
         $out .= "<sql_info></sql_info>";
         $out .= "<points>";

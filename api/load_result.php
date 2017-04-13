@@ -27,52 +27,36 @@ Sometimes a result modules can used multiple XML-schemas.
 see <facet_config.php> for function that parses XML document from client.
 
 Facet xml post: 
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/facet_post_xml.html
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/facet_post.xsd
+http://qsead.sead.se/xml_documentation/facet_post_xml.html
+http://qsead.sead.se/xml_documentation/facet_post.xsd
 
 Result xml post:
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_xml_post-schema.htm
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_xml_post-schema.xsd
-
+http://qsead.sead.se/xml_documentation/result_xml_post-schema.htm
+http://qsead.sead.se/xml_documentation/result_xml_post-schema.xsd
 
 XML response for the list tab  (shared across all applications): 
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_response_list.xsd
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_response_list.html
-
+http://qsead.sead.se/xml_documentation/result_response_list.xsd
+http://qsead.sead.se/xml_documentation/result_response_list.html
 
 XML post for result map:
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_map_post_schema.htm
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_map_post_schema.xsd
+http://qsead.sead.se/xml_documentation/result_map_post_schema.htm
+http://qsead.sead.se/xml_documentation/result_map_post_schema.xsd
 
 XML result map response for thematic mapping in map tab:
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_map_response_raster_overlay_schema.xsd
-http://dev.humlab.umu.se/frepalm/ships_test/xml_documentation/result_map_response_raster_overlay_schema.htm
+http://qsead.sead.se/xml_documentation/result_map_response_raster_overlay_schema.xsd
+http://qsead.sead.se/xml_documentation/result_map_response_raster_overlay_schema.htm
 
 Shared sequence for list, diagram, and map:
 	* initiate database connection using definition in bootstrap_application.php
-	* Process facetXml post using <FacetConfigDeserializer::deserializeFacetConfig> and store the post into a composite array
-	* Remove invalid discrete selection with the function <FacetConfig::deleteBogusPicks>
-	* Process result_xml post document using <ResultConfigDeserializer::deserializeResultConfig> storing the post into a composite array/objects
+	* Process facetXml post using <FacetConfigDeserializer::deserialize> and store the post into a composite array
+	* Remove invalid discrete selection with the function <deleteBogusPicks>
+	* Process result_xml post document using <ResultConfigDeserializer::deserialize> storing the post into a composite array/objects
 
 Sequence for list-data operation:
 	* Make cache-data identifier using function derive_selection 
 	* Render list using  <render_html>
 	* Save the query into a table (SEAD only?)
 
-Sequence for diagram load operation:
-	* Process the postdocument for the diagram options using <ResultConfigDeserializer::deserializeDiagramConfig>, stores the result in composite array
-	* Add all result_items from the result_xml document as potential y-axis in the diagram
-	* Derive the combinations of result variables and aggregations units e.g. one result variable for all parishes/units or one parish/unit and all result variables using the function get_group_y_data in custum_server_functions.php
-	* Handle exception if the client has not sent a valid/undefined y-variable or aggregation unit (such as county or a parish)
-	* Render the diagram data to be used using <result_render_diagram_data> in custom_server_functions.php. This will return the xml-data to be sent back to the client.
-
-Sequence for map load operation:
-	* Process xml-document for map-parameters using function using <ResultConfigDeserializer::deserializeMapConfig>. It stores the parameters into a composite array.
-	* Process symbol-xml document (if present) and make array for point symbols (SEAD/DIABAS)
-	* Render the map output for the client, NO LONGER VALID: which is different for each application 
-	* Functions on client-side are also different to handle the different kind of map-output.
-
-	<result_render_map_view.php>
 */
 
 require_once __DIR__ . '/../server/connection_helper.php';
@@ -85,6 +69,7 @@ require_once(__DIR__ . "/serializers/result_config_deserializer.php");
 require_once __DIR__ . '/serializers/result_serializer.php';
 require_once(__DIR__ . "/serializers/facet_picks_serializer.php");
 
+# TODO Move code to app service
 class LoadResultHelper {
 
     private static $compilers = [
@@ -104,10 +89,10 @@ class LoadResultHelper {
     private static $cacheables = [ "map" => false, "mapxml" => false, "listxml" => false, "listhtml" => true, "list" => true ];
     public static $isxml = [ "map" => true, "mapxml" => true, "listxml" => true, "listhtml" => false, "list" => false];
 
-    public static function getCompiler($conn, $requestType)
+    public static function getCompiler($requestType)
     {
         $compiler_class = self::$compilers[$requestType];
-        return new $compiler_class($conn);
+        return new $compiler_class();
     }
 
     public static function getSerializer($requestType)
@@ -133,11 +118,11 @@ class LoadResultHelper {
         return !empty($facetCacheId) ? CacheHelper::get_result_xml($facetCacheId) : $_REQUEST['result_xml'];
     }
 
-    public static function cacheInputData($conn)
+    public static function cacheInputData()
     {
         $cache_id  = $_REQUEST['facet_state_id'];
         if (empty($cache_id)) {
-            $cache_id = CacheIdGenerator::generateFacetStateId($conn);
+            $cache_id = CacheIdGenerator::generateFacetStateId();
             CacheHelper::put_facet_xml($cache_id, self::getFacetXml());
         }
         CacheHelper::put_result_xml($cache_id, self::getResultXml());
@@ -155,38 +140,30 @@ class LoadResultHelper {
     }
 }
 
-$conn          = ConnectionHelper::createConnection();
-$facetXml      = LoadResultHelper::getFacetXml();
-$resultXml     = LoadResultHelper::getResultXml();
-$facetConfig   = FacetConfigDeserializer::deserializeFacetConfig($facetXml); 
-$facetConfig   = FacetConfig::deleteBogusPicks($conn, $facetConfig);
-$resultConfig  = ResultConfigDeserializer::deserializeResultConfig($resultXml);
-$requestType   = $resultConfig["view_type"] . $resultConfig["client_render"];
-$resultCacheId = CacheIdGenerator::computeResultConfigCacheId($facetConfig, $resultConfig, $resultXml);
-$isCacheable   = LoadResultHelper::isCacheableResultData($requestType);
-$isCached      = false;
+ConnectionHelper::openConnection();
 
-$serialized_data = $isCacheable ? CacheHelper::get_result_data($requestType, $resultCacheId) : "";
-$isCached = $isCacheable && !empty($serialized_data);
+$facetsConfig    = FacetConfigDeserializer::deserialize(LoadResultHelper::getFacetXml())->deleteBogusPicks(); 
+$resultConfig    = ResultConfigDeserializer::deserialize(LoadResultHelper::getResultXml());
+$resultCacheId   = $resultConfig->generateCacheId($facetsConfig);
+$isCacheable     = LoadResultHelper::isCacheableResultData($resultConfig->requestType);
+$serialized_data = $isCacheable ? CacheHelper::get_result_data($resultConfig->requestType, $resultCacheId) : "";
+$isCached        = $isCacheable && !empty($serialized_data);
 
 if (empty($serialized_data)) {
-    $compiler = LoadResultHelper::getCompiler($conn, $requestType);
-    $serializer = LoadResultHelper::getSerializer($requestType);
-    $facetCacheId = LoadResultHelper::cacheInputData($conn);
-    $data = $compiler->compile($facetConfig, $resultConfig, $facetCacheId);
-    $serialized_data = $serializer->serialize($data['iterator'], $facetConfig, $resultConfig, $facetCacheId, $data['payload']);
+    $compiler = LoadResultHelper::getCompiler($resultConfig->requestType);
+    $serializer = LoadResultHelper::getSerializer($resultConfig->requestType);
+    $facetCacheId = LoadResultHelper::cacheInputData();
+    $data = $compiler->compile($facetsConfig, $resultConfig, $facetCacheId);
+    $serialized_data = $serializer->serialize($data['iterator'], $facetsConfig, $resultConfig, $facetCacheId, $data['payload']);
 }
 
 if ($isCacheable && !$isCached) {
-    LoadResultHelper::putCachedResultData($requestType, $resultCacheId, $serialized_data);
+    LoadResultHelper::putCachedResultData($resultConfig->requestType, $resultCacheId, $serialized_data);
 }
 
-$matrix = FacetConfig::collectUserPicks($facetConfig);
-$current_selections = FacetPicksSerializer::toHTML($matrix);
+$pick_data = FacetPicksSerializer::toHTML($facetsConfig->collectUserPicks());
 
-$current_request_id = $resultConfig["request_id"];
-
-if (!LoadResultHelper::$isxml[$requestType]) {
+if (!LoadResultHelper::$isxml[$resultConfig->requestType]) {
     // wrap non-xml return in CDATA tag
     $serialized_data = "<![CDATA[$serialized_data]]>";
 }
@@ -199,13 +176,13 @@ echo   "<response>";
 echo       $serialized_data;
 echo   "</response>";
 echo   "<current_selections>";
-echo       "<![CDATA[", $current_selections, "]]>";
+echo       "<![CDATA[", $pick_data, "]]>";
 echo   "</current_selections>";
 echo   "<request_id>";
-echo       $current_request_id;
+echo       $resultConfig->request_id;
 echo   "</request_id>";
 echo "</xml>";
 
-pg_close($conn);
+ConnectionHelper::closeConnection();
 
 ?>

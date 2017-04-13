@@ -1,5 +1,7 @@
 <?php
 
+require_once(__DIR__ . '/../../server/connection_helper.php');
+
 /*
 * class: sample_group_query
 * function to render query on sample_group level
@@ -15,13 +17,9 @@ class sample_group_query
     * returns:
     * resultset of query
     */
-    private function run_query($conn, $q)
+    private function run_query($q)
     {
-        if (($rs = pg_query($conn, $q)) <= 0) {
-            echo "Error: cannot execute site query. " . SqlFormatter::format($q, false) . " \n";
-            exit;
-        }
-        //   file_put_contents("sql_log.txt",  SqlFormatter::format($q, false).";\n", FILE_APPEND);
+        $rs = ConnectionHelper::query($q);
         return $rs;
     }
 
@@ -40,7 +38,6 @@ class sample_group_query
      * Then get all abundances arranged by sample_id, using array_agg function in postgres
      * Then use those two list to make a transposed matrix
      * params:
-     *  $conn - db connections
      *  $sample_group_id  -
      *  $cache_id - reference to filters set by users stored as xml
      *
@@ -50,11 +47,11 @@ class sample_group_query
      * see also:
      * <get_f_code_filter_query>
      */
-    function arrange_species_data($conn, $sample_group_id, $method_id, $cache_id)
+    function arrange_species_data($sample_group_id, $method_id, $cache_id)
     {
 
         $q = $this->get_physical_sample_id_query($sample_group_id, $method_id, $cache_id); // echo SqlFormatter::format($q,true);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         $physical_samples = [];
         while ($row = pg_fetch_assoc($rs)) {
             $physical_samples[$row["physical_sample_id"]]["sample_name"] = $row["sample_name"] . " "; //<BR>(".$row["physical_sample_id"].")";
@@ -63,7 +60,7 @@ class sample_group_query
         }
 
         $q = $this->render_species_count_query($sample_group_id, $method_id, $cache_id); // echo SqlFormatter::format($q,true);
-        $species_list = $this->get_species_list($conn, $q);
+        $species_list = $this->get_species_list($q);
 
         if (!empty($physical_samples)) {
             $data_array[0][0] = "Taxon || Physical sample";
@@ -476,11 +473,11 @@ class sample_group_query
     * Sample ids are rows and method/datasets are the columns.
     */
 
-    function arrange_measured_values($conn, $sample_group_id, $cache_id)
+    function arrange_measured_values($sample_group_id, $cache_id)
     {
         // get all dataset names as headings and dataset_id as key in array
         $q = $this->render_header_measured_values_query($sample_group_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
 
         while ($row = pg_fetch_assoc($rs)) {
             $data_set_list[$row["column_id"]] = "" . $row["method_name"] . "  " . $row["prep_method_name"]; //. " [".$row["column_id"]."]"; // add method in heading... prep_method_name
@@ -495,7 +492,7 @@ class sample_group_query
         }
 
         $q = $this->render_query_measured_values_by_sample_id($sample_group_id, $cache_id);
-        $rs = $this->run_query($conn, $q);
+        $rs = $this->run_query($q);
         $sample_names = $data_set_list = $data_array = [];
         while ($row = pg_fetch_assoc($rs)) {
             $sample_items = explode(";", $row["dataset_value_composites"]);

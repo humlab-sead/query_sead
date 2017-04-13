@@ -11,69 +11,67 @@ require_once __DIR__ . '/facet_content_counter.php'; //*
 
 class ResultCompiler
 {
-    public $conn = NULL;
-    function __construct($conn) {
-        $this->conn = $conn;
+    function __construct() {
     }
 
-    public function compile($facetConfig, $resultConfig, $facetStateId)
+    public function compile($facetsConfig, $resultConfig, $facetStateId)
     {
-        $q = $this->compileQuery($facetConfig, $resultConfig);
+        $q = $this->compileQuery($facetsConfig, $resultConfig);
         if (empty($q)) {
             return ['iterator' => NULL, 'payload' => NULL];
         }          
-        $data = ConnectionHelper::queryIter($this->conn, $q);
-        $extra = $this->getExtraPayload($facetConfig, $resultConfig, $facetStateId);
+        $data = ConnectionHelper::queryIter($q);
+        $extra = $this->getExtraPayload($facetsConfig, $resultConfig, $facetStateId);
         return [ 'iterator' => $data, 'payload' => $extra ];
     }
 
-    protected function getExtraPayload($facetConfig, $resultConfig, $facetCacheId)
+    protected function getExtraPayload($facetsConfig, $resultConfig, $facetCacheId)
     {
         return NULL;
     }
 
-    protected function compileQuery($facetConfig, $resultConfig)
+    protected function compileQuery($facetsConfig, $resultConfig)
     {
-        return ResultQueryCompiler::compileQuery($facetConfig, $resultConfig);
+        return ResultQueryCompiler::compileQuery($facetsConfig, $resultConfig);
     }
 }
 
 class HtmlListResultCompiler extends ResultCompiler {
-   function __construct($conn) {
-       parent::__construct($conn);
-   }
+    function __construct() {
+        parent::__construct();
+    }
 }
 
 class XmlListResultCompiler extends ResultCompiler {
-   function __construct($conn) {
-       parent::__construct($conn);
-   }
+    function __construct() {
+        parent::__construct();
+    }
 }
 
 class MapResultCompiler extends ResultCompiler {
 
     public $facetCode = NULL;
-    function __construct($conn) {
-        parent::__construct($conn);
+    function __construct() {
+        parent::__construct();
         $this->facetCode = "map_result";
     }
 
-    protected function getExtraPayload($facetConfig, $resultConfig, $facetCacheId)
+    protected function getExtraPayload($facetsConfig, $resultConfig, $facetCacheId)
     {
         $interval = 1;
-        $data = DiscreteFacetCounter::get_discrete_counts($this->conn, $this->facetCode, $facetConfig, $interval);
+        $data = DiscreteFacetCounter::getCount($this->facetCode, $facetsConfig, $interval);
         $filtered_count = $data ? $data["list"] : NULL;
         if ($filtered_count) {
-            $facetConfigWithoutPicks = FacetConfig::deleteUserPicks($facetConfig);
-            $data = DiscreteFacetCounter::get_discrete_counts($this->conn, $this->facetCode, $facetConfigWithoutPicks, $interval);
+            $facetsConfigWithoutPicks = $facetsConfig->deleteUserPicks();
+            $data = DiscreteFacetCounter::getCount($this->facetCode, $facetsConfigWithoutPicks, $interval);
             $un_filtered_count = $data ? $data["list"] : NULL;
         }
         return [ "filtered_count" => $filtered_count, "un_filtered_count" => $un_filtered_count ];
     }
 
-    protected function compileQuery($facetConfig, $resultConfig)
+    protected function compileQuery($facetsConfig, $resultConfig)
     {
-        return MapResultQueryCompiler::compileQuery($facetConfig, $this->facetCode);
+        return MapResultQueryCompiler::compileQuery($facetsConfig, $this->facetCode);
     }
 }
 

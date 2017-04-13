@@ -22,9 +22,7 @@ function get_view_state_language($view_state_id)
 {
     global $view_state_table, $default_language;
 
-    $conn = ConnectionHelper::createConnection();
-
-    $row = ConnectionHelper::queryRow($conn, "select * from $view_state_table where view_state_id = $view_state_id;");
+    $row = ConnectionHelper::queryRow("select * from $view_state_table where view_state_id = $view_state_id;");
 
     $view_state_xml = isset($row) ?  $row["view_state"] : "";
 
@@ -54,29 +52,13 @@ get a none-existing phrase from clients and add that phrase to the database.
 function language_receive_new_phrase($xml)
 {
     global $phrases_schema;
-    $schema_str = isset($phrases_schema) ? $phrases_schema . "." : "";
+    $schema_str = !empty($phrases_schema) ? $phrases_schema . "." : "";
     $data = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA);
-
-    $conn = ConnectionHelper::createConnection();
-
     $phrase = pg_escape_string($data->original_phrase);
-
-    //check that it really doesn't exist before doing anything
-    $exist_str = "SELECT id FROM " . $schema_str . "original_phrases WHERE phrase='" . $phrase . "'";
-
-    if (($rs2 = pg_query($conn, $exist_str)) <= 0) {
-        echo "Error: cannot execute query3. $exist_str \n";
-        exit;
-    }
-
+    $rs2 = ConnectionHelper::query("SELECT id FROM {$schema_str}original_phrases WHERE phrase='$phrase'");
     $exists = pg_num_rows($rs2);
-
     if ($exists == 0) {
-        $insert_query = "INSERT INTO " . $schema_str . "original_phrases (phrase) VALUES ('" . $phrase . "')";
-        if (($rs2 = pg_query($conn, $insert_query)) <= 0) {
-            echo "Error: cannot execute query3. $insert_query \n";
-            exit;
-        }
+        ConnectionHelper::query("INSERT INTO {$schema_str}original_phrases (phrase) VALUES ('$phrase')");
     }
     return "";
 }
@@ -87,24 +69,18 @@ Print the available languages as a javascript array for the client to use
 */
 function language_create_javascript_languages_definition_array()
 {
-
-    $conn = ConnectionHelper::createConnection();
     global $phrases_schema;
-
     $schema_str = isset($phrases_schema) ? $phrases_schema . "." : "";
-
-    $res = pg_query("SELECT * FROM " . $schema_str . "language_definitions");
-
+    $res = ConnectionHelper::query("SELECT * FROM {$schema_str}language_definitions");
     $js_out = "<script type=\"text/javascript\">\n";
     $js_out .= "var language_definitions = [];\n";
     while ($language_def = pg_fetch_assoc($res)) {
-        $js_out .= "language_definitions[" . $language_def['id'] . "] = [];\n";
-        $js_out .= "language_definitions[" . $language_def['id'] . "]['id'] = " . $language_def['id'] . ";\n";
-        $js_out .= "language_definitions[" . $language_def['id'] . "]['language'] = \"" . $language_def['language'] . "\";\n";
-        $js_out .= "language_definitions[" . $language_def['id'] . "]['language_name'] = \"" . $language_def['language_name'] . "\";\n";
+        $js_out .= "language_definitions[{$language_def['id']}] = [];\n";
+        $js_out .= "language_definitions[{$language_def['id']}]['id'] = " . $language_def['id'] . ";\n";
+        $js_out .= "language_definitions[{$language_def['id']}]['language'] = \"" . $language_def['language'] . "\";\n";
+        $js_out .= "language_definitions[{$language_def['id']}]['language_name'] = \"" . $language_def['language_name'] . "\";\n";
     }
     $js_out .= "</script>\n";
-
     return $js_out;
 }
 
@@ -115,19 +91,14 @@ Returns the phrases as javascript literal (one array).
 */
 function language_create_javascript_translation_arrays()
 {
-    $conn = ConnectionHelper::createConnection();
-
     global $phrases_schema;
     $schema_str = isset($phrases_schema) ? $phrases_schema . "." : "";
 
     $js_out = "<script type=\"text/javascript\">\n";
     $js_out .= "var languages = [];\n";
 
-    $q = "SELECT * FROM " . $schema_str . "language_definitions";;
-    if (($rs = pg_query($conn, $q)) <= 0) {
-        echo "Error: cannot execute query3. $q \n";
-        exit;
-    }
+    $q = "SELECT * FROM {$schema_str}language_definitions";;
+    $rs = ConnectionHelper::query($q);
     while ($row = pg_fetch_assoc($rs)) {
         //creates arrays for available languages
         $js_out .= "languages['" . $row["language"] . "'] = [];\n";
@@ -136,13 +107,12 @@ function language_create_javascript_translation_arrays()
     // fetch all orginal phrase and translated phrases.
     // If there are none existing transalated then add empty strings for all aviables language. (That why language_defition are joined without join-condiition)
 
-    $q = "SELECT *, language as def_language FROM " . $schema_str . "original_phrases," . $schema_str . "translated_phrases
-    where " . $schema_str . "translated_phrases.original_phrase_id=" . $schema_str . "original_phrases.id and language is not null and language <> ''";
+    $q = "SELECT *, language as def_language
+          FROM  {$schema_str}original_phrases, {$schema_str}translated_phrases
+          WHERE {$schema_str}translated_phrases.original_phrase_id= {$schema_str}original_phrases.id
+            AND language is not null and language <> ''";
 
-    if (($rs2 = pg_query($conn, $q)) <= 0) {
-        echo "Error: cannot execute query3. $q \n";
-        exit;
-    }
+    $rs2 = ConnectionHelper::query($q);
     while ($row = pg_fetch_assoc($rs2)) {
         $phrase_key = str_replace("\"", "\\\"", $row["phrase"]);
         $phrase_key = str_replace("__amp__", "&", $phrase_key);
@@ -156,23 +126,6 @@ function language_create_javascript_translation_arrays()
     return $js_out;
 }
 
-function language_translation_form_submit($form_data)
-{
-
-    foreach ($form_data as $key => $value) {
-        if (!empty($value)) {
-            //pg_query("SELECT id FROM languages WHERE id=");
-        }
-    }
-    return "Saved";
-}
-
-// function language_perform_update() {
-//     /* REMOVED (initilize of DB) */
-//     return "Updated";
-// }
-
-
 if (isset($_GET['f'])) {
     switch ($_GET['f']) {
         case 1:
@@ -180,10 +133,6 @@ if (isset($_GET['f'])) {
             break;
         case "language_new_phrase":
             echo language_receive_new_phrase($_POST['xml']);
-
-            break;
-        case "language_translation_form_submit":
-            echo language_translation_form_submit($_POST);
             break;
     }
 }

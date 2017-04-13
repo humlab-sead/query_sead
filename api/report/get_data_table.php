@@ -36,18 +36,15 @@ require_once(__DIR__ . "/../serializers/facet_config_deserializer.php");
 require_once(__DIR__ . "/../serializers/result_config_deserializer.php");
 require_once(__DIR__ . "/../serializers/facet_picks_serializer.php");
 
-global $result_definition;
+ConnectionHelper::openConnection();
 
-$conn = ConnectionHelper::createConnection();
+$facetXml = CacheHelper::get_facet_xml($_REQUEST['cache_id']);
+$facetsConfig = FacetConfigDeserializer::deserialize($facetXml)->deleteBogusPicks();
+$resultXml = CacheHelper::get_result_xml($_REQUEST['cache_id']);
+$resultConfig = ResultConfigDeserializer::deserialize($resultXml);
 
-$facet_xml = CacheHelper::get_facet_xml($_REQUEST['cache_id']);
-$facet_params = FacetConfigDeserializer::deserializeFacetConfig($facet_xml);
-$facet_params = FacetConfig::deleteBogusPicks($conn, $facet_params);
-$result_xml = CacheHelper::get_result_xml($_REQUEST['cache_id']);
-$resultConfig = ResultConfigDeserializer::deserializeResultConfig($result_xml);
-
-$aggregation_code = $resultConfig["aggregation_code"];
-$q = ResultQueryCompiler::compileQuery($facet_params, $resultConfig);
+$aggregation_code = $resultConfig->aggregation_code;
+$q = ResultQueryCompiler::compileQuery($facetsConfig, $resultConfig);
 
 if (empty($q)) {
     exit;
@@ -74,7 +71,7 @@ $objWorksheet2->getStyle('B')->getAlignment()->setWrapText(true); /// set wrap t
 $objWorksheet2->setCellValueByColumnAndRow(0, 1, 'SQL:'); // add a heading
 $objWorksheet2->setCellValueByColumnAndRow(1, 1, $q); // add the SQL
 
-$selection_matrix = FacetConfig::collectUserPicks($facet_params); // get the selection as matrix to be able to populate the filter sheet.
+$selection_matrix = $facetsConfig->collectUserPicks(); // get the selection as matrix to be able to populate the filter sheet.
 $objWorksheet1->setCellValueByColumnAndRow(0, 2, 'FILTERS');
 
 $columns_base = array("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "X", "Y", "Z");
@@ -105,31 +102,28 @@ foreach ($selection_matrix ?? [] as $facet_code => $selection_info) {
     $column_counter++;
 }
 
-$rs = ConnectionHelper::query($conn, $q);
+$rs = ConnectionHelper::query($q);
 
 $item_counter = 1;
 $use_count_item = false; //this is use to flag if aggregation is used and then indicate the usage.
 
 $column_counter = 0;
-foreach ($resultConfig["items"] as $headline) {
-    if ($item_counter == 1 && $headline != "parish_level") {
+foreach ($resultConfig->items as $headline) {
+    if ($item_counter == 1) {
         $use_count_item = true;
     }
     $item_counter++;
 
     // First create header for the column.
-    foreach ($result_definition[$headline]["result_item"] as $res_def_key => $definition_item) {
-        foreach ($definition_item as $item_type => $item) {
+    foreach (ResultDefinitionRegistry::getDefinition($headline)->fields as $res_def_key => $definition_item) {
+        foreach ($definition_item as $item) {
             if ($res_def_key != 'sort_item' && !($res_def_key == 'count_item' && !$use_count_item)) {
                 // add (counting phras for counting variables)
                 if ($res_def_key == 'count_item' && $use_count_item) {
-                    $extra_text_info = " " . t("(antal med värde)", $facet_params["client_language"]) . " ";
-                    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow($column_counter, 1, t($item["text"], $facet_params["client_language"]) . t($extra_text_info, $facet_params["client_language"]));
+                    $extra_text_info = " Number of items with a values ";
+                    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow($column_counter, 1, $item["text"] . $extra_text_info);
                 } else {
-                    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow($column_counter, 1, t($item["text"], $facet_params["client_language"]));
-                    if (isset($item["word_wrap"])) {
-                        $use_word_wrap[$columns[$column_counter]] = true;; // use the result_definition_item to know whether a columns should have word_wrap in excel document
-                    }
+                    $objPHPExcel->setActiveSheetIndex(0)->setCellValueByColumnAndRow($column_counter, 1, $item["text"]);
                 }
                 $column_counter++;
             }
@@ -146,16 +140,6 @@ while ($i < $column_counter) // only use the columns that have data
 }
 $columns = $columns_to_use;
 $objPHPExcel->setActiveSheetIndex(0);
-foreach ($columns as $key => $column_char) {
-    if (!isset($use_word_wrap[$column_char]))
-        $objPHPExcel->getActiveSheet()->getColumnDimension($column_char)->setAutoSize(true); // set autosize to all column
-}
-if (isset($use_word_wrap)) {
-    foreach ($use_word_wrap as $key => $element) {
-        $objPHPExcel->getActiveSheet()->getColumnDimension($key)->setWidth(20);
-        $objPHPExcel->getActiveSheet()->getStyle($key)->getAlignment()->setWrapText(true);
-    }
-}
 
 $objPHPExcel->getActiveSheet()->getPageSetup()->setOrientation(PHPExcel_Worksheet_PageSetup::ORIENTATION_LANDSCAPE);
 
@@ -215,5 +199,7 @@ header('Cache-Control: max-age=0');
 
 $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
 $objWriter->save('php://output');
+
+ConnectionHelper::closeConnection();
 exit;
 ?>
