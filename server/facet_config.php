@@ -2,7 +2,9 @@
 
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
+require_once __DIR__ . '/config/facet_definitions.php';
 require_once __DIR__ . '/query_builder.php';
+require_once __DIR__ . '/sql_query_builder.php';
 require_once __DIR__ . '/lib/utility.php';
 
 class FacetsConfig2
@@ -113,6 +115,11 @@ class FacetsConfig2
                '_' . $this->getPicksCacheId() .
                '_' . $this->language . '_' . $filter;
     }
+
+    public function getTargetTextFilter()
+    {
+        return isset($this->targetConfig) ? trim($this->targetConfig->textFilter) : "";
+    }
 }
 
 class FacetConfig2
@@ -123,7 +130,7 @@ class FacetConfig2
     public $rowCount = 0;
     public $textFilter = "";
     public $picks = [];
-    public $facet = NULL;    // Facet definition
+    public $facet = NULL;
     public $textFilterClause = "";
 
     function __construct($facetCode, $position, $startRow, $rowCount, $filter, $picks) {
@@ -151,6 +158,7 @@ class FacetConfig2
             $this->picks = [];
     }
 
+    // TODO: Move to SqlQueryBuilder
     function getTextFilterClause()
     {
         return empty($this->textFilter) ? "" : " AND {$this->facet->name_column} ILIKE '{$this->textFilter}' ";
@@ -187,29 +195,12 @@ class DeleteBogusPickService
     public static function deleteBogusPicks(&$facetsConfig)
     {
         foreach ($facetsConfig->getFacetCodes() ?: [] as $facetCode) {
-            $config = $facetsConfig->getConfig($facetCode);        
-            if ($config->facet->facet_type != "discrete") {
+            $config = $facetsConfig->getConfig($facetCode);
+            if ($config->facet->facet_type != "discrete" || count($config->picks) == 0) {
                 continue;
             }
-            if (count($config->picks) == 0) {
-                continue;
-            }
-            
-            $query = QueryBuildService::compileQuery2($facetsConfig, $facetCode);
-            $picks_clause = array_join_surround($config->getPickValues(), ",", "('", "'::text)", "");
-
-            $sql = "
-                SELECT DISTINCT pick_id, {$config->facet->name_column} AS name
-                FROM {$query->sql_table}
-                JOIN (
-                    VALUES {$picks_clause}
-                ) AS x(pick_id)
-                    ON x.pick_id = {$config->facet->id_column}::text
-                    {$query->sql_joins}
-                WHERE 1 = 1
-                    {$query->sql_where2}
-            ";
-
+            $query = QuerySetupService::setup2($facetsConfig, $facetCode);
+            $sql = ValidPicksSqlQueryBuilder::compile($query, $config->facet, $config->getPickValues());
             $rows = ConnectionHelper::queryRows($sql);
             $values = array_map(function ($x) { return new FacetConfigPick("discrete", $x["pick_id"], $x["name"]); }, $rows);
             $config->picks = $values;

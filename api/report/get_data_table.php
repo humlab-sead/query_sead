@@ -29,9 +29,9 @@ date_default_timezone_set('Europe/Stockholm');
 
 require_once(__DIR__ . '/../../server/config/environment.php');
 require_once(__DIR__ . '/../../server/lib/PHPExcel/PHPExcel.php');
-require_once(__DIR__ . '/../../server/result_query_compiler.php');
+require_once(__DIR__ . '/../../server/result_sql_compiler.php');
 require_once(__DIR__ . '/../../server/connection_helper.php');
-require_once(__DIR__ . '/../../server/cache_helper.php');
+require_once(__DIR__ . '/../cache_helper.php');
 require_once(__DIR__ . "/../serializers/facet_config_deserializer.php");
 require_once(__DIR__ . "/../serializers/result_config_deserializer.php");
 require_once(__DIR__ . "/../serializers/facet_picks_serializer.php");
@@ -44,7 +44,7 @@ $resultXml = CacheHelper::get_result_xml($_REQUEST['cache_id']);
 $resultConfig = ResultConfigDeserializer::deserialize($resultXml);
 
 $aggregation_code = $resultConfig->aggregation_code;
-$q = ResultQueryCompiler::compileQuery($facetsConfig, $resultConfig);
+$q = ResultSqlQueryCompiler::compile($facetsConfig, $resultConfig);
 
 if (empty($q)) {
     exit;

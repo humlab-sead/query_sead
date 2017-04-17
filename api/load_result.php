@@ -62,22 +62,22 @@ Sequence for list-data operation:
 require_once __DIR__ . '/../server/connection_helper.php';
 require_once __DIR__ . '/../server/lib/Cache.php';
 require_once __DIR__ . '/../server/facet_config.php';
-require_once __DIR__ . '/../server/cache_helper.php';
-require_once __DIR__ . '/../server/result_compiler.php';
-require_once(__DIR__ . "/serializers/facet_config_deserializer.php");
-require_once(__DIR__ . "/serializers/result_config_deserializer.php");
+require_once __DIR__ . '/cache_helper.php';
+require_once __DIR__ . '/../server/result_data_loader.php';
+require_once __DIR__ . "/serializers/facet_config_deserializer.php";
+require_once __DIR__ . "/serializers/result_config_deserializer.php";
 require_once __DIR__ . '/serializers/result_serializer.php';
-require_once(__DIR__ . "/serializers/facet_picks_serializer.php");
+require_once __DIR__ . "/serializers/facet_picks_serializer.php";
 
 # TODO Move code to app service
 class LoadResultHelper {
 
-    private static $compilers = [
-        "map" => "MapResultCompiler",
-        "mapxml" => "MapResultCompiler",
-        "listxml" => "XmlListResultCompiler",
-        "listhtml" => "HtmlListResultCompiler",
-        "list" => "HtmlListResultCompiler"
+    private static $loaders = [
+        "map" => "MapResultDataLoader",
+        "mapxml" => "MapResultDataLoader",
+        "listxml" => "ResultDataLoader",
+        "listhtml" => "ResultDataLoader",
+        "list" => "ResultDataLoader"
     ];
     private static $serializers = [
         "map" => "MapResultSerializer",
@@ -89,10 +89,10 @@ class LoadResultHelper {
     private static $cacheables = [ "map" => false, "mapxml" => false, "listxml" => false, "listhtml" => true, "list" => true ];
     public static $isxml = [ "map" => true, "mapxml" => true, "listxml" => true, "listhtml" => false, "list" => false];
 
-    public static function getCompiler($requestType)
+    public static function getLoader($requestType)
     {
-        $compiler_class = self::$compilers[$requestType];
-        return new $compiler_class();
+        $loader_class = self::$loaders[$requestType];
+        return new $loader_class();
     }
 
     public static function getSerializer($requestType)
@@ -128,44 +128,34 @@ class LoadResultHelper {
         CacheHelper::put_result_xml($cache_id, self::getResultXml());
         return $cache_id;
     }
-
-    public static function putCachedResultData($type, $cache_id, $data)
-    {
-        CacheHelper::put_result_data($type, $cache_id, $data); 
-    }
-
-    public static function getCachedResultData($type, $cache_id)
-    {
-        return CacheHelper::get_result_data($type, $cache_id); 
-    }
 }
 
 ConnectionHelper::openConnection();
 
 $facetsConfig    = FacetConfigDeserializer::deserialize(LoadResultHelper::getFacetXml())->deleteBogusPicks(); 
 $resultConfig    = ResultConfigDeserializer::deserialize(LoadResultHelper::getResultXml());
+
 $resultCacheId   = $resultConfig->generateCacheId($facetsConfig);
 $isCacheable     = LoadResultHelper::isCacheableResultData($resultConfig->requestType);
 $serialized_data = $isCacheable ? CacheHelper::get_result_data($resultConfig->requestType, $resultCacheId) : "";
-$isCached        = $isCacheable && !empty($serialized_data);
+$isStoredInCache = $isCacheable && !empty($serialized_data);
 
 if (empty($serialized_data)) {
-    $compiler = LoadResultHelper::getCompiler($resultConfig->requestType);
+    $loader = LoadResultHelper::getLoader($resultConfig->requestType);
     $serializer = LoadResultHelper::getSerializer($resultConfig->requestType);
     $facetCacheId = LoadResultHelper::cacheInputData();
-    $data = $compiler->compile($facetsConfig, $resultConfig, $facetCacheId);
+    $data = $loader->load($facetsConfig, $resultConfig, $facetCacheId);
     $serialized_data = $serializer->serialize($data['iterator'], $facetsConfig, $resultConfig, $facetCacheId, $data['payload']);
 }
 
-if ($isCacheable && !$isCached) {
-    LoadResultHelper::putCachedResultData($resultConfig->requestType, $resultCacheId, $serialized_data);
+if ($isCacheable && !$isStoredInCache) {
+    CacheHelper::put_result_data($resultConfig->requestType, $resultCacheId, $serialized_data);
 }
 
 $pick_data = FacetPicksSerializer::toHTML($facetsConfig->collectUserPicks());
 
 if (!LoadResultHelper::$isxml[$resultConfig->requestType]) {
-    // wrap non-xml return in CDATA tag
-    $serialized_data = "<![CDATA[$serialized_data]]>";
+    $serialized_data = "<![CDATA[$serialized_data]]>"; // wrap non-xml return in CDATA tag
 }
 
 // FIXME: Convert to JSON instead om XML

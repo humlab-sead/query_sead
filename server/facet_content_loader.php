@@ -1,16 +1,15 @@
 <?php
 
-require_once(__DIR__ . '/facet_content_counter.php');
-require_once(__DIR__ . '/cache_helper.php');
+require_once __DIR__ . '/facet_histogram_loader.php';
 require_once __DIR__ . '/lib/utility.php';
-require_once(__DIR__ . '/query_builder.php');
+require_once __DIR__ . '/query_builder.php';
 
 class FacetContent {
 
     public $facetCode;
-    public $requestType;    // = $facetsConfig->requestType
-    public $startRow;       // = $facetsConfig->requestType
-    public $rowCount;      // = $facetsConfig->rowCount
+    public $requestType;
+    public $startRow;
+    public $rowCount;
     public $interval;
     public $intervalQuery;
     public $facetsConfig;
@@ -41,6 +40,21 @@ class FacetContent {
         $this->histogram = $histogram ?? [];
         $this->pickMatrix = $pickMatrix ?? [];
     }
+
+    public function computeWindow()
+    {
+        $facetsConfig = $this->facetsConfig;
+        if ($facetsConfig->targetFacet->isOfType("range")) {
+            return [0, 250];
+        }
+        $offset = $facetsConfig->targetConfig->startRow;
+        $limit = $facetsConfig->targetConfig->rowCount;
+        if ($this->requestType == "populate_text_search") {
+            $offset = ArrayHelper::findIndex($this->rows, $facetsConfig->targetConfig->textFilter);
+            $offset = max(0, min($offset, $this->totalRowCount - 12));
+        }
+        return [$offset, $limit];
+    }
 }
 
 class FacetContentLoader {
@@ -50,16 +64,12 @@ class FacetContentLoader {
         return [ NULL, NULL ];
     }
 
-    protected function getFacetCategoryCount($facetCode, $facetsConfig, $interval_query)
-    {
-        return NULL;
-    }
-
     public function get_facet_content($facetsConfig)
     {
         list($interval, $intervalQuery) = $this->compileIntervalQuery($facetsConfig, $facetsConfig->targetCode);
-        $histogram = $this->getFacetCategoryCount($facetsConfig->targetCode, $facetsConfig, $intervalQuery);
+        $histogram = $this->getHistogramLoader()->load($facetsConfig->targetCode, $facetsConfig, $intervalQuery);
         $pickMatrix = $facetsConfig->collectUserPicks($facetsConfig->targetCode);
+        // FIXME Extract to seperate function such as generateHistogramMetaData
         $rows = [];
         $cursor = ConnectionHelper::query($intervalQuery);
         while ($row = pg_fetch_assoc($cursor)) {
@@ -101,28 +111,14 @@ class FacetContentLoader {
         return NULL;
     }
 
-// FIXME SEE ABOVE
+    // FIXME SEE ABOVE
     private function getExtraRowInfo($facetsConfig, $facetCode)
     {
         $facet = FacetRegistry::getDefinition($facetCode);
-        $query = QueryBuildService::compileQuery($facetsConfig, $facetCode, $data_tables, $facetsConfig->getFacetCodes());
-        $q1 = <<<EOS
-            SELECT DISTINCT id, name
-            FROM (
-                SELECT {$facet->id_column} AS id, Coalesce({$facet->name_column},'No value') AS name, $sort_column AS sort_column
-                FROM {$query->sql_table} 
-                     {$query->sql_joins}
-                WHERE 1 = 1
-                  {$query->sql_where2}
-                GROUP BY name, id, sort_column
-                ORDER BY {$facet->sort_column}
-            ) AS tmp
-EOS;
-        $rs = ConnectionHelper::execute($q1);
-        while ($row = pg_fetch_assoc($rs)) {
-            $extra_row_info[$row["id"]] = $row["name"];
-        }
-        return $extra_row_info ?? [];
+        $query = QuerySetupService::setup($facetsConfig, $facetCode, $data_tables, $facetsConfig->getFacetCodes());
+        $sql = FacetContentExtraRowInfoSqlQueryBuilder::compile($query, $facet);
+        $values = ConnectionHelper::queryKeyedValues($sql, 'id', 'name');
+        return $values ?? [];
     }
 }
 
@@ -136,10 +132,8 @@ class RangeFacetContentLoader extends FacetContentLoader {
     private function computeRangeLowerUpper($facetCode)
     {
         $facet = FacetRegistry::getDefinition($facetCode);
-        $q = "SELECT MAX({$facet->id_column}) AS max, MIN({$facet->id_column}) AS min " .
-             "FROM {$facet->table}";
-        $row = ConnectionHelper::queryRow($q);
-        $facet_range = ["upper" => $row["max"], "lower" => $row["min"]];
+        $sql = RangeLowerUpperSqlQueryBuilder::compile(NULL, $facet);
+        $facet_range = ConnectionHelper::queryRow($sql);
         return $facet_range;
     }
 
@@ -160,38 +154,15 @@ class RangeFacetContentLoader extends FacetContentLoader {
         return $limits;
     }
 
-    /*
-    function: getRangeQuery
-    get the sql-query for facet with interval data by computing a sql-query by adding the interval number into a sql-text
-    */
-
-    private function getRangeQuery($interval, $min_value, $max_value, $interval_count)
+    protected function compileIntervalQuery($facetsConfig, $facetCode, $interval_count=120)
     {
-        $pieces = [];
-        $lower = $min_value;
-        for ($i = 0; $i <= $interval_count && $lower <= $max_value; $i++) {
-            $upper = $lower + $interval;
-            $pieces[] = "($lower, $upper, '$lower => $upper', '')";
-            $lower += $interval;
-        }
-        return "SELECT lower, upper, id, name FROM (VALUES " . implode("\n,", $pieces) . ") AS X(lower, upper, id, name)";
-    }
-
-    protected function compileIntervalQuery($facetsConfig, $facetCode)
-    {
-        $interval_count = 120;
         $limits = $this->getLowerUpperLimit($facetsConfig, $facetCode);
         $interval = floor(($limits["upper"] - $limits["lower"]) / $interval_count);
         if ($interval <= 0) {
             $interval = 1;
         }
-        $q1 = $this->getRangeQuery($interval, $limits["lower"], $limits["upper"], $interval_count);
-        return [ $interval, $q1 ];
-    }
-
-    protected function getFacetCategoryCount($facetCode, $facetsConfig, $interval_query)
-    {
-        return RangeFacetCounter::getCount($facetCode, $facetsConfig, $interval_query);
+        $sql = RangeIntervalSqlQueryBuilder::compile($interval, $limits["lower"], $limits["upper"], $interval_count);
+        return [ $interval, $sql ];
     }
 
     protected function getCategoryItemValue($row)
@@ -208,20 +179,20 @@ class RangeFacetContentLoader extends FacetContentLoader {
     {
         return "\n " . $this->getCategoryItemName($row);
     }
+
+    protected function getHistogramLoader()
+    {
+        return new RangeFacetHistogramLoader();
+    }
 }
 
 class DiscreteFacetContentLoader extends FacetContentLoader {
 
     protected function compileIntervalQuery($facetsConfig, $notused)
     {
-        $query = QueryBuildService::compileQuery($facetsConfig, $facetsConfig->targetCode, [], $facetsConfig->getFacetCodes());
-        $sql = $this->compileSQL($facetsConfig, $facetsConfig->targetFacet, $query);
+        $query = QuerySetupService::setup($facetsConfig, $facetsConfig->targetCode, [], $facetsConfig->getFacetCodes());
+        $sql = DiscreteContentSqlQueryBuilder::compile($query, $facetsConfig->targetFacet, $facetsConfig->getTargetTextFilter());
         return [ 1, $sql ];
-    }
-
-    protected function getFacetCategoryCount($facetCode, $facetsConfig, $notused)
-    {
-        return DiscreteFacetCounter::getCount($facetCode, $facetsConfig, NULL);
     }
 
     protected function getCategoryItemValue($row)
@@ -238,47 +209,10 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
         // }
     }
 
-    protected function compileSQL($facetsConfig, $facet, $query): string
+    protected function getHistogramLoader()
     {
-        $text_criteria = $this->getTextFilterClause($facetsConfig, $facet->name_column);
-        $sort_clause = str_prefix(", {$facet->sort_column} ", $facet->sql_sort_clause);
-        $sql = "
-            SELECT {$facet->id_column} AS id, {$facet->name_column} AS name
-            FROM {$query->sql_table}
-                 {$query->sql_joins}
-            WHERE 1 = 1
-              {$text_criteria}
-              {$query->sql_where2}
-            GROUP BY {$facet->id_column}, {$facet->name_column}
-            {$sort_clause}";
-        return $sql;
-    }
-
-    function getTextFilterClause($facetsConfig, $column_name)
-    {
-        $filter = trim($facetsConfig->targetConfig->textFilter);
-        return empty($filter) ? "" : " AND $column_name ILIKE '$filter' ";
+        return new DiscreteFacetHistogramLoader();
     }
 }
 
-// FIXME: Move to API Service
-$facet_content_loaders = array(
-    "discrete" => new DiscreteFacetContentLoader(),
-    "range" => new RangeFacetContentLoader()
-);
-
-class FacetContentService {
-
-    public static function load($facetsConfig)
-    {
-        global $facet_content_loaders;
-        $cacheId = $facetsConfig->getCacheId();
-        if (!($facetContent = CacheHelper::get_facet_content($cacheId))) {
-            $loader = $facet_content_loaders[$facetsConfig->targetFacet->facet_type];
-            $facetContent = $loader->get_facet_content($facetsConfig);
-            CacheHelper::put_facet_content($cacheId, $facetContent);
-        }
-        return $facetContent;
-    }
-}
 ?>

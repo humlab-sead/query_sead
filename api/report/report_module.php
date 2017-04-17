@@ -1,6 +1,6 @@
 <?php
 
-require_once(__DIR__ . '/../../server/cache_helper.php');
+require_once(__DIR__ . '/../cache_helper.php');
 require_once(__DIR__ . '/../../server/connection_helper.php');
 require_once(__DIR__ . '/../../server/facet_config.php');
 require_once(__DIR__ . '/../../server/query_builder.php');
@@ -25,7 +25,7 @@ function get_f_code_filter_query($cache_id, $facetCode = "result_facet", $extraT
     $facet = FacetRegistry::getDefinition($facetCode);
     $facet_xml = CacheHelper::get_facet_xml($cache_id);
     $facetsConfig = FacetConfigDeserializer::deserialize($facet_xml)->deleteBogusPicks();
-    $query = QueryBuildService::compileQuery2($facetsConfig, $facetCode, $extraTables);
+    $query = QuerySetupService::setup2($facetsConfig, $facetCode, $extraTables);
     $sql = "SELECT DISTINCT {$facet->id_column} \n" .
            "FROM {$query->sql_table} \n" .
            "     {$query->sql_joins} \n" .
@@ -291,7 +291,7 @@ class site_reporter extends base_reporter
      * Info about sample_group(s) for site(s)
      */
 
-    function sample_group_report($site_id, $applicationName, $cache_id)
+    function sample_group_report($site_id, $cache_id)
     {
         $q = $this->site_query_obj->get_sample_group_info_query($site_id, $cache_id);
         $rs = $this->run_query($q);

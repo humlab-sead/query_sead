@@ -57,7 +57,7 @@ class FacetConfigDeserializer
     public static function deserialize($xml)
     {
         $text_filter_enabled = ConfigRegistry::getFilterByText();
-        $xml_obj = simplexml_load_string($xml);
+        $xml_obj = simplexml_load_string($xml ?: "");
         //self::storeGlobalRequestId((string)$xml_obj->request_id);
         $facetConfigs = [];
         $inactiveConfigs = [];  // TODO: Investigate is these are used and need to be saved
@@ -70,7 +70,13 @@ class FacetConfigDeserializer
                 // FIXME: Ensure that RANGE-values are extracted in correct order!!!
                 foreach ($group->selection ?? [] as $item) {
                     $value = (array)$item;
-                    $picks[] = new FacetConfigPick($value["selection_type"], $value["selection_value"], $value["selection_text"] ?? "");
+                    if (empty($value["selection_value"])) {
+                        continue;
+                    }
+                    $picks[] = new FacetConfigPick(
+                        (string)$value["selection_type"],
+                        (float)$value["selection_value"],
+                        (string)$value["selection_text"] ?? "");
                 }
             }
             $facetCode =(string)$element->f_code;

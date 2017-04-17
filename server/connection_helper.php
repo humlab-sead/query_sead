@@ -1,5 +1,6 @@
 <?php
 
+require_once __DIR__ . "/config/environment.php";
 require_once __DIR__ . "/lib/SqlFormatter.php";
 
 class RecordSetIterator {
@@ -114,6 +115,26 @@ class ConnectionHelper
         return $rows;
     }
 
+    public static function queryKeyedRows($sql, $key_name, $conn=NULL)
+    {
+        $rows = [];
+        $rs = ConnectionHelper::execute($sql);
+        while ($row = pg_fetch_assoc($rs)) {
+            $rows[$row[$key_name]] = $row;
+        }
+        return $rows;
+    }
+
+    public static function queryKeyedValues($sql, $key_name, $value_name, $conn=NULL)
+    {
+        $values = [];
+        $rs = ConnectionHelper::execute($sql);
+        while ($row = pg_fetch_assoc($rs)) {
+            $values[$row[$key_name]] = $row[$value_name];
+        }
+        return $values;
+    }
+
     public static function queryRow($sql, $conn=NULL)
     {
         $rs = ConnectionHelper::query($sql, $conn);
@@ -121,6 +142,3 @@ class ConnectionHelper
         return $row;
     }
 }
-
-
-?>

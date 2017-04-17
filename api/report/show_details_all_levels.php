@@ -82,7 +82,7 @@ $sample_group_reporter = new sample_group_reporter();
 echo $site_reporter->site_info_report($site_id, $cache_id);
 echo $site_reporter->dating_report($site_id, $cache_id);
 echo $site_reporter->reference_report($site_id, $cache_id);
-echo $site_reporter->sample_group_report($site_id, "sead", $cache_id);
+echo $site_reporter->sample_group_report($site_id, $cache_id);
 echo $site_reporter->dataset_report($site_id, $cache_id);
 
 $sample_group_id = null;

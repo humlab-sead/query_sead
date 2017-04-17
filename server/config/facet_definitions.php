@@ -782,5 +782,10 @@ class FacetRegistry
     {
         return self::getDefinitions()[$facetCode];
     }
+
+    public static function getOfType($type)
+    {
+        return array_filter(self::getDefinitions(), function ($x) use($type) { return $x->facet_type == $type;});
+    }
 }
 ?>

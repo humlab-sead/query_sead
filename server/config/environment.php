@@ -1,28 +1,13 @@
 <?php
-/* 
- * Select which application the framework should run.
- * 
- */
 
-$applicationName = "sead";
-$application_name = "sead";
+require_once __DIR__ . "/credentials.php";
 
-$applicationTitle = $applicationTitle ?? "SEAD - The Strategic Environmental Archaeology Database";
-
-function getServerName() {
-	return $_SERVER['SERVER_NAME'];
-}
-
-function getServerPrefixPath() {
-	$path = $_SERVER['PHP_SELF'];
-	$pathinfo = pathinfo($path);
-	return $pathinfo['dirname']."/";
-}
-
-function getApplication(){
-    global $applicationName;
-    return $applicationName;
-}
+define('CONNECTION_STRING',
+    "host={$db_information['db_host']} " .
+    "user={$db_information['db_user']} " .
+    "dbname={$db_information['db_database']} " .
+    "password={$db_information['db_password']} " .
+    "port={$db_information['db_port']}");
 
 class ConfigRegistry
 {
@@ -30,6 +15,18 @@ class ConfigRegistry
     public const application_name = "sead";
     public const cache_seq = "metainformation.file_name_data_download_seq";
     public const filter_by_text = true;
+    public const client_result_module_path = "client/result_modules";
+    public const cache_dir = __DIR__ . "/../../api/cache";
+
+    public static function getServerName() {
+        return $_SERVER['SERVER_NAME'];
+    }
+
+    public static function getServerPrefixPath() {
+        $path = $_SERVER['PHP_SELF'];
+        $pathinfo = pathinfo($path);
+        return $pathinfo['dirname']."/";
+    }
 
     public static function getMaxResultDefaultRows()
     {
@@ -47,27 +44,18 @@ class ConfigRegistry
     public static function getFilterByText(){
         return self::filter_by_text;
     }
+
+    public static function generateSessionKey(){
+        $ip = $_SERVER['REMOTE_ADDR'];
+        $timeStamp = time();
+        return sha1($ip . "_" . $timeStamp);
+    }
+
+    public static function getClientResultModules()
+    {
+        global $client_result_module_path;
+        return glob(self::client_result_module_path ."/*.js");
+    }
 }
-
-
-/**
- * Creates a session specific key. This is a  workaround for the session_handling in php which limits the number
- * of concurrent open connections to a postgresql database.
- * The session variable is computed from client ip and a timestamp at point of creation.
- */
-function generateSessionKey(){
-    $ip = $_SERVER['REMOTE_ADDR'];
-    $timeStamp = time();
-    return sha1($ip . "_" . $timeStamp);
-}
-
-$client_result_module_path = "client/result_modules";
-
-function getClientResultModules()
-{
-    global $client_result_module_path;
-    return glob("$client_result_module_path/*.js");
-}
-
 
 ?>

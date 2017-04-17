@@ -77,7 +77,7 @@ $site_reporter = new site_reporter();
 echo $site_reporter->site_info_report($site_id, $cache_id);
 echo $site_reporter->dating_report($site_id, $cache_id);
 echo $site_reporter->reference_report($site_id, $cache_id);
-echo $site_reporter->sample_group_report($site_id, "sead", $cache_id);
+echo $site_reporter->sample_group_report($site_id, $cache_id);
 echo $site_reporter->dataset_report($site_id, $cache_id);
 echo $site_reporter->species_report($site_id, $cache_id);
 echo $site_reporter->measured_values_report($site_id, $cache_id);

@@ -32,7 +32,7 @@
     <script type="text/javascript" src="//code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.9/highcharts.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.9/js/modules/exporting.js"></script>
-    <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyDEnaCiVoQ54k1MFbUECGJttDU1Vj7pPOw&sensor=false"></script>
+    <script type="text/javascript" src="//maps.google.com/maps/api/js?key=AIzaSyDEnaCiVoQ54k1MFbUECGJttDU1Vj7pPOw&sensor=false"></script>
 
     <script type="text/javascript" src="client/client_definitions.js"></script>
     <script type="text/javascript">
@@ -42,13 +42,13 @@
 
     <script type="text/javascript" src="client/user.js"></script>
     <script type="text/javascript">
-        var application_address = "<?php echo getServerName() ?>";
-        var application_prefix_path = "<?php echo getServerPrefixPath() ?>";
+        var application_address = "<?php echo ConfigRegistry::getServerName() ?>";
+        var application_prefix_path = "<?php echo ConfigRegistry::getServerPrefixPath() ?>";
         var application_name = "sead";
         var filter_by_text = true;
         var currentUser = new User();
         var use_web_socket = false; 
-        currentUser.sessionKey = "<?php echo generateSessionKey() ?>";
+        currentUser.sessionKey = "<?php echo ConfigRegistry::generateSessionKey() ?>";
     </script>
 
     <script type="text/javascript">
@@ -57,7 +57,7 @@
         var result_modules = [];
     </script>
     <?php
-        foreach (getClientResultModules() as $module_file) {
+        foreach (ConfigRegistry::getClientResultModules() as $module_file) {
             echo "<script type=\"text/javascript\" src=\"$module_file\"></script>";
         }
     ?>

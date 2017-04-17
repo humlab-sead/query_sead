@@ -19,7 +19,6 @@ class FacetContentSerializer {
 
     private static function serializeFacetData($facetContent, $action_type, $start_row, $num_row)
     {
-        global $request_id;
         if (empty($facetContent)) {
             return "<facets></facets>";
         }
@@ -27,6 +26,7 @@ class FacetContentSerializer {
         if ($action_type == "populate_text_search") {
             $start_row = ($start_row <= ($num_row / 2)) ? 0 : ($start_row - round(($num_row / 2)));
         }
+        $request_id = "0"; // FIXME - check where it us stored!"
         $xml  = "<facets>" .
                 "<facet_c>\n" .
                 "<request_id>$request_id</request_id>\n" .
@@ -37,12 +37,12 @@ class FacetContentSerializer {
                 "<count_of_selections>{$facetContent->countOfSelections}</count_of_selections>\n" .
                 "<range_interval>{$facetContent->interval}</range_interval>\n" .
                 "<total_number_of_rows><![CDATA[{$facetContent->totalRowCount}]]></total_number_of_rows>\n" .
-                "<start_row>$start_row</start_row>" .
-                "<scroll_to_row>$scroll_to_row</scroll_to_row>" .
-                "<action_type><![CDATA[$action_type]]></action_type>" .
+                "<start_row>$start_row</start_row>\n" .
+                "<scroll_to_row>$scroll_to_row</scroll_to_row>\n" .
+                "<action_type><![CDATA[$action_type]]></action_type>\n" .
                 "<rows>\n";
         $row_counter = 0;
-        for ($i = $start_row; $i <= $start_row + $num_row && $facetContent->rowCount > $i && !empty($facetContent->rows[$i]); $i++) {
+        for ($i = $start_row; $i <= $start_row + $num_row && $facetContent->totalRowCount > $i && !empty($facetContent->rows[$i]); $i++) {
             $row = $facetContent->rows[$i];
             if ($row['direct_counts'] == '')
                 continue;

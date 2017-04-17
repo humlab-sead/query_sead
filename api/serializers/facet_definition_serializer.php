@@ -10,7 +10,7 @@ class FacetDefinitionSerializer {
         $items = [];
         foreach ($facet_definition as $facet_key => $facet)
         {
-            if ($facet["applicable"] != 1)
+            if ($facet["applicable"] != "1")
                 continue;
 
             $counting_title = value_default($facet["counting_title"], "Number of observations");

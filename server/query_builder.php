@@ -164,7 +164,7 @@ class QueryBuilder
         return $joins;
     }
 
-    public function get_query_information($facetsConfig, $facetCode, $extra_tables, $facetCodes)
+    public function getQuerySetup($facetsConfig, $facetCode, $extra_tables, $facetCodes)
     {
         $target_facet = FacetRegistry::getDefinition($facetCode);
 
@@ -193,10 +193,11 @@ class QueryBuilder
 
         $routes = $this->computeShortestJoinPaths($target_facet->table_or_alias, $unique_tables);
         $reduced_routes = RouteReducer::reduce($routes ?? []);
+        $target_text_filter = isset($facetsConfig, $facetsConfig->targetConfig) ? trim($facetsConfig->targetConfig->textFilter) : "";
 
         $join_clause = $this->compileQueryJoins($reduced_routes ?? [], $join_criterias);
 
-        $querySetup = new QuerySetup($target_facet, $join_clause, $filter_clauses, $routes, $reduced_routes);
+        $querySetup = new QuerySetup($target_facet, $join_clause, $filter_clauses, $routes, $reduced_routes, $target_text_filter);
 
         return $querySetup;
     }
@@ -247,7 +248,7 @@ class QuerySetup
     public $sql_where;
     public $sql_where2;
     public $sql_joins;
-
+    public $target_text_filter;
     public $none_reduced_routes;
     public $reduced_routes;
 
@@ -257,7 +258,7 @@ class QuerySetup
     public $where;
     public $joins; 
 
-    function __construct($facet, $sql_joins, $sql_filter_clauses, $none_reduced_routes, $reduced_routes) {
+    function __construct($facet, $sql_joins, $sql_filter_clauses, $none_reduced_routes, $reduced_routes, $target_text_filter) {
 
         $this->facet = $facet;
         $this->fields = [ $facet->id_column, $facet->name_column ];
@@ -266,10 +267,12 @@ class QuerySetup
         $this->sql_where = $this->generateWhereClause($facet, $sql_filter_clauses);
         $this->sql_where2 = str_prefix("AND ", $this->sql_where);
         $this->sql_joins = $sql_joins;
-
+        $this->target_text_filter = $target_text_filter;
         $this->none_reduced_routes = $none_reduced_routes;
         $this->reduced_routes = $reduced_routes;
         
+        $filter = trim($facetsConfig->targetConfig->textFilter);
+
         // FIXME: remove
         $this->select_fields = $this->sql_fields;
         $this->tables = $this->sql_table;
@@ -288,7 +291,8 @@ class QuerySetup
     }
 }
 
-class QueryBuildService {
+// TODO Convert to non-static functions
+class QuerySetupService {
 
     //***************************************************************************************************************************************************
     /*
@@ -314,22 +318,24 @@ class QueryBuildService {
     Returns:
         Query object with SQL-parts
     */
-    public static function compileQuery($facetsConfig, $facetCode, $extraTables, $facetCodes)
+    public static function setup($facetsConfig, $facetCode, $extraTables, $facetCodes)
     {
-        global $weightedGraph;
-        $query_builder = new QueryBuilder($weightedGraph);
-        $querySetup = $query_builder->get_query_information($facetsConfig, $facetCode, $extraTables, $facetCodes);
+        $graph = WeightedGraph::create();
+        $query_builder = new QueryBuilder($graph);
+        $querySetup = $query_builder->getQuerySetup($facetsConfig, $facetCode, $extraTables, $facetCodes);
         return $querySetup;
     }
 
-    public static function compileQuery2($facetsConfig, $facetCode, $extraTables = [])
+    public static function setup2($facetsConfig, $facetCode, $extraTables = [])
     {
         $facetCodes = $facetsConfig->getFacetCodes();
         if (!in_array($facetCode, $facetCodes)) {
             $facetCodes[] = $facetCode;
         }
-        $querySetup = self::compileQuery($facetsConfig, $facetCode, $extraTables, $facetCodes);
+        $querySetup = self::setup($facetsConfig, $facetCode, $extraTables, $facetCodes);
         return $querySetup;
     }
 }
+
+
 ?>

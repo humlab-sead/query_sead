@@ -17,21 +17,21 @@ category - for grouping of facets in facet control area
 error_reporting( error_reporting() & ~E_NOTICE );
 require_once(__DIR__ . "/../server/lib/Cache.php");
 require_once(__DIR__ . "/../server/connection_helper.php");
-require_once(__DIR__ . "/../server/cache_helper.php");
-require_once(__DIR__ . "/../server/facet_content_counter.php");
+require_once(__DIR__ . "/cache_helper.php");
+require_once(__DIR__ . "/../server/facet_histogram_loader.php");
 require_once(__DIR__ . "/serializers/facet_definition_serializer.php");
 
 ConnectionHelper::openConnection();
 
 global $facet_definition;
 
-$facet_range = CacheHelper::get_facet_min_max();
+$bounds = CacheHelper::get_range_category_bounds();
 if (empty($data)) {
-    $facet_range = DiscreteMinMaxFacetCounter::compute_max_min();
-    CacheHelper::put_facet_min_max($facet_range);
+    $bounds = RangeCategoryBoundsLoader::load();
+    CacheHelper::put_range_category_bounds($bounds);
 }
 
-$out = FacetDefinitionSerializer::toJSON($facet_definition, $facet_range);
+$out = FacetDefinitionSerializer::toJSON($facet_definition, $bounds);
 
 ConnectionHelper::closeConnection();
  

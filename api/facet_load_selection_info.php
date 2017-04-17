@@ -20,7 +20,7 @@ ConnectionHelper::closeConnection();
 header("Content-Type: text/xml");
 
 // FIXME: Move to serializer (add args)
-echo "<?xml version=\"1.0\" encoding=\"utf-8\" ?>";
+echo "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
 echo "<data>";
 echo "<f_code>", $facetsConfig->targetCode, "</f_code>\n";
 echo "<report_html><![CDATA[", $tooltip, "]]></report_html>\n";
