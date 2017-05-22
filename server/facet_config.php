@@ -12,7 +12,7 @@ class FacetsConfig2
     public $requestId = "";
     public $language = "";
     public $requestType = "";       // Request specifier ("populate", ...)
-    public $targetCode = "";        // Target facet code i.e. facet for which new data is requested 
+    public $targetCode = "";        // Target facet code i.e. facet for which new data is requested
     public $triggerCode = "";       // Facet code that triggerd the request (some preceeding facet)
     public $facetConfigs = [];      // Current client facet configurations
     public $inactiveConfigs = [];   // Those having unset position
@@ -69,11 +69,6 @@ class FacetsConfig2
             $config->clearPicks();
     }
 
-    /*
-    Function: collectUserPicks
-    Collects user picks/selections from active facets.
-    */
-
     public function collectUserPicks($onlyCode = false)
     {
         $matrix = [ 'counts' => [] ];
@@ -91,6 +86,17 @@ class FacetsConfig2
             $matrix['counts'][$config->facet->facet_type] += count($config->picks);
         }
         return $matrix;
+    }
+
+    public function hasPicks($facetType = NULL)
+    {
+        foreach ($this->facetConfigs as $config) {
+            if (count($config->picks) == 0)
+                continue;
+            if ($facetType == NULL || $facetType == $config->facet->facet_type)
+                return true;
+        }
+        return false;
     }
 
     public function deleteBogusPicks()
@@ -163,6 +169,28 @@ class FacetConfig2
     {
         return empty($this->textFilter) ? "" : " AND {$this->facet->name_column} ILIKE '{$this->textFilter}' ";
     }
+
+    public function getPage()
+    {
+        return [ $this->startRow, $this->rowCount ];
+    }
+
+    public function getPickedLowerUpperBounds()
+    {
+        $bounds = [];
+        foreach ($this->picks as $pick) {
+            $bounds[$pick->type] = $pick->value;
+        }
+        return $bounds;
+    }
+
+    // FIXME: Move to a FacetRepository?
+    public function getStorageLowerUpperBounds()
+    {
+        $sql = RangeLowerUpperSqlQueryBuilder::compile(NULL, $this->facet);
+        $facet_bound = ConnectionHelper::queryRow($sql);
+        return $facet_bound;
+    }
 }
 
 class FacetConfigPick
@@ -201,7 +229,7 @@ class DeleteBogusPickService
             }
             $query = QuerySetupService::setup2($facetsConfig, $facetCode);
             $sql = ValidPicksSqlQueryBuilder::compile($query, $config->facet, $config->getPickValues());
-            $rows = ConnectionHelper::queryRows($sql);
+            $rows = ConnectionHelper::queryRows($sql) ?: [];
             $values = array_map(function ($x) { return new FacetConfigPick("discrete", $x["pick_id"], $x["name"]); }, $rows);
             $config->picks = $values;
         }

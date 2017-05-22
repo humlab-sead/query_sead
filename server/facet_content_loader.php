@@ -1,99 +1,99 @@
 <?php
 
-require_once __DIR__ . '/facet_histogram_loader.php';
+require_once __DIR__ . '/category_distribution_loader.php';
 require_once __DIR__ . '/lib/utility.php';
 require_once __DIR__ . '/query_builder.php';
 
 class FacetContent {
 
+    public $facetsConfig;
     public $facetCode;
     public $requestType;
+    public $totalRowCount;
+    public $compiledDistribution;
+    public $rawDistribution;
+
     public $startRow;
     public $rowCount;
     public $interval;
     public $intervalQuery;
-    public $facetsConfig;
-    public $totalRowCount;
-    public $rows;
-    public $report;
-    public $reportHtml;
-    public $reportXml;
     public $countOfSelections;
-    public $histogram;
     public $pickMatrix;
 
-    function __construct($facetsConfig, $rows,  $histogram, $pickMatrix, $interval, $intervalQuery)
+    function __construct($facetsConfig, $compiledDistribution, $rawDistribution, $pickMatrix, $interval, $intervalQuery)
     {
-        $this->facetCode = $facetsConfig->targetCode;
-        $this->requestType = $facetsConfig->requestType; 
-        $this->startRow = $facetsConfig->targetConfig->startRow;
-        $this->rowCount = $facetsConfig->targetConfig->rowCount;  
-        $this->interval = $interval;
-        $this->intervalQuery = $intervalQuery;
-        $this->facetsConfig = $facetsConfig;
-        $this->rows = $rows ?? [];
-        $this->totalRowCount = count($this->rows);
-        $this->report = ""; // FIXME: compute in serialize!
-        $this->reportHtml = "";// FIXME: compute in client!
-        $this->reportXml = "";// FIXME: compute in serialize!
-        $this->countOfSelections = ""; // FIXME or remove
-        $this->histogram = $histogram ?? [];
-        $this->pickMatrix = $pickMatrix ?? [];
+        $this->facetsConfig         = $facetsConfig;
+        $this->facetCode            = $facetsConfig->targetCode;
+        $this->compiledDistribution = $compiledDistribution ?? [];
+        $this->rawDistribution      = $rawDistribution ?? [];                   // category-count from DB as a key-value list
+        $this->totalRowCount        = count($this->compiledDistribution);
+        $this->requestType          = $facetsConfig->requestType; 
+        $this->startRow             = $facetsConfig->targetConfig->startRow;
+        $this->rowCount             = $facetsConfig->targetConfig->rowCount;  
+        $this->interval             = $interval;
+        $this->intervalQuery        = $intervalQuery;
+        $this->countOfSelections    = "";                                       // FIXME or remove (sent to client)
+        $this->pickMatrix           = $pickMatrix ?? [];
     }
 
-    public function computeWindow()
+    public function getPage()
     {
         $facetsConfig = $this->facetsConfig;
         if ($facetsConfig->targetFacet->isOfType("range")) {
             return [0, 250];
         }
-        $offset = $facetsConfig->targetConfig->startRow;
-        $limit = $facetsConfig->targetConfig->rowCount;
+        list($offset, $size) = $facetsConfig->targetConfig->getPage();
         if ($this->requestType == "populate_text_search") {
-            $offset = ArrayHelper::findIndex($this->rows, $facetsConfig->targetConfig->textFilter);
+            $offset = ArrayHelper::findIndex($this->compiledDistribution, $facetsConfig->targetConfig->textFilter);
             $offset = max(0, min($offset, $this->totalRowCount - 12));
         }
-        return [$offset, $limit];
+        return [$offset, $size];
     }
 }
 
 class FacetContentLoader {
+
+    public function load($facetsConfig)
+    {
+        list($interval, $intervalQuery) = $this->compileIntervalQuery($facetsConfig, $facetsConfig->targetCode);
+
+        //$extraCategoryInfo = $this->getExtraCategoryInfo($facetsConfig, $facet->extra_row_info_facet);
+        $rawDistribution = $this->getRawDistribution($facetsConfig, $intervalQuery);
+        $compiledDistribution = $this->compileDistribution($rawDistribution, $intervalQuery, $extraCategoryInfo);
+        $pickMatrix = $facetsConfig->collectUserPicks($facetsConfig->targetCode);
+
+        $facetContent = new FacetContent($facetsConfig, $compiledDistribution, $rawDistribution, $pickMatrix, $interval, $intervalQuery);
+        return $facetContent;
+    }
 
     protected function compileIntervalQuery($facetsConfig, $facetCode)
     {
         return [ NULL, NULL ];
     }
 
-    public function get_facet_content($facetsConfig)
+    private function getRawDistribution($facetsConfig, $intervalQuery)
     {
-        list($interval, $intervalQuery) = $this->compileIntervalQuery($facetsConfig, $facetsConfig->targetCode);
-        $histogram = $this->getHistogramLoader()->load($facetsConfig->targetCode, $facetsConfig, $intervalQuery);
-        $pickMatrix = $facetsConfig->collectUserPicks($facetsConfig->targetCode);
-        // FIXME Extract to seperate function such as generateHistogramMetaData
-        $rows = [];
+        $loader = CategoryDistributionLoader::create($facetsConfig->targetFacet->facet_type);
+        $rawDistribution = $loader->load($facetsConfig->targetCode, $facetsConfig, $intervalQuery);
+        return $rawDistribution;
+    }
+
+    protected function compileDistribution($rawDistribution, $intervalQuery, $extraCategoryInfo)
+    {
+        $compiledDistribution = [];
         $cursor = ConnectionHelper::query($intervalQuery);
+        $distribution = $rawDistribution["list"];
         while ($row = pg_fetch_assoc($cursor)) {
-            $report_text .= $this->getCategoryItemReport($row);
-            $rows[] = [
-                'values' => $this->getCategoryItemValue($row),
-                'name' => $this->getCategoryItemName($row /*, $extra_row_info */),
-                'direct_counts' => $histogram["list"][$row["id"]] ?? "0"
+            $id = $row["id"];
+            $extra = ""; //array_key_exists($id, $extraCategoryInfo) ? $extraCategoryInfo[$id] : "";
+            $compiledDistribution[] = [
+                'values'         => $this->getCategoryItemValue($row),
+                'display_name'   => $this->getCategoryItemDisplayName($row, $extra),
+                'name'           => $this->getCategoryItemName($row, $extra),
+                'category_count' => $distribution[$row["id"]] ?? "0"
             ];
         }
-        $facetContent = new FacetContent($facetsConfig, $rows,  $histogram, $pickMatrix, $interval, $intervalQuery);
-        return $facetContent;
-
-        // FIXME! THIS CAN NOT WORK! SEE USE BELOW!
-        // add extra information to a facet
-        // if (isset($facet->extra_row_info_facet)) {
-        //     $extra_row_info = $this->getExtraRowInfo($facetsConfig, $facet->extra_row_info_facet);
-        // }
-        // FIXME Move to serialize!
-        // $tooltip_text = FacetPicksSerializer::toHTML($content['pick_matrix']);
-        // $report_text = " Current filter   <BR>  ". $tooltip_text . "  " .
-        //    SqlFormatter::format($content['interval_query'], false) . "  ; \n  " .
-        //   ($content['interval_query']['sql'] ?? "") . " ;\n";
-
+        return $compiledDistribution;        
     }
 
     protected function getCategoryItemValue($row)
@@ -101,88 +101,19 @@ class FacetContentLoader {
         return NULL;
     }
 
-    protected function getCategoryItemName($row)
+    protected function getCategoryItemName($row, $extra)
     {
-        return NULL;
+        return $row["name"] . (!empty($extra) ? " ($extra)" : "");
     }
 
-    protected function getCategoryItemReport($row)
+    protected function getCategoryItemDisplayName($row, $extra)
     {
-        return NULL;
+        return $this->getCategoryItemName($row, $extra);
     }
 
-    // FIXME SEE ABOVE
-    private function getExtraRowInfo($facetsConfig, $facetCode)
+    protected function getExtraCategoryInfo($facetsConfig)
     {
-        $facet = FacetRegistry::getDefinition($facetCode);
-        $query = QuerySetupService::setup($facetsConfig, $facetCode, $data_tables, $facetsConfig->getFacetCodes());
-        $sql = FacetContentExtraRowInfoSqlQueryBuilder::compile($query, $facet);
-        $values = ConnectionHelper::queryKeyedValues($sql, 'id', 'name');
-        return $values ?? [];
-    }
-}
-
-class RangeFacetContentLoader extends FacetContentLoader {
-
-   // compute max and min for range facet
-    /*
-    Function: computeRangeLowerUpper
-    Get the min and max values of filter-variable from the database table.
-    */
-    private function computeRangeLowerUpper($facetCode)
-    {
-        $facet = FacetRegistry::getDefinition($facetCode);
-        $sql = RangeLowerUpperSqlQueryBuilder::compile(NULL, $facet);
-        $facet_range = ConnectionHelper::queryRow($sql);
-        return $facet_range;
-    }
-
-    /*
-    function: getLowerUpperLimit
-    Gets the lower and limits in range-filter so correct intervals can be computed.
-    Uses the clients setting if exists, otherwise gets it from the database.
-    */
-    private function getLowerUpperLimit($facetsConfig, $facetCode)
-    {
-        $limits = [];
-        foreach ($facetsConfig->getConfig($facetCode)->picks as $pick) {
-            $limits[$pick->type] = $pick->value;
-        }
-        if (count($limits) != 2) {
-            $limits = $this->computeRangeLowerUpper($facetCode);
-        }
-        return $limits;
-    }
-
-    protected function compileIntervalQuery($facetsConfig, $facetCode, $interval_count=120)
-    {
-        $limits = $this->getLowerUpperLimit($facetsConfig, $facetCode);
-        $interval = floor(($limits["upper"] - $limits["lower"]) / $interval_count);
-        if ($interval <= 0) {
-            $interval = 1;
-        }
-        $sql = RangeIntervalSqlQueryBuilder::compile($interval, $limits["lower"], $limits["upper"], $interval_count);
-        return [ $interval, $sql ];
-    }
-
-    protected function getCategoryItemValue($row)
-    {
-        return array("lower" => $row["lower"], "upper" => $row["upper"]);
-    }
-
-    protected function getCategoryItemName($row)
-    {
-        return $row["lower"] . "  to " . $row["upper"];
-    }
-
-    protected function getCategoryItemReport($row)
-    {
-        return "\n " . $this->getCategoryItemName($row);
-    }
-
-    protected function getHistogramLoader()
-    {
-        return new RangeFacetHistogramLoader();
+        return [];
     }
 }
 
@@ -200,18 +131,48 @@ class DiscreteFacetContentLoader extends FacetContentLoader {
         return array("discrete" => $row["id"]);
     }
 
-    protected function getCategoryItemName($row)
+    protected function getExtraCategoryInfo($facetsConfig)
     {
-        return $row["name"];
-        // FIXME! THIS CAN NOT WORK! CONCAT NAME TO AN ARRAY???
-        // if (!empty($extra_row_info)) {
-        //     $name_to_display.="(" . $extra_row_info . ")";
-        // }
+        $facet = $facetsConfig->targetFacet->extra_row_info_facet;
+        if (!isset($facet))
+            return [];
+        $query = QuerySetupService::setup($facetsConfig, $facet->facet_code, [], $facetsConfig->getFacetCodes());
+        $sql = FacetContentExtraRowInfoSqlQueryBuilder::compile($query, $facet);
+        $values = ConnectionHelper::queryKeyedValues($sql, 'id', 'name') ?? [];
+        return $values;
+    }
+}
+
+class RangeFacetContentLoader extends FacetContentLoader {
+
+    private function getLowerUpperBound($config)
+    {
+        $bounds = $config->getPickedLowerUpperBounds();          // Get client picked bound if exists...
+        if (count($bounds) != 2) {
+            $bounds = $config->getStorageLowerUpperBounds();     // ...else fetch from database
+        }
+        return [ $bounds["lower"],  $bounds["upper"] ];
     }
 
-    protected function getHistogramLoader()
+    protected function compileIntervalQuery($facetsConfig, $facetCode, $interval_count=120)
     {
-        return new DiscreteFacetHistogramLoader();
+        list($lower, $upper) = $this->getLowerUpperBound($facetsConfig->getConfig($facetCode));
+        $interval = floor(($upper - $lower) / $interval_count);
+        if ($interval <= 0) {
+            $interval = 1;
+        }
+        $sql = RangeIntervalSqlQueryBuilder::compile($interval, $lower, $upper, $interval_count);
+        return [ $interval, $sql ];
+    }
+
+    protected function getCategoryItemValue($row)
+    {
+        return [ "lower" => $row["lower"], "upper" => $row["upper"] ];
+    }
+
+    protected function getCategoryItemName($row, $extra)
+    {
+        return "{$row['lower']} to {$row['upper']}";
     }
 }
 

@@ -9,23 +9,32 @@ require_once(__DIR__ . '/query_builder.php');
 require_once(__DIR__ . '/sql_query_builder.php');
 require_once __DIR__ . "/lib/SqlFormatter.php";
 
-class FacetHistogramLoader {
+class CategoryDistributionLoader {
 
     public function load($facetCode, $facetsConfig, $intervalQuery=NULL)
     {
         $facet = FacetRegistry::getDefinition($facetCode);
         $sql = $this->compileSql($facet, $facetsConfig, $intervalQuery);
-        $histogram = ConnectionHelper::queryKeyedValues($sql, 'category', 'direct_count');
-        return [ "list" => $histogram, "sql" => SqlFormatter::format($sql, false) ];
+        $data = ConnectionHelper::queryKeyedValues($sql, 'category', 'direct_count');
+        return [ "list" => $data, "sql" => SqlFormatter::format($sql, false) ];
     }
 
     protected function compileSql($facet, $facetsConfig, $intervalQuery)
     {
         return "";
     }
+
+    private static $loaders = [
+        "discrete"  => "DiscreteCategoryDistributionLoader",
+        "range"     => "RangeCategoryDistributionLoader"
+    ];
+    public static function create($facetType)
+    {
+        return array_key_exists($facetType, self::$loaders) ? new self::$loaders[$facetType]() : NULL;
+    }
 }
 
-class RangeFacetHistogramLoader extends FacetHistogramLoader {
+class RangeCategoryDistributionLoader extends CategoryDistributionLoader {
 
     protected function compileSql($facet, $facetsConfig, $intervalQuery)
     {
@@ -36,7 +45,7 @@ class RangeFacetHistogramLoader extends FacetHistogramLoader {
     }
 }
 
-class DiscreteFacetHistogramLoader extends FacetHistogramLoader {
+class DiscreteCategoryDistributionLoader extends CategoryDistributionLoader {
 
     protected function compileSql($facet, $facetsConfig, $payload)
     {

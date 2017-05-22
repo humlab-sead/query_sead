@@ -18,7 +18,7 @@ error_reporting( error_reporting() & ~E_NOTICE );
 require_once(__DIR__ . "/../server/lib/Cache.php");
 require_once(__DIR__ . "/../server/connection_helper.php");
 require_once(__DIR__ . "/cache_helper.php");
-require_once(__DIR__ . "/../server/facet_histogram_loader.php");
+require_once(__DIR__ . "/../server/category_distribution_loader.php");
 require_once(__DIR__ . "/serializers/facet_definition_serializer.php");
 
 ConnectionHelper::openConnection();

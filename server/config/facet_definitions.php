@@ -55,7 +55,6 @@ $facet_definition = array
             "color" => "ff0000",
             "parents" => array("ROOT"),
         ),
-
     "ecology" =>
         array(
             "display_title" => "Ecology",
@@ -83,8 +82,6 @@ $facet_definition = array
             "color" => "ff0000",
             "parents" => array("ROOT"),
         ),
-
-
     "result_facet" =>
         array(
             "id_column" => "tbl_analysis_entities.analysis_entity_id",
@@ -572,7 +569,7 @@ $facet_definition = array
             "query_cond_table" => "",
             "query_cond" => "metainformation.view_abundance.abundance is not null",
             "default" => 0,
-            "parents" => array("ecology")  //$facet_category[2]
+            "parents" => array("ecology")
         ),
     "abundances_all" =>
         array(
@@ -587,12 +584,10 @@ $facet_definition = array
             "query_cond_table" => "",
             "query_cond" => "metainformation.view_abundance.abundance is not null",
             "default" => 0,
-            "parents" => array("ecology")  //$facet_category[2]
+            "parents" => array("ecology")
         ),
 
-
     //Eco code system
-
 
     "activeseason" =>
         array(

@@ -7,7 +7,7 @@ require_once __DIR__ . "/config/bootstrap_application.php";
 require_once __DIR__ . '/connection_helper.php';
 require_once __DIR__ . '/facet_config.php';
 require_once __DIR__ . '/result_sql_compiler.php';
-require_once __DIR__ . '/facet_histogram_loader.php';
+require_once __DIR__ . '/category_distribution_loader.php';
 
 class ResultDataLoader
 {
@@ -19,13 +19,13 @@ class ResultDataLoader
         $sql = $this->compileSql($facetsConfig, $resultConfig);
         if (empty($sql)) {
             return ['iterator' => NULL, 'payload' => NULL];
-        }          
+        }
         $data = ConnectionHelper::queryIter($sql);
-        $extra = $this->getExtraPayload($facetsConfig, $resultConfig, $facetStateId);
+        $extra = $this->getExtraPayload($facetsConfig, $resultConfig);
         return [ 'iterator' => $data, 'payload' => $extra ];
     }
 
-    protected function getExtraPayload($facetsConfig, $resultConfig, $facetCacheId)
+    protected function getExtraPayload($facetsConfig, $resultConfig)
     {
         return NULL;
     }
@@ -39,23 +39,28 @@ class ResultDataLoader
 class MapResultDataLoader extends ResultDataLoader {
 
     public $facetCode = NULL;
+    public $extraLoader = NULL;
+
     function __construct() {
         parent::__construct();
         $this->facetCode = "map_result";
+        $this->extraLoader = new DiscreteCategoryDistributionLoader();
     }
 
-    protected function getExtraPayload($facetsConfig, $resultConfig, $facetCacheId)
+    private function loadDistribution($facetsConfig)
     {
-        $histogram_loader = new DiscreteFacetHistogramLoader();
-        $interval = 1;
-        $data = $histogram_loader->load($this->facetCode, $facetsConfig, $interval);
-        $filtered_count = $data ? $data["list"] : NULL;
-        if ($filtered_count) {
-            $facetsConfigWithoutPicks = $facetsConfig->deleteUserPicks();
-            $data = $histogram_loader->load($this->facetCode, $facetsConfigWithoutPicks, $interval);
-            $un_filtered_count = $data ? $data["list"] : NULL;
-        }
-        return [ "filtered_count" => $filtered_count, "un_filtered_count" => $un_filtered_count ];
+        return $this->extraLoader->load($this->facetCode, $facetsConfig);
+    }
+
+    protected function getExtraPayload($facetsConfig, $resultConfig)
+    {
+        $data       = $this->loadDistribution($facetsConfig);
+        $filtered   = $data['list'] ?: [ ];
+        $unfiltered = $facetsConfig->hasPicks() ? $this->loadDistribution($facetsConfig->deleteUserPicks()) : $filteredDistribution;
+        return [
+            "filtered_count"    => $filtered,
+            "un_filtered_count" => $unfiltered
+        ];
     }
 
     protected function compileSql($facetsConfig, $resultConfig)

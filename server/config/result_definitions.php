@@ -187,6 +187,27 @@ $result_fields = array
         ),
 );
 
+
+// $field_keys = [];
+// foreach ($result_fields as $fields) {
+//     foreach ($fields as $key => $item) {
+//         $field_keys[$key] = $key;
+//     }
+// }
+// //sort($field_keys);
+// $data = [];
+// foreach ($result_fields as $result_key => $fields) {
+//     $line = []; //$result_key ];
+//     foreach ($field_keys as $field_key) {
+//         $line[] = $fields[$field_key];
+//     }
+//     $sql = "INSERT INTO facet.tbl_result_fields (" . implode(',', $field_keys) . ") VALUES ('" . implode("', '", $line) . "')\n";
+//     print($sql);
+// }
+
+// Alan US white paper -> System Developer
+
+
 $result_definitions = [
 
     "site_level" => [

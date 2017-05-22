@@ -100,51 +100,52 @@ class ArrayHelper
     }
 }
 
-function array_join_surround($array, $glue = "", $prefix = "", $suffix = "", $default="")
-{
-    return join($glue, array_map(function ($x) use ($prefix, $suffix, $default) {
-        return $prefix . ($x ?? $default) . $suffix;
-    }, $array));
-}
+    function array_join_surround($array, $glue = "", $prefix = "", $suffix = "", $default="")
+    {
+        return join($glue, array_map(function ($x) use ($prefix, $suffix, $default) {
+            return $prefix . ($x ?? $default) . $suffix;
+        }, $array));
+    }
 
-function array_add_unique(&$array,...$params)
-{
-    foreach ($params as $mixed) {
-        $values = (empty($mixed) ? [] : (is_array($mixed) ? $mixed : [$mixed]));
-        foreach ($values as $value) {
-            $array[$value] = $value;
+    function array_add_unique(&$array,...$params)
+    {
+        foreach ($params as $mixed) {
+            $values = (empty($mixed) ? [] : (is_array($mixed) ? $mixed : [$mixed]));
+            foreach ($values as $value) {
+                $array[$value] = $value;
+            }
         }
     }
-}
 
-/**
- * Adds a prefix to a string if it's not empty - otherwise returns empty string'
- *
- * @param string $prefix string to use as prefix.
- * @param string $string string to be prefixed.
- *
- * @return string
- */
-function str_prefix($prefix, $string, $glue="")
-{
-    return empty($string) ? "" : "$prefix$glue$string";
-}
+    /**
+    * Adds a prefix to a string if it's not empty - otherwise returns empty string'
+    *
+    * @param string $prefix string to use as prefix.
+    * @param string $string string to be prefixed.
+    *
+    * @return string
+    */
+    function str_prefix($prefix, $string, $glue="")
+    {
+        return empty($string) ? "" : "$prefix$glue$string";
+    }
 
-/**
- * Returns $value if not empty, else $default
- *
- * @param string $value string value to return if not empty.
- * @param string $default string default value if empty.
- *
- * @return string
- */
-function value_default($value, $default)
-{
-    return $value ?: $default;
-}
+    /**
+    * Returns $value if not empty, else $default
+    *
+    * @param string $value string value to return if not empty.
+    * @param string $default string default value if empty.
+    *
+    * @return string
+    */
+    function value_default($value, $default)
+    {
+        return $value ?: $default;
+    }
 
-function get(&$var, $key, $default=null) {
-    return (array_key_exists($key, $var) && !empty($var[$key])) ? $var[$key] : $default;
-}
+    function get(&$var, $key, $default=null) {
+        return (array_key_exists($key, $var) && !empty($var[$key])) ? $var[$key] : $default;
+    }
+
 
 ?>

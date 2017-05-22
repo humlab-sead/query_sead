@@ -44,7 +44,7 @@ class FacetContentService {
         $cacheId = $facetsConfig->getCacheId();
         if (!($facetContent = CacheHelper::get_facet_content($cacheId))) {
             $loader = $facet_content_loaders[$facetsConfig->targetFacet->facet_type];
-            $facetContent = $loader->get_facet_content($facetsConfig);
+            $facetContent = $loader->load($facetsConfig);
             CacheHelper::put_facet_content($cacheId, $facetContent);
         }
         return $facetContent;
@@ -54,7 +54,7 @@ class FacetContentService {
 $xml = $_REQUEST["xml"] ?: NULL;
 $facetsConfig = FacetConfigDeserializer::deserialize($xml)->deleteBogusPicks();
 $facetContent = FacetContentService::load($facetsConfig);
-$page = $facetContent->computeWindow();
+$page = $facetContent->getPage();
 $response = FacetContentSerializer::serializeFacetContent($facetContent, $facetsConfig->requestType, $page[0], $page[1]);
 
 ConnectionHelper::closeConnection();
